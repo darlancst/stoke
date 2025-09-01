@@ -1,0 +1,65 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Detalhes da Devolução #{{ devolucao.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Detalhes da Devolução #{{ devolucao.id }}</h1>
+    <a href="{% url 'inventario:listar_devolucoes' %}" class="btn btn-secondary">Voltar para a Lista</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h4>Informações Gerais</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Data da Devolução:</strong> {{ devolucao.data_devolucao|date:"d/m/Y H:i" }}</p>
+                <p>
+                    <strong>Venda Original:</strong> 
+                    <a href="{% url 'inventario:detalhar_venda' pk=devolucao.venda.pk %}">Venda #{{ devolucao.venda.id }}</a>
+                </p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Valor Total Restituído:</strong> <span class="fs-5 fw-bold">R$ {{ devolucao.valor_total_restituido|floatformat:2 }}</span></p>
+                {% if devolucao.motivo %}
+                    <p><strong>Motivo:</strong> {{ devolucao.motivo }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h4>Itens Devolvidos</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Quantidade Devolvida</th>
+                    <th>Valor Unitário</th>
+                    <th>Subtotal Restituído</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in devolucao.itens.all %}
+                <tr>
+                    <td>
+                        <a href="{% url 'inventario:detalhar_produto' pk=item.produto.pk %}">
+                            {{ item.produto.nome }}
+                        </a>
+                    </td>
+                    <td>{{ item.quantidade }}</td>
+                    <td>R$ {{ item.item_venda_original.preco_venda_unitario|floatformat:2 }}</td>
+                    <td>R$ {{ item.valor_restituido|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 

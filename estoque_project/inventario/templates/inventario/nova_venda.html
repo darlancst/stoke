@@ -1,0 +1,241 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Nova Venda{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.3/themes/base/jquery-ui.css">
+<style>
+    .total-venda-fixed {
+        position: sticky;
+        bottom: 0;
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-top: 1px solid #dee2e6;
+        z-index: 1020; /* Para ficar acima da tabela */
+    }
+    .ui-autocomplete {
+        max-height: 200px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 1050; /* Z-index alto para aparecer sobre outros elementos */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Registrar Nova Venda</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form id="form-venda" onsubmit="return false;">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="cliente_nome" class="form-label">Nome do Cliente</label>
+                    <input type="text" id="cliente_nome" name="cliente_nome" class="form-control" placeholder="Nome do Cliente (opcional)">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Local da Venda</label>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="tipo_venda" id="venda_loja" value="LOJA" checked>
+                        <label class="form-check-label" for="venda_loja">Na Loja (Lucro 50%)</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="tipo_venda" id="venda_externa" value="EXTERNA">
+                        <label class="form-check-label" for="venda_externa">Externa (Lucro 100%)</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <label for="buscar_produto" class="form-label">Buscar Produto</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="buscar_produto" class="form-control" placeholder="Digite o nome do produto...">
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <h3 class="mt-4">Itens da Venda</h3>
+        <div class="table-responsive">
+            <table class="table table-hover" id="tabela-itens-venda">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th style="width: 120px;">Quantidade</th>
+                        <th style="width: 150px;">Preço Unit.</th>
+                        <th style="width: 150px;">Subtotal</th>
+                        <th style="width: 80px;">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Linhas de itens serão adicionadas aqui via JS -->
+                </tbody>
+            </table>
+        </div>
+        <div id="sem-itens-aviso" class="text-center text-muted mt-3">
+            <p>Nenhum item adicionado à venda.</p>
+        </div>
+    </div>
+</div>
+
+<div class="total-venda-fixed d-flex justify-content-end align-items-center mt-4">
+    <div class="me-4">
+        <label for="desconto-venda" class="form-label">Desconto (R$)</label>
+        <input type="number" id="desconto-venda" class="form-control form-control-lg" style="width: 150px;" placeholder="0,00" min="0">
+    </div>
+    <div>
+        <h5 class="text-muted mb-0">Subtotal: <span id="subtotal-venda">R$ 0,00</span></h5>
+        <h3 class="mb-0">Total Final: <span id="total-final-venda">R$ 0,00</span></h3>
+    </div>
+    <button type="button" id="btn-finalizar-venda" class="btn btn-lg btn-success ms-4">Finalizar Venda</button>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.3/jquery-ui.min.js"></script>
+<script>
+$(document).ready(function() {
+    let itensVenda = {};
+    let subtotal = 0;
+
+    function recalcularTudo() {
+        subtotal = 0;
+        for (const id in itensVenda) {
+            subtotal += parseFloat(itensVenda[id].subtotal);
+        }
+        
+        let desconto = parseFloat($('#desconto-venda').val()) || 0;
+        if (desconto > subtotal) {
+            desconto = subtotal;
+            $('#desconto-venda').val(desconto.toFixed(2));
+        }
+
+        const totalFinal = subtotal - desconto;
+
+        $('#subtotal-venda').text('R$ ' + subtotal.toFixed(2).replace('.', ','));
+        $('#total-final-venda').text('R$ ' + totalFinal.toFixed(2).replace('.', ','));
+        $('#sem-itens-aviso').toggle(Object.keys(itensVenda).length === 0);
+    }
+
+    $("#buscar_produto").autocomplete({
+        source: "{% url 'inventario:buscar_produtos_json' %}",
+        minLength: 2,
+        select: function(event, ui) {
+            event.preventDefault();
+            const produto = ui.item;
+            if (!itensVenda[produto.id]) {
+                const precoNumerico = parseFloat(produto.preco);
+                if (isNaN(precoNumerico)) {
+                    console.error("Preço inválido recebido para o produto:", produto);
+                    return;
+                }
+
+                itensVenda[produto.id] = {
+                    id: produto.id,
+                    nome: produto.value,
+                    quantidade: 1,
+                    preco: precoNumerico,
+                    subtotal: precoNumerico,
+                    estoque: produto.estoque
+                };
+
+                const newRow = `
+                    <tr id="item-${produto.id}">
+                        <td>
+                            ${produto.value}
+                            <br>
+                            <small class="text-muted">Estoque disponível: ${produto.estoque}</small>
+                        </td>
+                        <td><input type="number" class="form-control quantidade-item" value="1" min="1" max="${produto.estoque}" data-id="${produto.id}"></td>
+                        <td>R$ <span class="preco-unitario">${precoNumerico.toFixed(2).replace('.', ',')}</span></td>
+                        <td>R$ <span class="subtotal-item">${precoNumerico.toFixed(2).replace('.', ',')}</span></td>
+                        <td><button class="btn btn-sm btn-danger remover-item" data-id="${produto.id}"><i class="bi bi-trash"></i></button></td>
+                    </tr>
+                `;
+                $('#tabela-itens-venda tbody').append(newRow);
+                recalcularTudo();
+            }
+            $(this).val('');
+        }
+    });
+
+    $('#tabela-itens-venda').on('input', '.quantidade-item', function() {
+        const id = $(this).data('id');
+        let quantidade = parseInt($(this).val());
+        const estoqueDisponivel = parseInt($(this).attr('max'));
+
+        if (quantidade > estoqueDisponivel) {
+            alert(`A quantidade não pode exceder o estoque disponível (${estoqueDisponivel}).`);
+            $(this).val(estoqueDisponivel);
+            quantidade = estoqueDisponivel;
+        }
+        
+        if (quantidade > 0 && itensVenda[id]) {
+            const preco = parseFloat(itensVenda[id].preco);
+            const subtotal = quantidade * preco;
+            itensVenda[id].quantidade = quantidade;
+            itensVenda[id].subtotal = subtotal;
+            $('#item-' + id).find('.subtotal-item').text(subtotal.toFixed(2).replace('.', ','));
+            recalcularTudo();
+        }
+    });
+
+    $('#tabela-itens-venda').on('click', '.remover-item', function() {
+        const id = $(this).data('id');
+        delete itensVenda[id];
+        $('#item-' + id).remove();
+        recalcularTudo();
+    });
+
+    $('#desconto-venda').on('input', function() {
+        recalcularTudo();
+    });
+
+    $('#btn-finalizar-venda').on('click', function() {
+        if (Object.keys(itensVenda).length === 0) {
+            alert('Adicione pelo menos um item para finalizar a venda.');
+            return;
+        }
+
+        const dadosVenda = {
+            cliente_nome: $('#cliente_nome').val() || 'Cliente Anônimo',
+            tipo_venda: $('input[name="tipo_venda"]:checked').val(),
+            desconto: parseFloat($('#desconto-venda').val()) || 0,
+            itens: Object.values(itensVenda).map(item => ({
+                id: item.id,
+                quantidade: item.quantidade
+            }))
+        };
+        
+        const csrfToken = $('input[name=csrfmiddlewaretoken]').val();
+
+        fetch("{% url 'inventario:criar_venda' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(dadosVenda)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                alert('Venda registrada com sucesso! ID da Venda: ' + data.venda_id);
+                window.location.href = "{% url 'inventario:listar_vendas' %}";
+            } else {
+                alert('Erro ao registrar a venda: ' + data.erro);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Ocorreu um erro inesperado. Verifique o console para mais detalhes.');
+        });
+    });
+});
+</script>
+{% endblock %} 

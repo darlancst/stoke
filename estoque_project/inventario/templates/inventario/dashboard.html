@@ -1,0 +1,357 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Dashboard - Gestão de Estoque{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h1 class="mb-0">Dashboard</h1>
+    
+    <!-- Formulário de Filtro de Data -->
+    <form method="get" class="d-flex align-items-center" id="filtro-periodo-form">
+        <select class="form-select me-2" name="periodo" id="periodo-select" style="width: auto;">
+            <option value="7d" {% if periodo_selecionado == '7d' %}selected{% endif %}>Últimos 7 dias</option>
+            <option value="30d" {% if periodo_selecionado == '30d' %}selected{% endif %}>Últimos 30 dias</option>
+            <option value="anual" {% if periodo_selecionado == 'anual' %}selected{% endif %}>Último Ano</option>
+            <option value="custom" {% if periodo_selecionado == 'custom' %}selected{% endif %}>Personalizado</option>
+        </select>
+
+        <div id="periodo-customizado" class="d-flex align-items-center {% if periodo_selecionado != 'custom' %}d-none{% endif %}">
+            <input type="date" class="form-control me-2" name="data_inicio" value="{{ data_inicio_selecionada }}" max="{{ hoje_str }}">
+            <span class="me-2">até</span>
+            <input type="date" class="form-control me-2" name="data_fim" value="{{ data_fim_selecionada }}" max="{{ hoje_str }}">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+    </form>
+</div>
+
+<div class="row g-2 mb-2">
+    <!-- Card: Receita Total -->
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-primary h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-currency-dollar"></i> Receita Total</h5>
+                <p class="card-text fs-4">R$ {{ receita_total|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <!-- Card: Lucro -->
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-info h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-cash-coin"></i> Seu Lucro</h5>
+                <p class="card-text fs-4">R$ {{ meu_lucro_total|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <!-- Card: Vendas -->
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-warning h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-cart4"></i> Vendas Realizadas</h5>
+                <p class="card-text fs-4">{{ numero_vendas }}</p>
+            </div>
+        </div>
+    </div>
+    <!-- Card: Estoque -->
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-secondary h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-box-seam"></i> Valor em Estoque</h5>
+                <p class="card-text fs-4">R$ {{ valor_total_estoque|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Coluna da Esquerda: Gráfico de Linhas -->
+    <div class="col-lg-7 mb-2">
+        <div class="card h-100">
+            <div class="card-header">
+                Receita Final vs. Seu Lucro (Período Selecionado)
+            </div>
+            <div class="card-body">
+                <canvas id="lineChart" style="min-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coluna da Direita: Cards de Informação Rápida -->
+    <div class="col-lg-5 mb-2">
+        <div class="row">
+            <!-- Estoque Baixo -->
+            <div class="col-12 mb-2">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-exclamation-triangle-fill text-danger"></i> Produtos com Estoque Baixo
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th class="text-end">Qtd. Atual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for produto in produtos_estoque_baixo %}
+                                <tr>
+                                    <td><a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}">{{ produto.nome }}</a></td>
+                                    <td class="text-end"><span class="badge bg-danger">{{ produto.qtd_total }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">Nenhum produto com estoque baixo.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mais Vendidos -->
+            <div class="col-md-6 mb-2 mb-md-0">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-trophy-fill"></i> Mais Vendidos
+                    </div>
+                    <div class="card-body">
+                        {% if top_produtos_vendidos %}
+                            <ul class="list-group list-group-flush">
+                                {% for produto in top_produtos_vendidos %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        {{ produto.produto__nome }}
+                                        <span class="badge bg-primary rounded-pill">{{ produto.quantidade_total_vendida }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-center text-muted mb-0">Nenhuma venda no período.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mais Lucrativos -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-currency-dollar"></i> Mais Lucrativos
+                    </div>
+                    <div class="card-body">
+                        {% if produtos_mais_lucrativos %}
+                            <ul class="list-group list-group-flush">
+                                {% for produto in produtos_mais_lucrativos %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        <span>{{ produto.produto__nome }}</span>
+                                        <span class="badge bg-success">R$ {{ produto.lucro_total|floatformat:2 }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-center text-muted mb-0">Nenhuma venda no período.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico Heatmap (Linha Completa) -->
+<div class="row">
+    <div class="col-12 mb-2">
+        <div class="card">
+            <div class="card-header">
+                Atividade de Lucro (Último Ano)
+            </div>
+            <div class="card-body">
+                <div class="heatmap-wrapper">
+                    <div id="heatmap-months-container"></div>
+                    <div id="heatmap-container" class="heatmap-loading"></div>
+                </div>
+                <div class="d-flex justify-content-end align-items-center mt-2">
+                    <small class="me-2 text-muted">Menos</small>
+                    <div class="heatmap-legend-cell" style="background-color: #ebedf0;"></div>
+                    <div class="heatmap-legend-cell" style="background-color: #9be9a8;"></div>
+                    <div class="heatmap-legend-cell" style="background-color: #40c463;"></div>
+                    <div class="heatmap-legend-cell" style="background-color: #30a14e;"></div>
+                    <div class="heatmap-legend-cell" style="background-color: #216e39;"></div>
+                    <small class="ms-2">Mais</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dados JSON para o JavaScript -->
+<script type="application/json" id="heatmap-data-json">{{ heatmap_data|safe }}</script>
+<script type="application/json" id="line-chart-data-json">
+{
+    "labels": {{ labels_grafico|safe }},
+    "receita": {{ receita_grafico|safe }},
+    "lucro": {{ meu_lucro_grafico|safe }}
+}
+</script>
+
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Estilos para o Heatmap */
+.heatmap-wrapper {
+    overflow-x: auto;
+    padding-bottom: 10px;
+}
+#heatmap-container {
+    display: grid;
+    grid-template-columns: repeat(53, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+    grid-auto-flow: column;
+    gap: 3px;
+    min-width: 800px; /* Garante que o heatmap não seja espremido */
+}
+.heatmap-cell {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background-color: #ebedf0;
+    border-radius: 2px;
+}
+.heatmap-cell[data-level="1"] { background-color: #9be9a8; }
+.heatmap-cell[data-level="2"] { background-color: #40c463; }
+.heatmap-cell[data-level="3"] { background-color: #30a14e; }
+.heatmap-cell[data-level="4"] { background-color: #216e39; }
+
+.heatmap-loading {
+    height: 150px; /* Altura enquanto carrega */
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#heatmap-months-container {
+    display: grid;
+    grid-template-columns: repeat(53, 1fr);
+    gap: 3px;
+    margin-bottom: 5px;
+    font-size: 0.7rem;
+    color: #555;
+    min-width: 800px; /* Alinhado com o container do heatmap */
+}
+
+.heatmap-month-label {
+    grid-column: span 4;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.heatmap-legend-cell {
+    width: 15px;
+    height: 15px;
+    border-radius: 2px;
+    margin: 0 2px;
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const periodoSelect = document.getElementById('periodo-select');
+    const customizadoDiv = document.getElementById('periodo-customizado');
+
+    periodoSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customizadoDiv.classList.remove('d-none');
+        } else {
+            customizadoDiv.classList.add('d-none');
+        }
+    });
+
+    // --- GRÁFICO DE LINHAS ---
+    try {
+        const lineChartData = JSON.parse(document.getElementById('line-chart-data-json').textContent);
+        const ctx = document.getElementById('lineChart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: lineChartData.labels,
+                    datasets: [
+                        { label: 'Receita Final', data: lineChartData.receita, borderColor: 'rgb(75, 192, 192)', backgroundColor: 'rgba(75, 192, 192, 0.2)', fill: true, tension: 0.1 },
+                        { label: 'Seu Lucro', data: lineChartData.lucro, borderColor: 'rgb(54, 162, 235)', backgroundColor: 'rgba(54, 162, 235, 0.2)', fill: true, tension: 0.1 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+    } catch (e) {
+        console.error("Erro ao renderizar o gráfico de linhas:", e);
+    }
+
+    // --- GRÁFICO HEATMAP ---
+    try {
+        const heatmapContainer = document.getElementById('heatmap-container');
+        const heatmapMonthsContainer = document.getElementById('heatmap-months-container');
+        if (heatmapContainer && heatmapMonthsContainer) {
+            const heatmapData = JSON.parse(document.getElementById('heatmap-data-json').textContent);
+            const cores = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+            
+            heatmapContainer.innerHTML = '';
+            heatmapContainer.classList.remove('heatmap-loading');
+            
+            const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            let lastMonth = -1;
+
+            heatmapData.forEach((item, index) => {
+                const diaEl = document.createElement('div');
+                diaEl.classList.add('heatmap-cell');
+                diaEl.style.backgroundColor = cores[item.nivel];
+                
+                const dataObj = new Date(item.data);
+                const dataFormatada = new Date(dataObj.getUTCFullYear(), dataObj.getUTCMonth(), dataObj.getUTCDate()).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const lucroFormatado = `R$ ${item.lucro.toFixed(2).replace('.', ',')}`;
+                
+                diaEl.setAttribute('data-bs-toggle', 'tooltip');
+                diaEl.setAttribute('data-bs-placement', 'top');
+                diaEl.setAttribute('title', `${dataFormatada} - Lucro: ${lucroFormatado}`);
+                
+                heatmapContainer.appendChild(diaEl);
+
+                // Adiciona a marcação do mês quando ele muda
+                const date = new Date(item.data);
+                const correctedDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                const month = correctedDate.getUTCMonth();
+
+                if (month !== lastMonth) {
+                    lastMonth = month;
+                    const colIndex = Math.floor(index / 7);
+                    
+                    const monthEl = document.createElement('div');
+                    monthEl.className = 'heatmap-month-label';
+                    monthEl.textContent = monthNames[month];
+                    monthEl.style.gridColumnStart = colIndex + 1;
+                    heatmapMonthsContainer.appendChild(monthEl);
+                }
+            });
+
+            const tooltipTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(tooltipTriggerEl => {
+                new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+    } catch (e) {
+        console.error("Erro ao renderizar o heatmap:", e);
+    }
+});
+</script>
+{% endblock %} 

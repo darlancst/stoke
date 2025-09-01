@@ -1,0 +1,188 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ titulo }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            {% if status_atual == 'ativos' %}
+                <a href="{% url 'inventario:listar_produtos' %}?status=pausados&q={{ query_atual|urlencode }}" class="btn btn-secondary">Ver Pausados</a>
+            {% else %}
+                <a href="{% url 'inventario:listar_produtos' %}?q={{ query_atual|urlencode }}" class="btn btn-secondary">Ver Ativos</a>
+            {% endif %}
+        </div>
+        <a href="{% url 'inventario:criar_produto' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            Adicionar Novo Produto
+        </a>
+    </div>
+</div>
+
+<form method="get" class="mb-4">
+    <input type="hidden" name="status" value="{{ status_atual }}">
+    <input type="text" class="form-control" placeholder="Buscar produto por nome..." name="q" value="{{ query_atual }}" id="search-input">
+</form>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Nome do Produto</th>
+                <th class="text-center">Estoque Total</th>
+                <th class="text-end">Preço de Venda</th>
+                <th class="text-end">Custo Médio</th>
+                <th class="text-center">Margem de Lucro</th>
+                <th class="text-center">Ações</th>
+            </tr>
+        </thead>
+        <tbody id="produtos-tbody">
+            {% for produto in produtos %}
+                <tr class="align-middle">
+                    <td>
+                        <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}">{{ produto.nome }}</a>
+                    </td>
+                    <td class="text-center">
+                        {{ produto.quantidade_total_agg|default:"0" }}
+                    </td>
+                    <td class="text-end">R$ {{ produto.preco_venda|floatformat:2 }}</td>
+                    <td class="text-end">R$ {{ produto.custo_medio_ponderado_agg|floatformat:2|default:"0.00" }}</td>
+                    <td class="text-center">
+                        {% if produto.margem_lucro_agg is not None %}
+                            <span class="badge {% if config and produto.margem_lucro_agg < config.margem_lucro_ideal %}bg-danger{% else %}bg-success{% endif %}">
+                                {{ produto.margem_lucro_agg|floatformat:2 }}%
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="btn btn-sm btn-info" title="Detalhes"><i class="bi bi-eye"></i></a>
+                            <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-sm btn-success" title="Adicionar Lote"><i class="bi bi-plus-lg"></i></a>
+                            <a href="{% url 'inventario:editar_produto' pk=produto.pk %}" class="btn btn-sm btn-warning" title="Editar"><i class="bi bi-pencil"></i></a>
+                            {% if produto.ativo %}
+                                <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja pausar este produto? Ele ficará oculto da tela de vendas.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-secondary" title="Pausar"><i class="bi bi-pause-fill"></i></button>
+                                </form>
+                            {% else %}
+                                <form action="{% url 'inventario:reativar_produto' pk=produto.pk %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success" title="Reativar"><i class="bi bi-play-fill"></i></button>
+                                </form>
+                                <form action="{% url 'inventario:excluir_produto_permanente' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('EXCLUSÃO PERMANENTE!\n\nEsta ação não pode ser desfeita e removerá o produto e todos os seus lotes do sistema.\n\nContinuar?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Excluir Permanentemente"><i class="bi bi-trash"></i></button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">
+                        {% if query_atual %}
+                            Nenhum produto encontrado para "<strong>{{ query_atual }}</strong>".
+                        {% else %}
+                            Nenhum produto encontrado.
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const produtosTbody = document.getElementById('produtos-tbody');
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const query = this.value.trim();
+            const status = '{{ status_atual }}';
+            buscarProdutos(query, status);
+        }, 300); // Aguarda 300ms após parar de digitar
+    });
+    
+    function buscarProdutos(query, status) {
+        const url = new URL('{% url "inventario:buscar_produtos_listagem_json" %}', window.location.origin);
+        url.searchParams.set('q', query);
+        url.searchParams.set('status', status);
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                atualizarTabela(data.produtos, query);
+            })
+            .catch(error => {
+                console.error('Erro na busca:', error);
+            });
+    }
+    
+    function atualizarTabela(produtos, query) {
+        let html = '';
+        
+        if (produtos.length === 0) {
+            html = `<tr>
+                <td colspan="6" class="text-center">
+                    ${query ? `Nenhum produto encontrado para "<strong>${query}</strong>".` : 'Nenhum produto encontrado.'}
+                </td>
+            </tr>`;
+        } else {
+            produtos.forEach(produto => {
+                const margemBadge = produto.margem_lucro_agg !== null 
+                    ? `<span class="badge bg-${produto.margem_cor}">${produto.margem_lucro_agg.toFixed(2)}%</span>`
+                    : '<span class="badge bg-secondary">N/A</span>';
+                
+                const acoesBotoes = produto.ativo 
+                    ? `<form action="/produtos/${produto.id}/pausar/" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja pausar este produto? Ele ficará oculto da tela de vendas.');">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-sm btn-secondary" title="Pausar"><i class="bi bi-pause-fill"></i></button>
+                       </form>`
+                    : `<form action="/produtos/${produto.id}/reativar/" method="post" class="d-inline">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-sm btn-success" title="Reativar"><i class="bi bi-play-fill"></i></button>
+                       </form>
+                       <form action="/produtos/${produto.id}/excluir-permanente/" method="post" class="d-inline" onsubmit="return confirm('EXCLUSÃO PERMANENTE!\\n\\nEsta ação não pode ser desfeita e removerá o produto e todos os seus lotes do sistema.\\n\\nContinuar?');">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir Permanentemente"><i class="bi bi-trash"></i></button>
+                       </form>`;
+                
+                html += `<tr class="align-middle">
+                    <td><a href="/produtos/${produto.id}/">${produto.nome}</a></td>
+                    <td class="text-center">${produto.quantidade_total_agg}</td>
+                    <td class="text-end">R$ ${produto.preco_venda.toFixed(2)}</td>
+                    <td class="text-end">R$ ${produto.custo_medio_ponderado_agg.toFixed(2)}</td>
+                    <td class="text-center">${margemBadge}</td>
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <a href="/produtos/${produto.id}/" class="btn btn-sm btn-info" title="Detalhes"><i class="bi bi-eye"></i></a>
+                            <a href="/produtos/${produto.id}/adicionar-estoque/" class="btn btn-sm btn-success" title="Adicionar Lote"><i class="bi bi-plus-lg"></i></a>
+                            <a href="/produtos/${produto.id}/editar/" class="btn btn-sm btn-warning" title="Editar"><i class="bi bi-pencil"></i></a>
+                            ${acoesBotoes}
+                        </div>
+                    </td>
+                </tr>`;
+            });
+        }
+        
+        produtosTbody.innerHTML = html;
+    }
+});
+</script>
+{% endblock %} 

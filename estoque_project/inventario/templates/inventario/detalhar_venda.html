@@ -1,0 +1,74 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Detalhes da Venda #{{ venda.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Detalhes da Venda #{{ venda.id }}</h1>
+    <div>
+        <a href="{% url 'inventario:registrar_devolucao' venda_pk=venda.pk %}" class="btn btn-info"><i class="bi bi-arrow-return-left"></i> Registrar Devolução</a>
+        <a href="{% url 'inventario:listar_vendas' %}" class="btn btn-secondary">Voltar para a Lista</a>
+    </div>
+</div>
+
+{% if venda.teve_devolucao %}
+<div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+    <span>
+        <i class="bi bi-info-circle-fill me-2"></i>
+        Esta venda possui um ou mais itens que foram devolvidos.
+    </span>
+    <a href="{% url 'inventario:listar_devolucoes' %}?venda_id={{ venda.id }}" class="btn btn-sm btn-outline-info">
+        Ver Devoluções Associadas
+    </a>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        <h4>Informações Gerais</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Cliente:</strong> {{ venda.cliente_nome }}</p>
+                <p><strong>Data:</strong> {{ venda.data|date:"d/m/Y H:i" }}</p>
+                <p><strong>Tipo de Venda:</strong> {{ venda.get_tipo_venda_display }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Subtotal:</strong> R$ {{ venda.valor_bruto|floatformat:2 }}</p>
+                <p><strong>Desconto:</strong> <span class="text-danger">- R$ {{ venda.desconto|floatformat:2 }}</span></p>
+                <p class="border-top pt-2"><strong>Valor Final:</strong> <span class="fs-5 fw-bold">R$ {{ venda.valor_total|floatformat:2 }}</span></p>
+                <p><strong>Seu Lucro na Venda:</strong> <span class="fs-5 fw-bold text-success">R$ {{ venda.meu_lucro|floatformat:2 }}</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h4>Itens da Venda</h4>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                    <th>Preço Unitário (no ato)</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in venda.itens.all %}
+                <tr>
+                    <td>{{ item.produto.nome }}</td>
+                    <td>{{ item.quantidade }}</td>
+                    <td>R$ {{ item.preco_venda_unitario|floatformat:2 }}</td>
+                    <td>R$ {% widthratio item.preco_venda_unitario 1 item.quantidade as subtotal %}{{ subtotal|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 

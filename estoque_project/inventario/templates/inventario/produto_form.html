@@ -1,0 +1,157 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}{{ titulo }} - Gestão de Estoque{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{{ titulo }}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <h5 class="mb-3">Dados do Produto</h5>
+            
+            <div class="mb-3">
+                <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
+                {{ form.nome }}
+            </div>
+
+            <div class="form-check mb-3">
+                {{ form.ativo }}
+                <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                    {{ form.ativo.label }}
+                </label>
+            </div>
+
+            <hr>
+
+            <h5 class="mb-3 mt-4">Estoque e Precificação</h5>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.quantidade_inicial.id_for_label }}" class="form-label">{{ form.quantidade_inicial.label }}</label>
+                    {{ form.quantidade_inicial }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.preco_compra.id_for_label }}" class="form-label">{{ form.preco_compra.label }}</label>
+                     <div class="input-group">
+                        <span class="input-group-text">R$</span>
+                        {{ form.preco_compra }}
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.preco_venda.id_for_label }}" class="form-label">{{ form.preco_venda.label }}</label>
+                     <div class="input-group">
+                        <span class="input-group-text">R$</span>
+                        {{ form.preco_venda }}
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <h5 class="mb-3 mt-4">Fornecedor</h5>
+
+            <label for="{{ form.fornecedor.id_for_label }}" class="form-label">{{ form.fornecedor.label }}</label>
+            <div class="input-group mb-3">
+                {{ form.fornecedor }}
+                <button class="btn btn-outline-success" type="button" data-bs-toggle="modal" data-bs-target="#modalNovoFornecedor">
+                    <i class="bi bi-plus-lg"></i> Novo
+                </button>
+            </div>
+
+            <hr>
+            
+            <button type="submit" class="btn btn-primary">Salvar Produto e Lote</button>
+            <a href="{% url 'inventario:listar_produtos' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Novo Fornecedor -->
+<div class="modal fade" id="modalNovoFornecedor" tabindex="-1" aria-labelledby="modalNovoFornecedorLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalNovoFornecedorLabel">Cadastrar Novo Fornecedor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="form-novo-fornecedor" onsubmit="return false;">
+            <div class="mb-3">
+                <label for="nome_novo_fornecedor" class="form-label">Nome do Fornecedor</label>
+                <input type="text" class="form-control" id="nome_novo_fornecedor" required>
+            </div>
+            <div id="modal-fornecedor-erro" class="alert alert-danger d-none"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        <button type="button" class="btn btn-primary" id="btn-salvar-novo-fornecedor">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalNovoFornecedor = new bootstrap.Modal(document.getElementById('modalNovoFornecedor'));
+    const btnSalvarFornecedor = document.getElementById('btn-salvar-novo-fornecedor');
+    const nomeFornecedorInput = document.getElementById('nome_novo_fornecedor');
+    const selectFornecedor = document.getElementById('{{ form.fornecedor.id_for_label }}');
+    const erroModal = document.getElementById('modal-fornecedor-erro');
+    
+    btnSalvarFornecedor.addEventListener('click', function() {
+        const nomeFornecedor = nomeFornecedorInput.value.trim();
+        if (!nomeFornecedor) {
+            erroModal.textContent = 'Por favor, insira um nome para o fornecedor.';
+            erroModal.classList.remove('d-none');
+            return;
+        }
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch("{% url 'inventario:criar_fornecedor_rapido' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ nome: nomeFornecedor })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                // Adiciona a nova opção ao select
+                const novaOpcao = new Option(data.nome, data.id, true, true);
+                selectFornecedor.add(novaOpcao);
+                
+                // Limpa o formulário e fecha o modal
+                nomeFornecedorInput.value = '';
+                erroModal.classList.add('d-none');
+                modalNovoFornecedor.hide();
+            } else {
+                erroModal.textContent = 'Erro: ' + data.erro;
+                erroModal.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            console.error('Erro no fetch:', error);
+            erroModal.textContent = 'Ocorreu um erro de comunicação. Tente novamente.';
+            erroModal.classList.remove('d-none');
+        });
+    });
+});
+</script>
+{% endblock %} 
