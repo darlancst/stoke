@@ -3,9 +3,14 @@
 {% block title %}Configurações - Gestão de Estoque{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Configurações</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Configurações</h1>
+</div>
 
 <div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Configurações Gerais</h5>
+    </div>
     <div class="card-body">
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}

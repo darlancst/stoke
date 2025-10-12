@@ -25,9 +25,42 @@
     <meta name="theme-color" content="#0d1117">
     {% block extra_head %}{% endblock %}
     <style>
+        /* ========== ESTILOS GLOBAIS E TIPOGRAFIA ========== */
         body {
             font-size: .875rem;
+            line-height: 1.6;
         }
+        
+        /* Padronização de títulos */
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            margin-bottom: 1.25rem;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+        
+        h3, h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        h5 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        h6 {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        /* ========== LAYOUT - SIDEBAR ========== */
         .sidebar {
             position: fixed;
             top: 0;
@@ -37,6 +70,7 @@
             padding: 48px 0 0;
             box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
         }
+        
         .sidebar-sticky {
             position: relative;
             top: 0;
@@ -98,9 +132,195 @@
             font-size: 1.1rem;
         }
         
-        /* Transições suaves para mudança de tema */
-        body, .card, .table, .sidebar, .form-control, .form-select, .btn, .badge, .alert {
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        /* ========== CARDS - MELHORIAS VISUAIS ========== */
+        .card {
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .card-header {
+            background-color: rgba(0, 0, 0, 0.02);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 1.25rem;
+        }
+        
+        /* ========== BOTÕES - MELHORIAS VISUAIS ========== */
+        .btn {
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.8125rem;
+            border-radius: 6px;
+        }
+        
+        .btn-group .btn {
+            box-shadow: none;
+        }
+        
+        .btn-group .btn:hover {
+            transform: none;
+            z-index: 1;
+        }
+        
+        /* ========== BADGES - MELHORIAS VISUAIS ========== */
+        .badge {
+            padding: 0.35em 0.65em;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.75em;
+            letter-spacing: 0.3px;
+        }
+        
+        /* ========== FORMULÁRIOS - MELHORIAS VISUAIS ========== */
+        .form-control,
+        .form-select {
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            padding: 0.625rem 0.875rem;
+            transition: all 0.2s ease;
+        }
+        
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+        }
+        
+        .input-group-text {
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        
+        /* ========== TABELAS - MELHORIAS VISUAIS ========== */
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            padding: 0.875rem 0.75rem;
+        }
+        
+        .table tbody td {
+            padding: 0.875rem 0.75rem;
+            vertical-align: middle;
+        }
+        
+        .table-hover tbody tr {
+            transition: background-color 0.2s ease;
+        }
+        
+        /* ========== ALERTAS - MELHORIAS VISUAIS ========== */
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* ========== MODAIS - MELHORIAS VISUAIS ========== */
+        .modal-content {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 1.25rem 1.5rem;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 1rem 1.5rem;
+        }
+        
+        /* ========== TRANSIÇÕES SUAVES ========== */
+        body, .card, .table, .sidebar, .form-control, .form-select, .btn, .badge, .alert, .nav-link {
+            transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* ========== RESPONSIVIDADE - MELHORIAS ========== */
+        @media (max-width: 767.98px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .btn {
+                font-size: 0.8125rem;
+                padding: 0.5rem 0.875rem;
+            }
+            
+            /* Botões de ação em cards mobile - garantir visibilidade dos ícones */
+            .btn-sm.py-0.px-2 {
+                padding: 0.375rem 0.5rem !important;
+                min-width: 32px;
+                height: 32px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .btn-sm.py-0.px-2 i {
+                font-size: 1rem;
+            }
+        }
+        
+        /* ========== GAP E FLEX UTILITIES ========== */
+        .gap-1 {
+            gap: 0.25rem !important;
+        }
+        
+        .gap-2 {
+            gap: 0.5rem !important;
+        }
+        
+        .gap-3 {
+            gap: 1rem !important;
         }
         
         /* ========== DARK MODE STYLES ========== */
@@ -140,6 +360,11 @@
             background-color: #161b22;
             border-color: #30363d;
             color: #c9d1d9;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        [data-theme="dark"] .card:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
         }
         
         [data-theme="dark"] .card-header {
@@ -185,6 +410,7 @@
             background-color: #0d1117;
             border-color: #58a6ff;
             color: #c9d1d9;
+            box-shadow: 0 0 0 0.25rem rgba(88, 166, 255, 0.15);
         }
         
         [data-theme="dark"] .form-control::placeholder {
@@ -270,6 +496,7 @@
         [data-theme="dark"] .modal-content {
             background-color: #161b22;
             border-color: #30363d;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
         }
         
         [data-theme="dark"] .modal-header {
