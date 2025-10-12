@@ -3,19 +3,7 @@
 {% block title %}Registrar Devolução da Venda #{{ venda.id }}{% endblock %}
 
 {% block content %}
-<!-- Cabeçalho Responsivo -->
-<div class="row align-items-center mb-4">
-    <div class="col-12 col-md-8">
-        <h1 class="mb-2 mb-md-0">Registrar Devolução <span class="text-muted fs-6">da Venda #{{ venda.id }}</span></h1>
-    </div>
-    <div class="col-12 col-md-4">
-        <div class="d-flex flex-wrap gap-2 justify-content-md-end">
-            <a href="{% url 'inventario:detalhar_venda' pk=venda.pk %}" class="btn btn-secondary btn-sm">
-                <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
-            </a>
-        </div>
-    </div>
-</div>
+<h1 class="mb-4">Registrar Devolução <span class="text-muted fs-5">da Venda #{{ venda.id }}</span></h1>
 
 {% if messages %}
     {% for message in messages %}
@@ -27,67 +15,49 @@
     {% csrf_token %}
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">Selecione os Itens e Quantidades para Devolver</h5>
+            <h4>Selecione os Itens e Quantidades para Devolver</h4>
         </div>
         <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-12 col-md-6">
-                    <p class="mb-2"><strong>Cliente:</strong> {{ venda.cliente_nome|default:"Não informado" }}</p>
-                </div>
-                <div class="col-12 col-md-6">
-                    <p class="mb-2"><strong>Data da Venda:</strong> {{ venda.data|date:"d/m/Y H:i" }}</p>
-                </div>
-            </div>
+            <p><strong>Cliente:</strong> {{ venda.cliente_nome }}</p>
+            <p><strong>Data da Venda:</strong> {{ venda.data|date:"d/m/Y H:i" }}</p>
 
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Produto</th>
-                            <th class="text-center">Qtd. Vendida</th>
-                            <th class="text-end">Preço Unitário</th>
-                            <th class="text-center">Qtd. a Devolver</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item_info in itens_venda_com_max_devolucao %}
-                        {% with item=item_info.item max_devolucao=item_info.max_para_devolver %}
-                        <tr>
-                            <td class="fw-semibold">{{ item.produto.nome }}</td>
-                            <td class="text-center">
-                                <span class="badge bg-primary">{{ item.quantidade }}</span>
-                            </td>
-                            <td class="text-end">R$ {{ item.preco_venda_unitario|floatformat:2 }}</td>
-                            <td class="text-center">
-                                {% if max_devolucao > 0 %}
-                                    <input type="number" class="form-control form-control-sm text-center" 
-                                           name="item_{{ item.id }}" value="0" min="0" max="{{ max_devolucao }}" 
-                                           style="max-width: 100px; margin: 0 auto;">
-                                {% else %}
-                                    <span class="badge bg-secondary">Já devolvido</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endwith %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Qtd. Vendida</th>
+                        <th>Preço Unitário</th>
+                        <th>Qtd. a Devolver</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item_info in itens_venda_com_max_devolucao %}
+                    {% with item=item_info.item max_devolucao=item_info.max_para_devolver %}
+                    <tr>
+                        <td>{{ item.produto.nome }}</td>
+                        <td>{{ item.quantidade }}</td>
+                        <td>R$ {{ item.preco_venda_unitario|floatformat:2 }}</td>
+                        <td>
+                            {% if max_devolucao > 0 %}
+                                <input type="number" class="form-control" name="item_{{ item.id }}" value="0" min="0" max="{{ max_devolucao }}">
+                            {% else %}
+                                <span class="text-muted">Já devolvido</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
             
             <div class="mb-3">
                 <label for="motivo" class="form-label">Motivo da Devolução (Opcional)</label>
                 <textarea class="form-control" id="motivo" name="motivo" rows="3"></textarea>
             </div>
 
-            <hr class="my-4">
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check-circle"></i> Confirmar Devolução
-                </button>
-                <a href="{% url 'inventario:detalhar_venda' pk=venda.pk %}" class="btn btn-secondary">
-                    <i class="bi bi-x-circle"></i> Cancelar
-                </a>
-            </div>
+            <hr>
+            <button type="submit" class="btn btn-primary">Confirmar Devolução</button>
+            <a href="{% url 'inventario:detalhar_venda' pk=venda.pk %}" class="btn btn-secondary">Cancelar</a>
         </div>
     </div>
 </form>
