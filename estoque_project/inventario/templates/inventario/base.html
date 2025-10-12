@@ -137,13 +137,10 @@
             border-radius: 12px;
             border: 1px solid rgba(0, 0, 0, 0.08);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
-        }
-        
-        .card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
         }
         
         .card-header {
@@ -361,10 +358,6 @@
             border-color: #30363d;
             color: #c9d1d9;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        [data-theme="dark"] .card:hover {
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
         }
         
         [data-theme="dark"] .card-header {
