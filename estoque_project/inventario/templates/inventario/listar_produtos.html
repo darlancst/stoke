@@ -4,22 +4,22 @@
 
 {% block content %}
 <!-- Cabeçalho Responsivo -->
-<div class="row align-items-center mb-3">
-    <div class="col-12 col-md-6">
-        <h1 class="mb-2 mb-md-0">{{ titulo }}</h1>
+<div class="row align-items-center mb-4">
+    <div class="col-12 col-md-6 mb-2 mb-md-0">
+        <h1 class="mb-0">{{ titulo }}</h1>
     </div>
     <div class="col-12 col-md-6">
         <div class="d-flex flex-wrap gap-2 justify-content-md-end">
             {% if status_atual == 'ativos' %}
-                <a href="{% url 'inventario:listar_produtos' %}?status=pausados&q={{ query_atual|urlencode }}" class="btn btn-secondary btn-sm">
+                <a href="{% url 'inventario:listar_produtos' %}?status=pausados&q={{ query_atual|urlencode }}" class="btn btn-secondary">
                     <i class="bi bi-pause-circle"></i> <span class="d-none d-sm-inline">Ver</span> Pausados
                 </a>
             {% else %}
-                <a href="{% url 'inventario:listar_produtos' %}?q={{ query_atual|urlencode }}" class="btn btn-secondary btn-sm">
+                <a href="{% url 'inventario:listar_produtos' %}?q={{ query_atual|urlencode }}" class="btn btn-secondary">
                     <i class="bi bi-play-circle"></i> <span class="d-none d-sm-inline">Ver</span> Ativos
                 </a>
             {% endif %}
-            <a href="{% url 'inventario:criar_produto' %}" class="btn btn-primary btn-sm">
+            <a href="{% url 'inventario:criar_produto' %}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Novo</span> Produto
             </a>
         </div>

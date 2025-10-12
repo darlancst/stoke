@@ -4,13 +4,13 @@
 
 {% block content %}
 <!-- Cabeçalho Responsivo -->
-<div class="row align-items-center mb-3">
-    <div class="col-12 col-md-6">
-        <h1 class="mb-2 mb-md-0">Histórico de Vendas</h1>
+<div class="row align-items-center mb-4">
+    <div class="col-12 col-md-6 mb-2 mb-md-0">
+        <h1 class="mb-0">Histórico de Vendas</h1>
     </div>
     <div class="col-12 col-md-6">
-        <div class="d-flex justify-content-md-end">
-            <a href="{% url 'inventario:criar_venda' %}" class="btn btn-success btn-sm">
+        <div class="d-flex justify-content-md-end gap-2">
+            <a href="{% url 'inventario:criar_venda' %}" class="btn btn-success">
                 <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Registrar</span> Nova Venda
             </a>
         </div>
@@ -121,8 +121,8 @@
 <!-- Cards para Mobile/Tablet -->
 <div class="d-lg-none" id="vendas-cards-mobile">
     {% for venda in vendas %}
-        <div class="card mb-2{% if venda.tipo_devolucao == 'total' %} border-danger bg-danger bg-opacity-10{% elif venda.tipo_devolucao == 'parcial' %} border-warning bg-warning bg-opacity-10{% endif %}">
-            <div class="card-body py-2 px-3">
+        <div class="card mb-3{% if venda.tipo_devolucao == 'total' %} border-danger bg-danger bg-opacity-10{% elif venda.tipo_devolucao == 'parcial' %} border-warning bg-warning bg-opacity-10{% endif %}" style="border-width: 1px;">
+            <div class="card-body py-3 px-3">
                 <!-- Linha 1: ID, Tipo, Cliente -->
                 <div class="d-flex justify-content-between align-items-start mb-1">
                     <div class="flex-grow-1">

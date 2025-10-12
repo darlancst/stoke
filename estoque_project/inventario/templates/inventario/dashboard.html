@@ -35,16 +35,18 @@
 </div>
 
 <style>
+/* ========== MELHORIAS DE UI/UX DO DASHBOARD ========== */
 .dashboard-card {
     border: none;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    overflow: hidden;
 }
 
 .dashboard-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .card-receita {
@@ -102,24 +104,70 @@
 }
 
 .dashboard-icon {
-    font-size: 2rem;
-    opacity: 0.9;
-    margin-bottom: 0.5rem;
+    font-size: 2.25rem;
+    opacity: 0.85;
+    margin-bottom: 0.75rem;
 }
 
 .dashboard-value {
     font-weight: 700;
     margin-bottom: 0;
-    line-height: 1.2;
+    line-height: 1.1;
+    font-size: 1.75rem;
 }
 
 .dashboard-title {
-    font-size: 0.85rem;
-    font-weight: 500;
-    opacity: 0.95;
-    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0.9;
+    margin-bottom: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
+}
+
+/* Melhorias nos cards de informação */
+.card {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+}
+
+.card-header {
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.85rem 1rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Melhor espaçamento para listas nos cards */
+.list-group-item {
+    padding: 0.75rem 1rem;
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+/* Tabelas dentro de cards com melhor visual */
+.card-body .table {
+    margin-bottom: 0;
+}
+
+.card-body .table th,
+.card-body .table td {
+    padding: 0.65rem 0.75rem;
+}
+
+/* Badges dentro de tabelas com melhor alinhamento */
+.table .badge {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
 }
 
 @media (max-width: 767.98px) {
