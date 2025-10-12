@@ -1,0 +1,142 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Produtos Chegando{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-3">
+    <div class="col-12 col-md-6">
+        <h1 class="mb-2 mb-md-0">Produtos Chegando</h1>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="d-flex justify-content-md-end">
+            <a href="{% url 'inventario:criar_produto_chegando' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> Novo Produto Chegando
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" placeholder="Buscar por nome do produto..." name="q" value="{{ query_atual }}">
+                {% if query_atual %}
+                    <a href="{% url 'inventario:listar_produtos_chegando' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Desktop -->
+<div class="card d-none d-lg-block">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Produto</th>
+                        <th class="text-center">Quantidade</th>
+                        <th class="text-end">Preço Compra</th>
+                        <th class="text-center">Data Compra</th>
+                        <th class="text-center">Previsão Chegada</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for produto in produtos_chegando %}
+                    <tr class="align-middle">
+                        <td class="fw-semibold">{{ produto.nome }}</td>
+                        <td class="text-center"><span class="badge bg-info text-dark">{{ produto.quantidade }}</span></td>
+                        <td class="text-end">R$ {{ produto.preco_compra|floatformat:2 }}</td>
+                        <td class="text-center">{{ produto.data_compra|date:"d/m/Y" }}</td>
+                        <td class="text-center">{{ produto.data_prevista_chegada|date:"d/m/Y"|default:"—" }}</td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <a href="{% url 'inventario:incluir_no_estoque' pk=produto.pk %}" class="btn btn-sm btn-success" title="Incluir no Estoque">
+                                    <i class="bi bi-box-arrow-in-down"></i>
+                                </a>
+                                <form action="{% url 'inventario:excluir_produto_chegando' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Excluir este produto chegando?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <i class="bi bi-hourglass-split display-1 text-muted"></i>
+                            <h5 class="text-muted mt-2">Nenhum produto chegando</h5>
+                            <p class="text-muted">Registre produtos que você comprou e estão a caminho.</p>
+                            <a href="{% url 'inventario:criar_produto_chegando' %}" class="btn btn-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Primeiro Produto
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile -->
+<div class="d-lg-none">
+    {% for produto in produtos_chegando %}
+        <div class="card mb-2">
+            <div class="card-body py-2 px-3">
+                <!-- Linha 1: Nome, Data e Quantidade -->
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 small">
+                            <span class="fw-bold">{{ produto.nome }}</span>
+                        </h6>
+                        <small class="text-muted">{{ produto.data_compra|date:"d/m/Y" }}</small>
+                    </div>
+                    <span class="badge bg-info text-dark">{{ produto.quantidade }}</span>
+                </div>
+                
+                <!-- Linha 2: Preço e Previsão -->
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div>
+                        <strong class="text-success">R$ {{ produto.preco_compra|floatformat:2 }}</strong>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">Prev:</small>
+                        <small class="text-muted ms-1">{{ produto.data_prevista_chegada|date:"d/m"|default:"—" }}</small>
+                    </div>
+                </div>
+                
+                <!-- Linha 3: Ações (ícones apenas) -->
+                <div class="d-flex gap-1 mt-2">
+                    <a href="{% url 'inventario:incluir_no_estoque' pk=produto.pk %}" class="btn btn-success btn-sm py-0 px-2" title="Incluir no estoque">
+                        <i class="bi bi-box-arrow-in-down"></i>
+                    </a>
+                    <form action="{% url 'inventario:excluir_produto_chegando' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Excluir este produto?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm py-0 px-2" title="Excluir">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="text-center py-5">
+            <i class="bi bi-hourglass-split display-1 text-muted"></i>
+            <h5 class="text-muted mt-3">Nenhum produto chegando</h5>
+            <a href="{% url 'inventario:criar_produto_chegando' %}" class="btn btn-primary mt-3">
+                <i class="bi bi-plus-circle"></i> Primeiro Produto
+            </a>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

@@ -3,99 +3,209 @@
 {% block title %}Detalhes de {{ produto.nome }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="mb-0">{{ produto.nome }}</h1>
-    <div>
-        <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-success"><i class="bi bi-plus-circle"></i> Adicionar Lote</a>
-        <a href="{% url 'inventario:editar_produto' pk=produto.pk %}" class="btn btn-warning"><i class="bi bi-pencil-square"></i> Editar Produto</a>
-        <a href="{% url 'inventario:listar_produtos' %}" class="btn btn-secondary">Voltar para a Lista</a>
+<!-- Cabeçalho Responsivo -->
+<div class="row align-items-center mb-3">
+    <div class="col-12 col-md-6">
+        <h1 class="mb-2 mb-md-0">{{ produto.nome }}</h1>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+            <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-success btn-sm">
+                <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Adicionar Lote</span>
+            </a>
+            <a href="{% url 'inventario:editar_produto' pk=produto.pk %}" class="btn btn-warning btn-sm">
+                <i class="bi bi-pencil-square"></i> <span class="d-none d-sm-inline">Editar</span>
+            </a>
+            <a href="{% url 'inventario:listar_produtos' %}" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
+            </a>
+        </div>
     </div>
 </div>
 
 <!-- Informações Resumidas -->
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-4 text-center">
-            <div class="col">
-                <h5 class="card-title text-muted">Quantidade Total</h5>
-                <p class="card-text fs-4">{{ produto.quantidade_total }}</p>
-            </div>
-            <div class="col">
-                <h5 class="card-title text-muted">Custo Médio</h5>
-                <p class="card-text fs-4">R$ {{ produto.custo_medio_ponderado|floatformat:2 }}</p>
-            </div>
-            <div class="col">
-                <h5 class="card-title text-muted">Preço de Venda</h5>
-                <p class="card-text fs-4">R$ {{ produto.preco_venda|floatformat:2 }}</p>
-            </div>
-            <div class="col">
-                <div class="card h-100 
-                    {% if produto.margem_lucro is not None %}
-                        {% if produto.margem_lucro >= config.margem_lucro_ideal %}
-                            border-success border-2
-                        {% else %}
-                            border-danger border-2
-                        {% endif %}
-                    {% endif %}">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted">Margem de Lucro</h5>
-                        <p class="card-text fs-4">
-                            {% if produto.margem_lucro is not None %}
-                                {{ produto.margem_lucro|floatformat:2 }}%
-                            {% else %}
-                                <span class="text-muted fs-6" title="Custo ou preço de venda não definidos">N/A</span>
-                            {% endif %}
-                        </p>
-                    </div>
+<div class="card mb-3">
+    <div class="card-body py-2 py-md-3">
+        <div class="row g-2">
+            <!-- Quantidade Total -->
+            <div class="col-4 col-md-4 col-lg-2">
+                <div class="text-center">
+                    <small class="text-muted d-block">Quantidade</small>
+                    <p class="fs-5 mb-0 fw-bold">{{ produto.quantidade_total }}</p>
                 </div>
             </div>
-            <div class="col">
-                <h5 class="card-title text-muted">Status</h5>
-                <p class="card-text fs-4">
-                    {% if produto.ativo %}
-                        <span class="badge bg-success">Ativo</span>
-                    {% else %}
-                        <span class="badge bg-secondary">Inativo</span>
-                    {% endif %}
-                </p>
+            
+            <!-- Chegando -->
+            <div class="col-4 col-md-4 col-lg-2">
+                <div class="text-center">
+                    <small class="text-muted d-block">Chegando</small>
+                    {% with chegando=produto.quantidade_chegando|default:0 %}
+                        <p class="fs-5 mb-0 fw-bold {% if chegando > 0 %}text-info{% else %}text-secondary{% endif %}">
+                            {{ chegando }}
+                        </p>
+                    {% endwith %}
+                </div>
+            </div>
+            
+            <!-- Status -->
+            <div class="col-4 col-md-4 col-lg-2">
+                <div class="text-center">
+                    <small class="text-muted d-block">Status</small>
+                    <p class="mb-0 mt-1">
+                        {% if produto.ativo %}
+                            <span class="badge bg-success">Ativo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inativo</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Custo Médio -->
+            <div class="col-4 col-md-4 col-lg-2">
+                <div class="text-center">
+                    <small class="text-muted d-block">Custo Médio</small>
+                    <p class="mb-0 mt-1">R$ {{ produto.custo_medio_ponderado|floatformat:2 }}</p>
+                </div>
+            </div>
+            
+            <!-- Preço de Venda -->
+            <div class="col-4 col-md-4 col-lg-2">
+                <div class="text-center">
+                    <small class="text-muted d-block">Preço Venda</small>
+                    <p class="mb-0 mt-1 fw-bold text-primary">R$ {{ produto.preco_venda|floatformat:2 }}</p>
+                </div>
+            </div>
+            
+            <!-- Margem de Lucro -->
+            <div class="col-4 col-md-4 col-lg-2">
+                <div class="text-center">
+                    <small class="text-muted d-block">Margem Lucro</small>
+                    <p class="mb-0 mt-1">
+                        {% if produto.margem_lucro is not None %}
+                            <span class="badge {% if produto.margem_lucro >= config.margem_lucro_ideal %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ produto.margem_lucro|floatformat:1 }}%
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">N/A</span>
+                        {% endif %}
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h3>Lotes do Produto</h3>
+<!-- Lotes do Produto -->
+<div class="card">
+    <div class="card-header py-2">
+        <h6 class="mb-0"><i class="bi bi-box-seam"></i> Lotes do Produto</h6>
     </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Data de Entrada</th>
-                        <th>Fornecedor</th>
-                        <th>Qtd. Inicial</th>
-                        <th>Qtd. Atual</th>
-                        <th>Preço de Compra</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for lote in produto.lotes.all %}
-                    <tr class="{% if lote.quantidade_atual == 0 %}table-secondary text-muted{% endif %}">
-                        <td>{{ lote.data_entrada|date:"d/m/Y H:i" }}</td>
-                        <td>{{ lote.fornecedor.nome|default:"N/A" }}</td>
-                        <td>{{ lote.quantidade_inicial }}</td>
-                        <td>{{ lote.quantidade_atual }}</td>
-                        <td>R$ {{ lote.preco_compra|floatformat:2 }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center">Nenhum lote cadastrado para este produto.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="card-body py-2">
+        {% if produto.lotes.all %}
+            <!-- Tabela para telas médias e grandes -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data Entrada</th>
+                            <th>Fornecedor</th>
+                            <th class="text-center">Qtd. Inicial</th>
+                            <th class="text-center">Qtd. Atual</th>
+                            <th class="text-end">Preço Compra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lote in produto.lotes.all %}
+                        <tr class="{% if lote.quantidade_atual == 0 %}table-secondary text-muted{% endif %}">
+                            <td>{{ lote.data_entrada|date:"d/m/Y" }}</td>
+                            <td>{{ produto.fornecedor.nome|default:"N/A" }}</td>
+                            <td class="text-center">{{ lote.quantidade_inicial }}</td>
+                            <td class="text-center">
+                                <span class="{% if lote.quantidade_atual == 0 %}text-muted{% else %}fw-bold{% endif %}">
+                                    {{ lote.quantidade_atual }}
+                                </span>
+                            </td>
+                            <td class="text-end">R$ {{ lote.preco_compra|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Cards para telas pequenas -->
+            <div class="d-md-none">
+                {% for lote in produto.lotes.all %}
+                <div class="card mb-2 {% if lote.quantidade_atual == 0 %}bg-light{% endif %}">
+                    <div class="card-body p-2">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <small class="text-muted">{{ lote.data_entrada|date:"d/m/Y" }}</small>
+                                <span class="d-block small">{{ produto.fornecedor.nome|default:"N/A" }}</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-info">Ini: {{ lote.quantidade_inicial }}</span>
+                                <span class="badge {% if lote.quantidade_atual == 0 %}bg-secondary{% else %}bg-primary{% endif %}">
+                                    Atual: {{ lote.quantidade_atual }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">Compra: </small>
+                            <strong class="text-primary">R$ {{ lote.preco_compra|floatformat:2 }}</strong>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-3">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <p class="text-muted mt-2 mb-2">Nenhum lote cadastrado</p>
+                <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle"></i> Adicionar Lote
+                </a>
+            </div>
+        {% endif %}
     </div>
 </div>
-{% endblock %} 
+
+<!-- Histórico de Vendas deste Produto -->
+<div class="card mt-3">
+    <div class="card-header py-2">
+        <h6 class="mb-0"><i class="bi bi-people"></i> Vendas deste Produto</h6>
+    </div>
+    <div class="card-body py-2">
+            {% if vendas_do_produto %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Venda</th>
+                                <th>Cliente</th>
+                                <th class="text-center">Qtd.</th>
+                                <th class="text-end">Preço Unit.</th>
+                                <th class="text-end">Subtotal</th>
+                                <th class="text-end">Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in vendas_do_produto %}
+                            <tr>
+                                <td><a href="{% url 'inventario:detalhar_venda' pk=item.venda.pk %}">#{{ item.venda.pk }}</a></td>
+                                <td>{{ item.venda.cliente_nome|default:'Cliente não informado' }}</td>
+                                <td class="text-center">{{ item.quantidade }}</td>
+                                <td class="text-end">R$ {{ item.preco_venda_unitario|floatformat:2 }}</td>
+                                <td class="text-end">R$ {{ item.subtotal|floatformat:2 }}</td>
+                                <td class="text-end">{{ item.venda.data|date:'d/m/Y H:i' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">Este produto ainda não foi vendido.</p>
+            {% endif %}
+    </div>
+ </div>
+{% endblock %}

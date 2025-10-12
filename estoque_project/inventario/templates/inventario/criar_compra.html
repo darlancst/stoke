@@ -1,0 +1,150 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Novo Pedido de Compra{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Novo Pedido de Compra</h1>
+
+<div class="card">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <label class="form-label">Fornecedor</label>
+        <select id="fornecedor" class="form-select">
+          <option value="">Selecione...</option>
+          {% for f in fornecedores %}
+          <option value="{{ f.id }}">{{ f.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">Data Prevista</label>
+        <input type="date" id="data_prevista" class="form-control">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Observações</label>
+        <textarea id="observacoes" class="form-control" rows="2"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <h5 class="mb-3">Itens do Pedido</h5>
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-6">
+        <label class="form-label">Produto</label>
+        <select id="produto" class="form-select">
+          <option value="">Selecione...</option>
+          {% for p in produtos %}
+          <option value="{{ p.id }}">{{ p.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label">Quantidade</label>
+        <input type="number" id="quantidade" class="form-control" min="1" value="1">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label">Preço Compra (R$)</label>
+        <input type="number" id="preco_compra" class="form-control" min="0" step="0.01" value="0.00">
+      </div>
+      <div class="col-12 col-md-2">
+        <button class="btn btn-secondary w-100" id="btn-add-item"><i class="bi bi-plus"></i> Adicionar</button>
+      </div>
+    </div>
+
+    <div class="table-responsive mt-3">
+      <table class="table" id="tabela-itens">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th class="text-center">Quantidade</th>
+            <th class="text-end">Preço Compra</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="text-end">
+      <button class="btn btn-primary" id="btn-salvar"><i class="bi bi-check-circle"></i> Salvar Pedido</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const itens = [];
+  const tabelaBody = document.querySelector('#tabela-itens tbody');
+  function render() {
+    tabelaBody.innerHTML = itens.map((it, idx) => `
+      <tr>
+        <td>${it.nome}</td>
+        <td class="text-center">${it.quantidade}</td>
+        <td class="text-end">R$ ${parseFloat(it.preco_compra).toFixed(2)}</td>
+        <td class="text-center"><button class="btn btn-sm btn-outline-danger" data-idx="${idx}"><i class="bi bi-trash"></i></button></td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('btn-add-item').addEventListener('click', function() {
+    const produtoSel = document.getElementById('produto');
+    const produtoId = produtoSel.value;
+    const produtoNome = produtoSel.options[produtoSel.selectedIndex]?.text || '';
+    const quantidade = parseInt(document.getElementById('quantidade').value) || 0;
+    const preco = parseFloat(document.getElementById('preco_compra').value) || 0;
+    if (!produtoId || quantidade <= 0) return;
+    itens.push({produto_id: produtoId, nome: produtoNome, quantidade: quantidade, preco_compra: preco});
+    render();
+  });
+
+  tabelaBody.addEventListener('click', function(e) {
+    if (e.target.closest('button')) {
+      const idx = parseInt(e.target.closest('button').dataset.idx);
+      itens.splice(idx, 1);
+      render();
+    }
+  });
+
+  document.getElementById('btn-salvar').addEventListener('click', function() {
+    const fornecedorId = document.getElementById('fornecedor').value;
+    const dataPrevista = document.getElementById('data_prevista').value;
+    const observacoes = document.getElementById('observacoes').value;
+    if (!fornecedorId || itens.length === 0) {
+      alert('Selecione o fornecedor e adicione pelo menos um item.');
+      return;
+    }
+    const payload = {
+      fornecedor_id: fornecedorId,
+      data_prevista: dataPrevista || null,
+      observacoes: observacoes || '',
+      itens: itens.map(i => ({produto_id: i.produto_id, quantidade: i.quantidade, preco_compra: i.preco_compra}))
+    };
+    fetch('{% url "inventario:criar_compra" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify(payload)
+    }).then(r => r.json()).then(data => {
+      if (data.sucesso) {
+        window.location.href = '{% url "inventario:listar_compras" %}';
+      } else {
+        alert('Erro ao salvar: ' + data.erro);
+      }
+    }).catch(err => alert('Erro inesperado.'));
+  });
+});
+</script>
+{% endblock %}
+
+
+
+

@@ -3,70 +3,210 @@
 {% block title %}Dashboard - Gestão de Estoque{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-2">
-    <h1 class="mb-0">Dashboard</h1>
+<div class="row align-items-center mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <h1 class="mb-0">Dashboard</h1>
+            
+            <!-- Formulário de Filtro de Data -->
+            <form method="get" id="filtro-periodo-form">
+                <select class="form-select" name="periodo" id="periodo-select" style="width: auto; min-width: 150px;">
+                    <option value="7d" {% if periodo_selecionado == '7d' %}selected{% endif %}>Últimos 7 dias</option>
+                    <option value="30d" {% if periodo_selecionado == '30d' %}selected{% endif %}>Últimos 30 dias</option>
+                    <option value="anual" {% if periodo_selecionado == 'anual' %}selected{% endif %}>Último Ano</option>
+                    <option value="custom" {% if periodo_selecionado == 'custom' %}selected{% endif %}>Personalizado</option>
+                </select>
+            </form>
+        </div>
+        
+        <!-- Campos de data personalizada (aparecem abaixo quando selecionado) -->
+        <div id="periodo-customizado" class="mt-2 {% if periodo_selecionado != 'custom' %}d-none{% endif %}">
+            <form method="get" class="d-flex align-items-center gap-2 flex-wrap">
+                <input type="hidden" name="periodo" value="custom">
+                <input type="date" class="form-control" name="data_inicio" id="data-inicio" value="{{ data_inicio_selecionada }}" max="{{ hoje_str }}" style="width: auto;">
+                <span class="text-muted">até</span>
+                <input type="date" class="form-control" name="data_fim" id="data-fim" value="{{ data_fim_selecionada }}" max="{{ hoje_str }}" style="width: auto;">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.12);
+}
+
+.card-receita {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.card-lucro {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+}
+
+.card-vendas {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.card-estoque {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+}
+
+/* Dark mode adjustments for dashboard cards */
+[data-theme="dark"] .dashboard-card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .dashboard-card:hover {
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .card-receita {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+}
+
+[data-theme="dark"] .card-lucro {
+    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+}
+
+[data-theme="dark"] .card-vendas {
+    background: linear-gradient(135deg, #c27803 0%, #b45309 100%);
+}
+
+[data-theme="dark"] .card-estoque {
+    background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+}
+
+/* Dark mode - ajustes específicos do dashboard */
+[data-theme="dark"] .card-header .text-danger {
+    color: #ff7b72 !important;
+}
+
+[data-theme="dark"] .card-header .text-warning {
+    color: #d29922 !important;
+}
+
+.dashboard-icon {
+    font-size: 2rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-value {
+    font-weight: 700;
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+.dashboard-title {
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.95;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
     
-    <!-- Formulário de Filtro de Data -->
-    <form method="get" class="d-flex align-items-center" id="filtro-periodo-form">
-        <select class="form-select me-2" name="periodo" id="periodo-select" style="width: auto;">
-            <option value="7d" {% if periodo_selecionado == '7d' %}selected{% endif %}>Últimos 7 dias</option>
-            <option value="30d" {% if periodo_selecionado == '30d' %}selected{% endif %}>Últimos 30 dias</option>
-            <option value="anual" {% if periodo_selecionado == 'anual' %}selected{% endif %}>Último Ano</option>
-            <option value="custom" {% if periodo_selecionado == 'custom' %}selected{% endif %}>Personalizado</option>
-        </select>
+    .dashboard-card .card-body {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .dashboard-value {
+        font-size: 1.1rem !important;
+        line-height: 1.1;
+    }
+    
+    .dashboard-icon {
+        font-size: 1.2rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .dashboard-title {
+        font-size: 0.7rem;
+        margin-bottom: 0.25rem;
+        letter-spacing: 0.3px;
+    }
+}
+</style>
 
-        <div id="periodo-customizado" class="d-flex align-items-center {% if periodo_selecionado != 'custom' %}d-none{% endif %}">
-            <input type="date" class="form-control me-2" name="data_inicio" value="{{ data_inicio_selecionada }}" max="{{ hoje_str }}">
-            <span class="me-2">até</span>
-            <input type="date" class="form-control me-2" name="data_fim" value="{{ data_fim_selecionada }}" max="{{ hoje_str }}">
+<div class="row g-2 g-md-3">
+    <!-- Card: Receita Total (1) -->
+    <div class="col-6 col-md-3">
+        <div class="card dashboard-card card-receita h-100">
+            <div class="card-body text-center">
+                <div class="dashboard-icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <h6 class="dashboard-title">Receita Total</h6>
+                <p class="dashboard-value fs-3">R$ {{ receita_total|floatformat:2 }}</p>
+            </div>
         </div>
+    </div>
 
-        <button type="submit" class="btn btn-primary">Filtrar</button>
-    </form>
+    <!-- Card: Seu Lucro (2) -->
+    <div class="col-6 col-md-3">
+        <div class="card dashboard-card card-lucro h-100">
+            <div class="card-body text-center">
+                <div class="dashboard-icon">
+                    <i class="bi bi-trophy-fill"></i>
+                </div>
+                <h6 class="dashboard-title">Seu Lucro</h6>
+                <p class="dashboard-value fs-3">R$ {{ meu_lucro_total|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card: Vendas Realizadas (3) -->
+    <div class="col-6 col-md-3">
+        <div class="card dashboard-card card-vendas h-100">
+            <div class="card-body text-center">
+                <div class="dashboard-icon">
+                    <i class="bi bi-bag-check-fill"></i>
+                </div>
+                <h6 class="dashboard-title">Vendas Realizadas</h6>
+                <p class="dashboard-value fs-3">{{ numero_vendas }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card: Valor em Estoque (4) -->
+    <div class="col-6 col-md-3">
+        <div class="card dashboard-card card-estoque h-100">
+            <div class="card-body text-center">
+                <div class="dashboard-icon">
+                    <i class="bi bi-boxes"></i>
+                </div>
+                <h6 class="dashboard-title">Valor em Estoque</h6>
+                <p class="dashboard-value fs-3">R$ {{ valor_total_estoque|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="row g-2 mb-2">
-    <!-- Card: Receita Total -->
-    <div class="col-6 col-md-3">
-        <div class="card text-white bg-primary h-100">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-currency-dollar"></i> Receita Total</h5>
-                <p class="card-text fs-4">R$ {{ receita_total|floatformat:2 }}</p>
-            </div>
-        </div>
-    </div>
-    <!-- Card: Lucro -->
-    <div class="col-6 col-md-3">
-        <div class="card text-white bg-info h-100">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-cash-coin"></i> Seu Lucro</h5>
-                <p class="card-text fs-4">R$ {{ meu_lucro_total|floatformat:2 }}</p>
-            </div>
-        </div>
-    </div>
-    <!-- Card: Vendas -->
-    <div class="col-6 col-md-3">
-        <div class="card text-white bg-warning h-100">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-cart4"></i> Vendas Realizadas</h5>
-                <p class="card-text fs-4">{{ numero_vendas }}</p>
-            </div>
-        </div>
-    </div>
-    <!-- Card: Estoque -->
-    <div class="col-6 col-md-3">
-        <div class="card text-white bg-secondary h-100">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-box-seam"></i> Valor em Estoque</h5>
-                <p class="card-text fs-4">R$ {{ valor_total_estoque|floatformat:2 }}</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
+<div class="row g-2 g-md-3 mt-2 mt-md-3">
     <!-- Coluna da Esquerda: Gráfico de Linhas -->
-    <div class="col-lg-7 mb-2">
+    <div class="col-lg-7">
         <div class="card h-100">
             <div class="card-header">
                 Receita Final vs. Seu Lucro (Período Selecionado)
@@ -78,10 +218,10 @@
     </div>
 
     <!-- Coluna da Direita: Cards de Informação Rápida -->
-    <div class="col-lg-5 mb-2">
-        <div class="row">
+    <div class="col-lg-5">
+        <div class="row g-2 g-md-3">
             <!-- Estoque Baixo -->
-            <div class="col-12 mb-2">
+            <div class="col-12">
                 <div class="card">
                     <div class="card-header">
                         <i class="bi bi-exclamation-triangle-fill text-danger"></i> Produtos com Estoque Baixo
@@ -111,8 +251,45 @@
                 </div>
             </div>
 
+            <!-- Produtos Parados (Sem Vendas) -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-clock-history text-warning"></i> Produtos Parados (60+ dias sem vender)
+                    </div>
+                    <div class="card-body p-2">
+                        {% if produtos_parados %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Produto</th>
+                                            <th class="text-center">Qtd.</th>
+                                            <th class="text-end">Dias Parado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in produtos_parados %}
+                                        <tr>
+                                            <td><a href="{% url 'inventario:detalhar_produto' pk=item.produto.pk %}">{{ item.produto.nome }}</a></td>
+                                            <td class="text-center"><span class="badge bg-secondary">{{ item.quantidade }}</span></td>
+                                            <td class="text-end">
+                                                <span class="badge bg-warning text-dark">{{ item.dias_parado }} dias</span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-center text-muted mb-0 py-2">Todos os produtos estão vendendo regularmente! 🎉</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
             <!-- Mais Vendidos -->
-            <div class="col-md-6 mb-2 mb-md-0">
+            <div class="col-md-6">
                 <div class="card h-100">
                     <div class="card-header">
                         <i class="bi bi-trophy-fill"></i> Mais Vendidos
@@ -122,7 +299,7 @@
                             <ul class="list-group list-group-flush">
                                 {% for produto in top_produtos_vendidos %}
                                     <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                        {{ produto.produto__nome }}
+                                        <a href="{% url 'inventario:detalhar_produto' pk=produto.produto__id %}">{{ produto.produto__nome }}</a>
                                         <span class="badge bg-primary rounded-pill">{{ produto.quantidade_total_vendida }}</span>
                                     </li>
                                 {% endfor %}
@@ -145,8 +322,11 @@
                             <ul class="list-group list-group-flush">
                                 {% for produto in produtos_mais_lucrativos %}
                                     <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                        <span>{{ produto.produto__nome }}</span>
-                                        <span class="badge bg-success">R$ {{ produto.lucro_total|floatformat:2 }}</span>
+                                        <a href="{% url 'inventario:detalhar_produto' pk=produto.produto__id %}">{{ produto.produto__nome }}</a>
+                                        <div class="text-end">
+                                            <span class="badge bg-success">R$ {{ produto.lucro_total|floatformat:2 }}</span>
+                                            <small class="d-block text-muted mt-1">{{ produto.margem_lucro|floatformat:1 }}% margem</small>
+                                        </div>
                                     </li>
                                 {% endfor %}
                             </ul>
@@ -161,8 +341,8 @@
 </div>
 
 <!-- Gráfico Heatmap (Linha Completa) -->
-<div class="row">
-    <div class="col-12 mb-2">
+<div class="row mt-2 mt-md-3">
+    <div class="col-12">
         <div class="card">
             <div class="card-header">
                 Atividade de Lucro (Último Ano)
@@ -174,11 +354,11 @@
                 </div>
                 <div class="d-flex justify-content-end align-items-center mt-2">
                     <small class="me-2 text-muted">Menos</small>
-                    <div class="heatmap-legend-cell" style="background-color: #ebedf0;"></div>
-                    <div class="heatmap-legend-cell" style="background-color: #9be9a8;"></div>
-                    <div class="heatmap-legend-cell" style="background-color: #40c463;"></div>
-                    <div class="heatmap-legend-cell" style="background-color: #30a14e;"></div>
-                    <div class="heatmap-legend-cell" style="background-color: #216e39;"></div>
+                    <div class="heatmap-legend-cell" data-level="0"></div>
+                    <div class="heatmap-legend-cell" data-level="1"></div>
+                    <div class="heatmap-legend-cell" data-level="2"></div>
+                    <div class="heatmap-legend-cell" data-level="3"></div>
+                    <div class="heatmap-legend-cell" data-level="4"></div>
                     <small class="ms-2">Mais</small>
                 </div>
             </div>
@@ -204,6 +384,29 @@
 .heatmap-wrapper {
     overflow-x: auto;
     padding-bottom: 10px;
+    -webkit-overflow-scrolling: touch; /* Scroll suave em iOS */
+    scroll-behavior: smooth; /* Scroll suave em outros browsers */
+}
+
+@media (max-width: 767.98px) {
+    .heatmap-wrapper {
+        /* Em mobile, garantir que o scroll funcione bem */
+        scroll-snap-type: x proximity;
+        scrollbar-width: thin;
+    }
+    
+    .heatmap-wrapper::-webkit-scrollbar {
+        height: 6px;
+    }
+    
+    .heatmap-wrapper::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+    }
+    
+    [data-theme="dark"] .heatmap-wrapper::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
 }
 #heatmap-container {
     display: grid;
@@ -224,12 +427,47 @@
 .heatmap-cell[data-level="3"] { background-color: #30a14e; }
 .heatmap-cell[data-level="4"] { background-color: #216e39; }
 
+/* Dark mode heatmap cells */
+[data-theme="dark"] .heatmap-cell {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+}
+[data-theme="dark"] .heatmap-cell[data-level="1"] { background-color: rgba(88, 166, 255, 0.2); border-color: rgba(88, 166, 255, 0.3); }
+[data-theme="dark"] .heatmap-cell[data-level="2"] { background-color: rgba(88, 166, 255, 0.4); border-color: rgba(88, 166, 255, 0.5); }
+[data-theme="dark"] .heatmap-cell[data-level="3"] { background-color: rgba(88, 166, 255, 0.6); border-color: rgba(88, 166, 255, 0.7); }
+[data-theme="dark"] .heatmap-cell[data-level="4"] { background-color: rgba(88, 166, 255, 0.8); border-color: rgba(88, 166, 255, 0.9); }
+
+/* Heatmap Legend Cells */
+.heatmap-legend-cell {
+    width: 12px;
+    height: 12px;
+    margin: 0 2px;
+    border-radius: 2px;
+}
+.heatmap-legend-cell[data-level="0"] { background-color: #ebedf0; }
+.heatmap-legend-cell[data-level="1"] { background-color: #9be9a8; }
+.heatmap-legend-cell[data-level="2"] { background-color: #40c463; }
+.heatmap-legend-cell[data-level="3"] { background-color: #30a14e; }
+.heatmap-legend-cell[data-level="4"] { background-color: #216e39; }
+
+/* Dark mode heatmap legend */
+[data-theme="dark"] .heatmap-legend-cell[data-level="0"] { background-color: #161b22; border: 1px solid #30363d; }
+[data-theme="dark"] .heatmap-legend-cell[data-level="1"] { background-color: rgba(88, 166, 255, 0.2); }
+[data-theme="dark"] .heatmap-legend-cell[data-level="2"] { background-color: rgba(88, 166, 255, 0.4); }
+[data-theme="dark"] .heatmap-legend-cell[data-level="3"] { background-color: rgba(88, 166, 255, 0.6); }
+[data-theme="dark"] .heatmap-legend-cell[data-level="4"] { background-color: rgba(88, 166, 255, 0.8); }
+
 .heatmap-loading {
     height: 150px; /* Altura enquanto carrega */
     background-color: #f8f9fa;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+[data-theme="dark"] .heatmap-loading {
+    background-color: #0d1117;
+    color: #6e7681;
 }
 
 #heatmap-months-container {
@@ -240,6 +478,10 @@
     font-size: 0.7rem;
     color: #555;
     min-width: 800px; /* Alinhado com o container do heatmap */
+}
+
+[data-theme="dark"] #heatmap-months-container {
+    color: #8b949e;
 }
 
 .heatmap-month-label {
@@ -264,12 +506,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     const periodoSelect = document.getElementById('periodo-select');
     const customizadoDiv = document.getElementById('periodo-customizado');
+    const form = document.getElementById('filtro-periodo-form');
 
+    // Auto-submit quando o período for alterado
     periodoSelect.addEventListener('change', function() {
         if (this.value === 'custom') {
+            // Mostra os campos de data personalizada
             customizadoDiv.classList.remove('d-none');
         } else {
+            // Esconde os campos e submete o form
             customizadoDiv.classList.add('d-none');
+            form.submit(); // Auto-submit para períodos pré-definidos
         }
     });
 
@@ -278,6 +525,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const lineChartData = JSON.parse(document.getElementById('line-chart-data-json').textContent);
         const ctx = document.getElementById('lineChart');
         if (ctx) {
+            // Obter cores baseadas no tema atual
+            const chartColors = window.getChartColors();
+            
             new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -290,7 +540,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true } }
+                    scales: { 
+                        y: { 
+                            beginAtZero: true,
+                            grid: { color: chartColors.gridColor },
+                            ticks: { color: chartColors.textColor }
+                        },
+                        x: {
+                            grid: { color: chartColors.gridColor },
+                            ticks: { color: chartColors.textColor }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: chartColors.textColor }
+                        }
+                    }
                 }
             });
         }
@@ -304,7 +569,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const heatmapMonthsContainer = document.getElementById('heatmap-months-container');
         if (heatmapContainer && heatmapMonthsContainer) {
             const heatmapData = JSON.parse(document.getElementById('heatmap-data-json').textContent);
-            const cores = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
             
             heatmapContainer.innerHTML = '';
             heatmapContainer.classList.remove('heatmap-loading');
@@ -315,7 +579,7 @@ document.addEventListener('DOMContentLoaded', function() {
             heatmapData.forEach((item, index) => {
                 const diaEl = document.createElement('div');
                 diaEl.classList.add('heatmap-cell');
-                diaEl.style.backgroundColor = cores[item.nivel];
+                diaEl.setAttribute('data-level', item.nivel); // Usa data-level para que o CSS controle as cores
                 
                 const dataObj = new Date(item.data);
                 const dataFormatada = new Date(dataObj.getUTCFullYear(), dataObj.getUTCMonth(), dataObj.getUTCDate()).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -348,6 +612,30 @@ document.addEventListener('DOMContentLoaded', function() {
             tooltipTriggerList.forEach(tooltipTriggerEl => {
                 new bootstrap.Tooltip(tooltipTriggerEl);
             });
+
+            // Auto-scroll para a direita (dias mais recentes)
+            const heatmapWrapper = document.querySelector('.heatmap-wrapper');
+            if (heatmapWrapper) {
+                // Função para posicionar no final (dias mais recentes)
+                const scrollToEnd = () => {
+                    heatmapWrapper.scrollLeft = heatmapWrapper.scrollWidth - heatmapWrapper.clientWidth;
+                };
+                
+                // Executa o scroll imediatamente
+                scrollToEnd();
+                
+                // Em telas pequenas, executa novamente após um delay para garantir que o layout esteja completo
+                if (window.innerWidth < 768) {
+                    setTimeout(scrollToEnd, 100);
+                    setTimeout(scrollToEnd, 300);
+                }
+                
+                // Também executa após o redimensionamento da janela
+                const resizeObserver = new ResizeObserver(() => {
+                    setTimeout(scrollToEnd, 50);
+                });
+                resizeObserver.observe(heatmapWrapper);
+            }
         }
     } catch (e) {
         console.error("Erro ao renderizar o heatmap:", e);

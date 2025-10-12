@@ -12,21 +12,29 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+from decouple import Config, RepositoryEnv, Csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Configuração do decouple com encoding UTF-8-SIG para Windows
+env_file = BASE_DIR / '.env'
+if env_file.exists():
+    config = Config(RepositoryEnv(str(env_file), encoding='utf-8-sig'))
+else:
+    config = Config(RepositoryEnv('.env.example', encoding='utf-8-sig'))
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-m#z5#z=p+*o_j$*a&j$d8_z&z(i$8@g9&!y#t$n$d#c^w)i)@b'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-m#z5#z=p+*o_j$*a&j$d8_z&z(i$8@g9&!y#t$n$d#c^w)i)@b')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['seu-usuario.pythonanywhere.com', '127.0.0.1']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost', cast=Csv())
 
 
 # Application definition
@@ -49,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'inventario.middleware.RatelimitMiddleware',  # Rate limiting protection
 ]
 
 ROOT_URLCONF = 'estoque_project.urls'
@@ -119,6 +128,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

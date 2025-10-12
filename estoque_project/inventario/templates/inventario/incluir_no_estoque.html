@@ -1,0 +1,129 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Incluir no Estoque - {{ produto_chegando.nome }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Incluir no Estoque</h1>
+
+<div class="alert alert-info">
+    <h5><i class="bi bi-info-circle"></i> Produto Chegando</h5>
+    <p class="mb-1"><strong>Nome:</strong> {{ produto_chegando.nome }}</p>
+    <p class="mb-1"><strong>Quantidade:</strong> {{ produto_chegando.quantidade }} unidades</p>
+    <p class="mb-0"><strong>Preço de Compra:</strong> R$ {{ produto_chegando.preco_compra|floatformat:2 }}</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="mb-3">Dados para Incluir no Estoque</h5>
+        <p class="text-muted">Complete os dados para adicionar este produto ao seu estoque de vendas.</p>
+        
+        <div class="row g-3">
+            {% if not produto_chegando.fornecedor %}
+            <div class="col-12 col-md-6">
+                <label class="form-label">Fornecedor *</label>
+                <select id="fornecedor" class="form-select" required>
+                    <option value="">Selecione...</option>
+                    {% for f in fornecedores %}
+                    <option value="{{ f.id }}">{{ f.nome }}</option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">De qual fornecedor você comprou este produto</small>
+            </div>
+            {% else %}
+            <div class="col-12 col-md-6">
+                <label class="form-label">Fornecedor</label>
+                <input type="text" class="form-control" value="{{ produto_chegando.fornecedor.nome }}" disabled>
+                <small class="text-muted">Fornecedor já definido no cadastro</small>
+            </div>
+            {% endif %}
+            
+            <div class="col-12 col-md-6">
+                <label class="form-label">Preço de Venda (R$) *</label>
+                <input type="number" id="preco_venda" class="form-control" min="0" step="0.01" value="{{ produto_chegando.preco_compra|floatformat:2 }}" required>
+                <small class="text-muted">Por quanto você vai vender cada unidade</small>
+            </div>
+            
+            <div class="col-12">
+                {% if produto_vinculado %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> 
+                    <strong>Produto Vinculado:</strong> Este produto chegando está vinculado ao produto 
+                    "<strong>{{ produto_vinculado.nome }}</strong>" no estoque. Ao incluir, será adicionado 
+                    um novo lote de {{ produto_chegando.quantidade }} unidades ao produto existente.
+                    <br><small>Estoque atual: {{ produto_vinculado.quantidade_total }} unidades</small>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    <strong>Atenção:</strong> Se já existir um produto com o nome "{{ produto_chegando.nome }}" no estoque, 
+                    apenas um novo lote será adicionado a ele. Caso contrário, um novo produto será criado.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="text-end mt-3">
+            <a href="{% url 'inventario:listar_produtos_chegando' %}" class="btn btn-secondary">Cancelar</a>
+            <button class="btn btn-success" id="btn-incluir">
+                <i class="bi bi-box-arrow-in-down"></i> Incluir no Estoque
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('btn-incluir').addEventListener('click', function() {
+    const fornecedor_select = document.getElementById('fornecedor');
+    const fornecedor_id = fornecedor_select ? fornecedor_select.value : null;
+    const preco_venda = parseFloat(document.getElementById('preco_venda').value);
+    
+    // Só valida fornecedor se o campo existir (quando não está pré-preenchido)
+    if (fornecedor_select && !fornecedor_id) {
+        alert('Por favor, selecione um fornecedor.');
+        return;
+    }
+    
+    if (preco_venda <= 0) {
+        alert('Preço de venda deve ser maior que zero.');
+        return;
+    }
+    
+    const payload = {
+        fornecedor_id: fornecedor_id,
+        preco_venda: preco_venda
+    };
+    
+    this.disabled = true;
+    this.innerHTML = '<i class="bi bi-hourglass-split"></i> Processando...';
+    
+    fetch('{% url "inventario:incluir_no_estoque" pk=produto_chegando.pk %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.sucesso) {
+            alert('Produto incluído no estoque com sucesso!');
+            window.location.href = '{% url "inventario:listar_produtos" %}';
+        } else {
+            alert('Erro: ' + data.erro);
+            this.disabled = false;
+            this.innerHTML = '<i class="bi bi-box-arrow-in-down"></i> Incluir no Estoque';
+        }
+    })
+    .catch(() => {
+        alert('Erro inesperado.');
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-box-arrow-in-down"></i> Incluir no Estoque';
+    });
+});
+</script>
+{% endblock %}
+

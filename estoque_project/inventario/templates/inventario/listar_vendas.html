@@ -3,55 +3,195 @@
 {% block title %}Vendas - Gestão de Estoque{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Histórico de Vendas</h1>
-    <a href="{% url 'inventario:criar_venda' %}" class="btn btn-success">
-        <i class="bi bi-plus-circle"></i> Registrar Nova Venda
-    </a>
+<!-- Cabeçalho Responsivo -->
+<div class="row align-items-center mb-3">
+    <div class="col-12 col-md-6">
+        <h1 class="mb-2 mb-md-0">Histórico de Vendas</h1>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="d-flex justify-content-md-end">
+            <a href="{% url 'inventario:criar_venda' %}" class="btn btn-success btn-sm">
+                <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Registrar</span> Nova Venda
+            </a>
+        </div>
+    </div>
 </div>
 
-<div class="card">
-    <div class="card-body">
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>ID da Venda</th>
-                    <th>Cliente</th>
-                    <th>Data</th>
-                    <th>Tipo</th>
-                    <th>Valor Final</th>
-                    <th>Seu Lucro</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for venda in vendas %}
-                <tr>
-                    <td>
-                        #{{ venda.id }}
-                        {% if venda.teve_devolucao %}
-                            <span class="ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Esta venda teve itens devolvidos">
-                                <i class="bi bi-arrow-return-left text-info"></i>
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td>{{ venda.cliente_nome }}</td>
-                    <td>{{ venda.data|date:"d/m/Y H:i" }}</td>
-                    <td>{{ venda.get_tipo_venda_display }}</td>
-                    <td>R$ {{ venda.valor_total|floatformat:2 }}</td>
-                    <td>R$ {{ venda.meu_lucro|floatformat:2 }}</td>
-                    <td>
-                        <a href="{% url 'inventario:detalhar_venda' pk=venda.pk %}" class="btn btn-sm btn-info" title="Detalhes"><i class="bi bi-eye"></i></a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="text-center">Nenhuma venda registrada.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<!-- Busca -->
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Buscar por cliente, ID (#123), tipo (loja/externa)..." id="search-vendas-input" value="{{ query_atual }}">
+            {% if query_atual %}
+                <a href="{% url 'inventario:listar_vendas' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x"></i>
+                </a>
+            {% endif %}
+        </div>
     </div>
+</div>
+
+<!-- Tabela para Desktop/Tablet -->
+<div class="card d-none d-lg-block">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="tabela-vendas-desktop">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID da Venda</th>
+                        <th>Cliente</th>
+                        <th>Data</th>
+                        <th>Tipo</th>
+                        <th>Itens</th>
+                        <th class="text-end">Valor Final</th>
+                        <th class="text-end">Seu Lucro</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="vendas-tbody-desktop">
+                    {% for venda in vendas %}
+                    <tr class="align-middle{% if venda.tipo_devolucao == 'total' %} table-danger{% elif venda.tipo_devolucao == 'parcial' %} table-warning{% endif %}">
+                        <td>
+                            <span class="fw-semibold">#{{ venda.id }}</span>
+                            {% if venda.tipo_devolucao == 'total' %}
+                                <div class="mt-1">
+                                    <span class="badge bg-danger text-white" data-bs-toggle="tooltip" data-bs-placement="top" title="Todos os itens desta venda foram devolvidos">
+                                        <i class="bi bi-x-circle-fill me-1"></i>
+                                        TOTALMENTE DEVOLVIDO
+                                    </span>
+                                </div>
+                            {% elif venda.tipo_devolucao == 'parcial' %}
+                                <div class="mt-1">
+                                    <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Alguns itens desta venda foram devolvidos ({{ venda.quantidade_total_devolvida }} de {{ venda.quantidade_total_vendida }} itens)">
+                                        <i class="bi bi-dash-circle-fill me-1"></i>
+                                        PARCIALMENTE DEVOLVIDO
+                                    </span>
+                                </div>
+                            {% endif %}
+                            {% if venda.tem_brindes %}
+                                <div class="mt-1">
+                                    <span class="badge bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Esta venda incluiu {{ venda.quantidade_brindes_dados }} brinde{{ venda.quantidade_brindes_dados|pluralize:'s' }} (custo total: R$ {{ venda.valor_brindes_dados|floatformat:2 }})">
+                                        <i class="bi bi-gift-fill me-1"></i>
+                                        {{ venda.quantidade_brindes_dados }} BRINDE{{ venda.quantidade_brindes_dados|pluralize:"S" }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ venda.cliente_nome|default:"Cliente não informado" }}</td>
+                        <td>{{ venda.data|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <span class="badge {% if venda.tipo_venda == 'LOJA' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                {{ venda.get_tipo_venda_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <ul class="list-unstyled mb-0 small">
+                                {% for item in venda.itens.all %}
+                                    <li>{{ item.quantidade }}x {{ item.produto.nome }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td class="text-end fw-bold">R$ {{ venda.valor_total|floatformat:2 }}</td>
+                        <td class="text-end text-success fw-bold">R$ {{ venda.meu_lucro|floatformat:2 }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'inventario:detalhar_venda' pk=venda.pk %}" class="btn btn-sm btn-info" title="Detalhes">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="bi bi-receipt display-1 text-muted"></i>
+                            <h5 class="text-muted mt-2">Nenhuma venda registrada</h5>
+                            <p class="text-muted">Comece registrando sua primeira venda.</p>
+                            <a href="{% url 'inventario:criar_venda' %}" class="btn btn-success mt-2">
+                                <i class="bi bi-plus-circle"></i> Registrar Primeira Venda
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Cards para Mobile/Tablet -->
+<div class="d-lg-none" id="vendas-cards-mobile">
+    {% for venda in vendas %}
+        <div class="card mb-2{% if venda.tipo_devolucao == 'total' %} border-danger bg-danger bg-opacity-10{% elif venda.tipo_devolucao == 'parcial' %} border-warning bg-warning bg-opacity-10{% endif %}">
+            <div class="card-body py-2 px-3">
+                <!-- Linha 1: ID, Tipo, Cliente -->
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 small">
+                            <a href="{% url 'inventario:detalhar_venda' pk=venda.pk %}" class="text-decoration-none">
+                                <span class="fw-bold">#{{ venda.id }}</span>
+                            </a>
+                            <span class="text-muted">· {{ venda.cliente_nome|default:"S/ cliente"|truncatechars:20 }}</span>
+                        </h6>
+                        <small class="text-muted">{{ venda.data|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <span class="badge {% if venda.tipo_venda == 'LOJA' %}bg-primary{% else %}bg-secondary{% endif %}">
+                        {{ venda.get_tipo_venda_display }}
+                    </span>
+                </div>
+                
+                <!-- Linha 2: Valores -->
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div>
+                        <strong class="text-primary">R$ {{ venda.valor_total|floatformat:2 }}</strong>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">Lucro:</small>
+                        <strong class="text-success ms-1">R$ {{ venda.meu_lucro|floatformat:2 }}</strong>
+                    </div>
+                </div>
+
+                <!-- Linha 3: Itens -->
+                <div class="mt-2">
+                    <ul class="list-group list-group-flush">
+                        {% for item in venda.itens.all %}
+                        <li class="list-group-item py-1 px-0 bg-transparent">
+                            <small>{{ item.quantidade }}x {{ item.produto.nome }} - R$ {{ item.preco_venda_unitario|floatformat:2 }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <!-- Linha 3: Badges Informativos -->
+                {% if venda.tipo_devolucao or venda.tem_brindes %}
+                <div class="d-flex flex-wrap gap-1">
+                    {% if venda.tipo_devolucao == 'total' %}
+                        <span class="badge bg-danger" data-bs-toggle="tooltip" title="Totalmente devolvido">
+                            <i class="bi bi-x-circle-fill"></i> Devolvido
+                        </span>
+                    {% elif venda.tipo_devolucao == 'parcial' %}
+                        <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="{{ venda.quantidade_total_devolvida }}/{{ venda.quantidade_total_vendida }} devolvidos">
+                            <i class="bi bi-dash-circle-fill"></i> Parcial
+                        </span>
+                    {% endif %}
+                    {% if venda.tem_brindes %}
+                        <span class="badge bg-success" data-bs-toggle="tooltip" title="{{ venda.quantidade_brindes_dados }} brinde(s) - R$ {{ venda.valor_brindes_dados|floatformat:2 }}">
+                            <i class="bi bi-gift-fill"></i> {{ venda.quantidade_brindes_dados }}
+                        </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="text-center py-5">
+            <i class="bi bi-receipt display-1 text-muted"></i>
+            <h5 class="text-muted mt-3">Nenhuma venda registrada</h5>
+            <p class="text-muted">Comece registrando sua primeira venda.</p>
+            <a href="{% url 'inventario:criar_venda' %}" class="btn btn-success mt-3">
+                <i class="bi bi-plus-circle"></i> Registrar Primeira Venda
+            </a>
+        </div>
+    {% endfor %}
 </div>
 {% endblock %}
 
@@ -63,6 +203,146 @@ document.addEventListener('DOMContentLoaded', function () {
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl)
     })
+
+    const searchInput = document.getElementById('search-vendas-input');
+    const tbodyDesktop = document.getElementById('vendas-tbody-desktop');
+    const cardsMobile = document.getElementById('vendas-cards-mobile');
+    const totalInfo = document.getElementById('vendas-total');
+    let searchTimeout;
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                buscarVendas(this.value.trim());
+            }, 300);
+        });
+    }
+
+    function badgeDevolucao(v) {
+        if (v.tipo_devolucao === 'total') {
+            return `<div class="mt-1"><span class="badge bg-danger text-white" data-bs-toggle="tooltip" data-bs-placement="top" title="Todos os itens desta venda foram devolvidos"><i class="bi bi-x-circle-fill me-1"></i>TOTALMENTE DEVOLVIDO</span></div>`;
+        }
+        if (v.tipo_devolucao === 'parcial') {
+            return `<div class="mt-1"><span class="badge bg-warning text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Alguns itens desta venda foram devolvidos (${v.quantidade_total_devolvida} de ${v.quantidade_total_vendida} itens)"><i class="bi bi-dash-circle-fill me-1"></i>PARCIALMENTE DEVOLVIDO</span></div>`;
+        }
+        return '';
+    }
+
+    function badgeBrinde(v) {
+        if (!v.tem_brindes) return '';
+        const qtd = v.quantidade_brindes_dados || 0;
+        const valor = (v.valor_brindes_dados || 0).toFixed(2);
+        return `<div class="mt-1"><span class="badge bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Esta venda incluiu ${qtd} brinde(s) (custo total: R$ ${valor})"><i class="bi bi-gift-fill me-1"></i>${qtd} BRINDE${qtd===1?'':'S'}</span></div>`;
+    }
+
+    function renderizarItens(itens) {
+        if (!itens || itens.length === 0) return '';
+        return '<ul class="list-unstyled mb-0 small">' + itens.map(item => `<li>${item.quantidade}x ${item.produto_nome}</li>`).join('') + '</ul>';
+    }
+
+    function renderizarItensMobile(itens) {
+        if (!itens || itens.length === 0) return '';
+        let itensHtml = '<ul class="list-group list-group-flush mt-2">';
+        itens.forEach(item => {
+            itensHtml += `<li class="list-group-item py-1 px-0 bg-transparent"><small>${item.quantidade}x ${item.produto_nome} - R$ ${item.preco_unitario.toFixed(2)}</small></li>`;
+        });
+        itensHtml += '</ul>';
+        return itensHtml;
+    }
+
+    function badgesDevolucaoBrindeCompacto(v) {
+        let badges = '';
+        if (v.tipo_devolucao === 'total') {
+            badges += `<span class="badge bg-danger" data-bs-toggle="tooltip" title="Totalmente devolvido"><i class="bi bi-x-circle-fill"></i> Devolvido</span>`;
+        } else if (v.tipo_devolucao === 'parcial') {
+            badges += `<span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="${v.quantidade_total_devolvida}/${v.quantidade_total_vendida} devolvidos"><i class="bi bi-dash-circle-fill"></i> Parcial</span>`;
+        }
+        if (v.tem_brindes) {
+            const qtd = v.quantidade_brindes_dados || 0;
+            const valor = (v.valor_brindes_dados || 0).toFixed(2);
+            badges += `<span class="badge bg-success ms-1" data-bs-toggle="tooltip" title="${qtd} brinde(s) - R$ ${valor}"><i class="bi bi-gift-fill"></i> ${qtd}</span>`;
+        }
+        return badges ? `<div class="d-flex flex-wrap gap-1">${badges}</div>` : '';
+    }
+
+    function buscarVendas(query) {
+        const url = new URL('{% url "inventario:buscar_vendas_listagem_json" %}', window.location.origin);
+        url.searchParams.set('q', query || '');
+        fetch(url)
+            .then(r => r.json())
+            .then(data => atualizarListagem(data.vendas, query, data.total))
+            .catch(err => console.error('Erro na busca de vendas:', err));
+    }
+
+    function atualizarListagem(vendas, query, total) {
+        atualizarTabelaDesktop(vendas, query);
+        atualizarCardsMobile(vendas, query);
+        if (totalInfo) {
+            totalInfo.classList.remove('d-none');
+            totalInfo.textContent = `${total} venda${total === 1 ? '' : 's'} encontradas`;
+        }
+        // Reativar tooltips após render
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el) });
+    }
+
+    function atualizarTabelaDesktop(vendas, query) {
+        if (!tbodyDesktop) return;
+        if (!vendas || vendas.length === 0) {
+            tbodyDesktop.innerHTML = `<tr><td colspan="8" class="text-center py-4"><i class="bi bi-receipt display-1 text-muted"></i><h5 class="text-muted mt-2">${query ? `Nenhuma venda encontrada para "${query}"` : 'Nenhuma venda encontrada'}</h5></td></tr>`;
+            return;
+        }
+        let html = '';
+        vendas.forEach(v => {
+            const rowClass = v.tipo_devolucao === 'total' ? ' table-danger' : (v.tipo_devolucao === 'parcial' ? ' table-warning' : '');
+            const itensHtml = renderizarItens(v.itens);
+            html += `<tr class="align-middle${rowClass}">`
+                + `<td><span class="fw-semibold">#${v.id}</span>${badgeDevolucao(v)}${badgeBrinde(v)}</td>`
+                + `<td>${v.cliente_nome}</td>`
+                + `<td>${v.data}</td>`
+                + `<td><span class="badge ${v.tipo_venda === 'LOJA' ? 'bg-primary' : 'bg-secondary'}">${v.tipo_venda_label}</span></td>`
+                + `<td>${itensHtml}</td>`
+                + `<td class="text-end fw-bold">R$ ${v.valor_total.toFixed(2)}</td>`
+                + `<td class="text-end text-success fw-bold">R$ ${v.meu_lucro.toFixed(2)}</td>`
+                + `<td class="text-center"><a href="${v.url_detalhes}" class="btn btn-sm btn-info" title="Detalhes"><i class="bi bi-eye"></i></a></td>`
+                + `</tr>`;
+        });
+        tbodyDesktop.innerHTML = html;
+    }
+
+    function atualizarCardsMobile(vendas, query) {
+        if (!cardsMobile) return;
+        if (!vendas || vendas.length === 0) {
+            cardsMobile.innerHTML = `<div class="text-center py-5"><i class="bi bi-receipt display-1 text-muted"></i><h5 class="text-muted mt-3">${query ? `Nenhuma venda encontrada para "${query}"` : 'Nenhuma venda encontrada'}</h5></div>`;
+            return;
+        }
+        let html = '';
+        vendas.forEach(v => {
+            const cardClass = v.tipo_devolucao === 'total' ? ' border-danger bg-danger bg-opacity-10' : (v.tipo_devolucao === 'parcial' ? ' border-warning bg-warning bg-opacity-10' : '');
+            const clienteTrunc = v.cliente_nome && v.cliente_nome.length > 20 ? v.cliente_nome.substring(0,17) + '...' : (v.cliente_nome || 'S/ cliente');
+            const itensHtml = renderizarItensMobile(v.itens);
+            html += `<div class="card mb-2${cardClass}"><div class="card-body py-2 px-3">`
+                + `<div class="d-flex justify-content-between align-items-start mb-1">`
+                + `<div class="flex-grow-1"><h6 class="mb-0 small"><a href="${v.url_detalhes}" class="text-decoration-none"><span class="fw-bold">#${v.id}</span></a> <span class="text-muted">· ${clienteTrunc}</span></h6>`
+                + `<small class="text-muted">${v.data}</small></div>`
+                + `<span class="badge ${v.tipo_venda === 'LOJA' ? 'bg-primary' : 'bg-secondary'}">${v.tipo_venda_label}</span>`
+                + `</div>`
+                + `<div class="d-flex justify-content-between align-items-center mb-1">`
+                + `<div><strong class="text-primary">R$ ${v.valor_total.toFixed(2)}</strong></div>`
+                + `<div class="text-end"><small class="text-muted">Lucro:</small> <strong class="text-success ms-1">R$ ${v.meu_lucro.toFixed(2)}</strong></div>`
+                + `</div>`
+                + itensHtml
+                + badgesDevolucaoBrindeCompacto(v)
+                + `</div></div>`;
+        });
+        cardsMobile.innerHTML = html;
+        // Reinicializar tooltips nos novos elementos
+        var tooltipTriggerList = [].slice.call(cardsMobile.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
 })
 </script>
 {% endblock %} 

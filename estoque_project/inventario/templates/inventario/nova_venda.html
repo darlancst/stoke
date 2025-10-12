@@ -11,87 +11,194 @@
         background-color: #f8f9fa;
         padding: 1rem;
         border-top: 1px solid #dee2e6;
-        z-index: 1020; /* Para ficar acima da tabela */
+        z-index: 1020;
     }
+    
     .ui-autocomplete {
         max-height: 200px;
         overflow-y: auto;
         overflow-x: hidden;
-        z-index: 1050; /* Z-index alto para aparecer sobre outros elementos */
+        z-index: 1050;
+    }
+    
+    @media (max-width: 991.98px) {
+        .total-venda-fixed {
+            position: static;
+            border-radius: 0.375rem;
+            border: 1px solid #dee2e6;
+            margin-top: 1rem;
+        }
+        
+        .total-mobile-flex {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .desconto-mobile {
+            order: 1;
+            width: 100% !important;
+        }
+        
+        .totais-mobile {
+            order: 2;
+            text-align: center;
+        }
+        
+        .btn-finalizar-mobile {
+            order: 3;
+            width: 100%;
+        }
+    }
+    
+    .item-card-mobile {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Dark mode overrides */
+    [data-theme="dark"] .total-venda-fixed {
+        background-color: #0d1117;
+        border-top: 1px solid #30363d;
+    }
+    @media (max-width: 991.98px) {
+        [data-theme="dark"] .total-venda-fixed {
+            border: 1px solid #30363d;
+        }
+    }
+    [data-theme="dark"] .item-card-mobile {
+        border-color: #30363d;
+        background-color: #0d1117;
+    }
+    [data-theme="dark"] .form-control-plaintext {
+        color: #c9d1d9;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Registrar Nova Venda</h1>
+<!-- Cabeçalho Responsivo -->
+<div class="row align-items-center mb-3">
+    <div class="col-12 col-md-6">
+        <h1 class="mb-2 mb-md-0">Registrar Nova Venda</h1>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="d-flex justify-content-md-end">
+            <a href="{% url 'inventario:listar_vendas' %}" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
+            </a>
+        </div>
+    </div>
 </div>
 
 <div class="card">
     <div class="card-body">
         <form id="form-venda" onsubmit="return false;">
             {% csrf_token %}
-            <div class="row">
-                <div class="col-md-6 mb-3">
+            <div class="row g-3">
+                <!-- Nome do Cliente -->
+                <div class="col-md-6">
                     <label for="cliente_nome" class="form-label">Nome do Cliente</label>
                     <input type="text" id="cliente_nome" name="cliente_nome" class="form-control" placeholder="Nome do Cliente (opcional)">
                 </div>
-                <div class="col-md-6 mb-3">
+                
+                <!-- Tipo de Venda -->
+                <div class="col-md-6">
                     <label class="form-label">Local da Venda</label>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="tipo_venda" id="venda_loja" value="LOJA" checked>
-                        <label class="form-check-label" for="venda_loja">Na Loja (Lucro 50%)</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="tipo_venda" id="venda_externa" value="EXTERNA">
-                        <label class="form-check-label" for="venda_externa">Externa (Lucro 100%)</label>
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="tipo_venda" id="venda_loja" value="LOJA" checked>
+                            <label class="form-check-label" for="venda_loja">
+                                <span class="d-block">Na Loja</span>
+                                <small class="text-muted">Lucro 50%</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="tipo_venda" id="venda_externa" value="EXTERNA">
+                            <label class="form-check-label" for="venda_externa">
+                                <span class="d-block">Externa</span>
+                                <small class="text-muted">Lucro 100%</small>
+                            </label>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-12 mb-3">
+                
+                <!-- Buscar Produto -->
+                <div class="col-12">
                     <label for="buscar_produto" class="form-label">Buscar Produto</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" id="buscar_produto" class="form-control" placeholder="Digite o nome do produto...">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="buscar_produto" class="form-control" placeholder="Digite o nome do produto para adicionar à venda...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="form-check d-flex align-items-center h-100 ps-3">
+                                <input class="form-check-input me-2" type="checkbox" id="adicionar_como_brinde">
+                                <label class="form-check-label text-success fw-bold" for="adicionar_como_brinde">
+                                    <i class="bi bi-gift-fill me-1"></i>Adicionar como Brinde
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </form>
 
-        <h3 class="mt-4">Itens da Venda</h3>
-        <div class="table-responsive">
-            <table class="table table-hover" id="tabela-itens-venda">
-                <thead>
-                    <tr>
-                        <th>Produto</th>
-                        <th style="width: 120px;">Quantidade</th>
-                        <th style="width: 150px;">Preço Unit.</th>
-                        <th style="width: 150px;">Subtotal</th>
-                        <th style="width: 80px;">Ação</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Linhas de itens serão adicionadas aqui via JS -->
-                </tbody>
-            </table>
-        </div>
-        <div id="sem-itens-aviso" class="text-center text-muted mt-3">
-            <p>Nenhum item adicionado à venda.</p>
+        <!-- Itens da Venda -->
+        <div class="mt-4">
+            <h5><i class="bi bi-cart3"></i> Itens da Venda</h5>
+            
+            <!-- Tabela para Desktop -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover" id="tabela-itens-venda">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Produto</th>
+                            <th style="width: 120px;">Quantidade</th>
+                            <th style="width: 150px;">Preço Unit.</th>
+                            <th style="width: 150px;">Subtotal</th>
+                            <th style="width: 80px;">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Linhas de itens serão adicionadas aqui via JS -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Cards para Mobile -->
+            <div class="d-md-none" id="itens-mobile-container">
+                <!-- Cards serão adicionados aqui via JS -->
+            </div>
+            
+            <!-- Aviso quando vazio -->
+            <div id="sem-itens-aviso" class="text-center text-muted py-4">
+                <i class="bi bi-cart-x display-1 text-muted"></i>
+                <h6 class="text-muted mt-2">Nenhum item adicionado à venda</h6>
+                <p class="text-muted">Use a busca acima para adicionar produtos</p>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="total-venda-fixed d-flex justify-content-end align-items-center mt-4">
-    <div class="me-4">
+<!-- Área de Total e Finalização -->
+<div class="total-venda-fixed d-flex justify-content-end align-items-center total-mobile-flex">
+    <div class="desconto-mobile me-4">
         <label for="desconto-venda" class="form-label">Desconto (R$)</label>
-        <input type="number" id="desconto-venda" class="form-control form-control-lg" style="width: 150px;" placeholder="0,00" min="0">
+        <input type="number" id="desconto-venda" class="form-control form-control-lg" style="width: 150px;" placeholder="0,00" min="0" step="0.01">
     </div>
-    <div>
-        <h5 class="text-muted mb-0">Subtotal: <span id="subtotal-venda">R$ 0,00</span></h5>
-        <h3 class="mb-0">Total Final: <span id="total-final-venda">R$ 0,00</span></h3>
+    
+    <div class="totais-mobile">
+        <h6 class="text-muted mb-0">Subtotal: <span id="subtotal-venda">R$ 0,00</span></h6>
+        <h4 class="mb-0 fw-bold">Total Final: <span id="total-final-venda">R$ 0,00</span></h4>
     </div>
-    <button type="button" id="btn-finalizar-venda" class="btn btn-lg btn-success ms-4">Finalizar Venda</button>
+    
+    <button type="button" id="btn-finalizar-venda" class="btn btn-lg btn-success ms-4 btn-finalizar-mobile">
+        <i class="bi bi-check-circle"></i> Finalizar Venda
+    </button>
 </div>
 {% endblock %}
 
@@ -122,50 +229,114 @@ $(document).ready(function() {
         $('#sem-itens-aviso').toggle(Object.keys(itensVenda).length === 0);
     }
 
+    function adicionarItemMobile(produto) {
+        const precoFormatado = produto.preco.toFixed(2).replace('.', ',');
+        const brindeTag = produto.eh_brinde ? '<span class="badge bg-success ms-2"><i class="bi bi-gift-fill"></i> BRINDE</span>' : '';
+        const cardClass = produto.eh_brinde ? 'border-success bg-success bg-opacity-10' : '';
+        
+        const cardHtml = `
+            <div class="item-card-mobile ${cardClass}" id="item-mobile-${produto.chave}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0">${produto.nome}${brindeTag}</h6>
+                    <button class="btn btn-sm btn-outline-danger remover-item-mobile" data-chave="${produto.chave}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <small class="text-muted d-block mb-3">Estoque disponível: ${produto.estoque}</small>
+                
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label">Quantidade</label>
+                        <input type="number" class="form-control quantidade-item-mobile" value="1" min="1" max="${produto.estoque}" data-chave="${produto.chave}">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Preço Unit.</label>
+                        <div class="form-control-plaintext">R$ ${precoFormatado}</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Subtotal</label>
+                        <div class="form-control-plaintext fw-bold ${produto.eh_brinde ? 'text-success' : 'text-primary'}">
+                            R$ <span class="subtotal-item-mobile">${precoFormatado}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        $('#itens-mobile-container').append(cardHtml);
+    }
+
     $("#buscar_produto").autocomplete({
         source: "{% url 'inventario:buscar_produtos_json' %}",
         minLength: 2,
         select: function(event, ui) {
             event.preventDefault();
             const produto = ui.item;
-            if (!itensVenda[produto.id]) {
+            const ehBrinde = $('#adicionar_como_brinde').is(':checked');
+            const chaveItem = produto.id + '_' + (ehBrinde ? 'brinde' : 'pago'); // Chave composta para permitir mesmo produto como pago e brinde
+            
+            if (!itensVenda[chaveItem]) {
                 const precoNumerico = parseFloat(produto.preco);
+                const precoFinal = ehBrinde ? 0 : precoNumerico;
+                
                 if (isNaN(precoNumerico)) {
                     console.error("Preço inválido recebido para o produto:", produto);
                     return;
                 }
 
-                itensVenda[produto.id] = {
+                itensVenda[chaveItem] = {
                     id: produto.id,
                     nome: produto.value,
                     quantidade: 1,
-                    preco: precoNumerico,
-                    subtotal: precoNumerico,
-                    estoque: produto.estoque
+                    preco: precoFinal,
+                    preco_original: precoNumerico,
+                    subtotal: precoFinal,
+                    estoque: produto.estoque,
+                    eh_brinde: ehBrinde,
+                    chave: chaveItem
                 };
 
+                // Adicionar na tabela desktop
+                const brindeTag = ehBrinde ? '<span class="badge bg-success ms-2"><i class="bi bi-gift-fill"></i> BRINDE</span>' : '';
+                const precoExibido = ehBrinde ? '0,00' : precoNumerico.toFixed(2).replace('.', ',');
+                
                 const newRow = `
-                    <tr id="item-${produto.id}">
+                    <tr id="item-${chaveItem}" ${ehBrinde ? 'class="table-success"' : ''}>
                         <td>
-                            ${produto.value}
+                            ${produto.value}${brindeTag}
                             <br>
                             <small class="text-muted">Estoque disponível: ${produto.estoque}</small>
                         </td>
-                        <td><input type="number" class="form-control quantidade-item" value="1" min="1" max="${produto.estoque}" data-id="${produto.id}"></td>
-                        <td>R$ <span class="preco-unitario">${precoNumerico.toFixed(2).replace('.', ',')}</span></td>
-                        <td>R$ <span class="subtotal-item">${precoNumerico.toFixed(2).replace('.', ',')}</span></td>
-                        <td><button class="btn btn-sm btn-danger remover-item" data-id="${produto.id}"><i class="bi bi-trash"></i></button></td>
+                        <td><input type="number" class="form-control quantidade-item" value="1" min="1" max="${produto.estoque}" data-chave="${chaveItem}"></td>
+                        <td>R$ <span class="preco-unitario">${precoExibido}</span></td>
+                        <td>R$ <span class="subtotal-item">${precoFinal.toFixed(2).replace('.', ',')}</span></td>
+                        <td><button class="btn btn-sm btn-danger remover-item" data-chave="${chaveItem}"><i class="bi bi-trash"></i></button></td>
                     </tr>
                 `;
                 $('#tabela-itens-venda tbody').append(newRow);
+
+                // Adicionar card mobile
+                adicionarItemMobile({
+                    id: produto.id,
+                    nome: produto.value,
+                    preco: precoFinal,
+                    preco_original: precoNumerico,
+                    estoque: produto.estoque,
+                    eh_brinde: ehBrinde,
+                    chave: chaveItem
+                });
+
                 recalcularTudo();
+                
+                // Limpar checkbox de brinde após adicionar
+                $('#adicionar_como_brinde').prop('checked', false);
             }
             $(this).val('');
         }
     });
 
+    // Event handlers para desktop
     $('#tabela-itens-venda').on('input', '.quantidade-item', function() {
-        const id = $(this).data('id');
+        const chave = $(this).data('chave');
         let quantidade = parseInt($(this).val());
         const estoqueDisponivel = parseInt($(this).attr('max'));
 
@@ -175,20 +346,63 @@ $(document).ready(function() {
             quantidade = estoqueDisponivel;
         }
         
-        if (quantidade > 0 && itensVenda[id]) {
-            const preco = parseFloat(itensVenda[id].preco);
+        if (quantidade > 0 && itensVenda[chave]) {
+            const preco = parseFloat(itensVenda[chave].preco);
             const subtotal = quantidade * preco;
-            itensVenda[id].quantidade = quantidade;
-            itensVenda[id].subtotal = subtotal;
-            $('#item-' + id).find('.subtotal-item').text(subtotal.toFixed(2).replace('.', ','));
+            itensVenda[chave].quantidade = quantidade;
+            itensVenda[chave].subtotal = subtotal;
+            
+            // Atualizar desktop
+            $('#item-' + chave).find('.subtotal-item').text(subtotal.toFixed(2).replace('.', ','));
+            // Atualizar mobile
+            $('#item-mobile-' + chave).find('.quantidade-item-mobile').val(quantidade);
+            $('#item-mobile-' + chave).find('.subtotal-item-mobile').text(subtotal.toFixed(2).replace('.', ','));
+            
             recalcularTudo();
         }
     });
 
     $('#tabela-itens-venda').on('click', '.remover-item', function() {
-        const id = $(this).data('id');
-        delete itensVenda[id];
-        $('#item-' + id).remove();
+        const chave = $(this).data('chave');
+        delete itensVenda[chave];
+        $('#item-' + chave).remove();
+        $('#item-mobile-' + chave).remove();
+        recalcularTudo();
+    });
+
+    // Event handlers para mobile
+    $('#itens-mobile-container').on('input', '.quantidade-item-mobile', function() {
+        const chave = $(this).data('chave');
+        let quantidade = parseInt($(this).val());
+        const estoqueDisponivel = parseInt($(this).attr('max'));
+
+        if (quantidade > estoqueDisponivel) {
+            alert(`A quantidade não pode exceder o estoque disponível (${estoqueDisponivel}).`);
+            $(this).val(estoqueDisponivel);
+            quantidade = estoqueDisponivel;
+        }
+        
+        if (quantidade > 0 && itensVenda[chave]) {
+            const preco = parseFloat(itensVenda[chave].preco);
+            const subtotal = quantidade * preco;
+            itensVenda[chave].quantidade = quantidade;
+            itensVenda[chave].subtotal = subtotal;
+            
+            // Atualizar mobile
+            $('#item-mobile-' + chave).find('.subtotal-item-mobile').text(subtotal.toFixed(2).replace('.', ','));
+            // Atualizar desktop
+            $('#item-' + chave).find('.quantidade-item').val(quantidade);
+            $('#item-' + chave).find('.subtotal-item').text(subtotal.toFixed(2).replace('.', ','));
+            
+            recalcularTudo();
+        }
+    });
+
+    $('#itens-mobile-container').on('click', '.remover-item-mobile', function() {
+        const chave = $(this).data('chave');
+        delete itensVenda[chave];
+        $('#item-' + chave).remove();
+        $('#item-mobile-' + chave).remove();
         recalcularTudo();
     });
 
@@ -208,11 +422,15 @@ $(document).ready(function() {
             desconto: parseFloat($('#desconto-venda').val()) || 0,
             itens: Object.values(itensVenda).map(item => ({
                 id: item.id,
-                quantidade: item.quantidade
+                quantidade: item.quantidade,
+                eh_brinde: item.eh_brinde || false
             }))
         };
         
         const csrfToken = $('input[name=csrfmiddlewaretoken]').val();
+
+        // Disable button to prevent double-click
+        $(this).prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Processando...');
 
         fetch("{% url 'inventario:criar_venda' %}", {
             method: 'POST',
@@ -229,11 +447,13 @@ $(document).ready(function() {
                 window.location.href = "{% url 'inventario:listar_vendas' %}";
             } else {
                 alert('Erro ao registrar a venda: ' + data.erro);
+                $('#btn-finalizar-venda').prop('disabled', false).html('<i class="bi bi-check-circle"></i> Finalizar Venda');
             }
         })
         .catch(error => {
             console.error('Erro:', error);
             alert('Ocorreu um erro inesperado. Verifique o console para mais detalhes.');
+            $('#btn-finalizar-venda').prop('disabled', false).html('<i class="bi bi-check-circle"></i> Finalizar Venda');
         });
     });
 });

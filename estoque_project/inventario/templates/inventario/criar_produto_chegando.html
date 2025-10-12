@@ -1,0 +1,171 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Novo Produto Chegando{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.3/themes/base/jquery-ui.css">
+<style>
+.ui-autocomplete {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1050;
+}
+.produto-existente-badge {
+    display: none;
+    margin-top: 5px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Novo Produto Chegando</h1>
+<p class="text-muted">Registre produtos que você comprou e estão a caminho.</p>
+
+<div class="card">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label">Nome do Produto *</label>
+        <input type="text" id="nome" class="form-control" placeholder="Digite para buscar produtos existentes..." required autocomplete="off">
+        <input type="hidden" id="produto_id">
+        <div class="produto-existente-badge">
+          <span class="badge bg-success">
+            <i class="bi bi-check-circle"></i> Produto existente no estoque - Ao incluir, será adicionado como novo lote
+          </span>
+        </div>
+      </div>
+      
+      <div class="col-12 col-md-4">
+        <label class="form-label">Quantidade *</label>
+        <input type="number" id="quantidade" class="form-control" min="1" value="1" required>
+      </div>
+      
+      <div class="col-12 col-md-4">
+        <label class="form-label">Preço de Compra (R$) *</label>
+        <input type="number" id="preco_compra" class="form-control" min="0" step="0.01" value="0.00" required>
+        <small class="text-muted">Quanto você pagou</small>
+      </div>
+      
+      <div class="col-12 col-md-4">
+        <label class="form-label">Fornecedor</label>
+        <select id="fornecedor" class="form-select">
+          <option value="">Selecione (opcional)</option>
+          {% for fornecedor in fornecedores %}
+            <option value="{{ fornecedor.id }}">{{ fornecedor.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="col-12 col-md-4">
+        <label class="form-label">Previsão de Chegada</label>
+        <input type="date" id="data_prevista_chegada" class="form-control">
+      </div>
+      
+      <div class="col-12">
+        <label class="form-label">Observações</label>
+        <textarea id="observacoes" class="form-control" rows="2" placeholder="Ex: Fornecedor: Maria, Nota fiscal: 123..."></textarea>
+      </div>
+    </div>
+    
+    <div class="text-end mt-3">
+      <a href="{% url 'inventario:listar_produtos_chegando' %}" class="btn btn-secondary">Cancelar</a>
+      <button class="btn btn-primary" id="btn-salvar">
+        <i class="bi bi-check-circle"></i> Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.3/jquery-ui.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Autocomplete para buscar produtos existentes
+    $("#nome").autocomplete({
+        source: "{% url 'inventario:buscar_produtos_json' %}",
+        minLength: 2,
+        select: function(event, ui) {
+            event.preventDefault();
+            // Preenche o nome do produto
+            $('#nome').val(ui.item.value);
+            // Armazena o ID do produto
+            $('#produto_id').val(ui.item.id);
+            // Mostra badge de produto existente
+            $('.produto-existente-badge').fadeIn();
+            return false;
+        },
+        change: function(event, ui) {
+            // Se o usuário limpar ou mudar o texto, limpa o ID
+            if (!ui.item) {
+                $('#produto_id').val('');
+                $('.produto-existente-badge').fadeOut();
+            }
+        }
+    });
+    
+    // Quando digitar manualmente, remove badge se não for um produto selecionado
+    $('#nome').on('input', function() {
+        if (!$('#produto_id').val()) {
+            $('.produto-existente-badge').fadeOut();
+        }
+    });
+});
+
+document.getElementById('btn-salvar').addEventListener('click', function() {
+    const nome = document.getElementById('nome').value.trim();
+    const quantidade = parseInt(document.getElementById('quantidade').value);
+    const preco_compra = parseFloat(document.getElementById('preco_compra').value);
+    const fornecedor_id = document.getElementById('fornecedor').value;
+    const data_prevista_chegada = document.getElementById('data_prevista_chegada').value;
+    const observacoes = document.getElementById('observacoes').value.trim();
+    const produto_id = document.getElementById('produto_id').value; // ID do produto existente
+    
+    if (!nome || quantidade <= 0 || preco_compra < 0) {
+        alert('Preencha os campos obrigatórios corretamente.');
+        return;
+    }
+    
+    const payload = {
+        nome: nome,
+        quantidade: quantidade,
+        preco_compra: preco_compra,
+        fornecedor_id: fornecedor_id || null,
+        data_prevista_chegada: data_prevista_chegada || null,
+        observacoes: observacoes,
+        produto_id: produto_id || null  // Envia ID se foi selecionado um produto existente
+    };
+    
+    this.disabled = true;
+    this.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando...';
+    
+    fetch('{% url "inventario:criar_produto_chegando" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.sucesso) {
+            window.location.href = '{% url "inventario:listar_produtos_chegando" %}';
+        } else {
+            alert('Erro: ' + data.erro);
+            this.disabled = false;
+            this.innerHTML = '<i class="bi bi-check-circle"></i> Salvar';
+        }
+    })
+    .catch(() => {
+        alert('Erro inesperado.');
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-check-circle"></i> Salvar';
+    });
+});
+</script>
+{% endblock %}
+

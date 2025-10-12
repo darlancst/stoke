@@ -23,6 +23,12 @@
                 </div>
             </div>
 
+            <div class="mb-3">
+                <label for="{{ form.quantidade_estoque.id_for_label }}" class="form-label">{{ form.quantidade_estoque.label }}</label>
+                {{ form.quantidade_estoque }}
+                <div class="form-text">{{ form.quantidade_estoque.help_text }}</div>
+            </div>
+
             <div class="form-check mb-3">
                 {{ form.ativo }}
                 <label class="form-check-label" for="{{ form.ativo.id_for_label }}">

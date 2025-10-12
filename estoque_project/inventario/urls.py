@@ -5,6 +5,9 @@ app_name = 'inventario'
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
+    # PWA
+    path('offline/', views.offline, name='offline'),
+    path('sw.js', views.service_worker, name='service_worker'),
     # URLs Produto
     path('produtos/', views.listar_produtos, name='listar_produtos'),
     path('produtos/novo/', views.criar_produto, name='criar_produto'),
@@ -25,9 +28,16 @@ urlpatterns = [
     path('devolucoes/<int:pk>/', views.detalhar_devolucao, name='detalhar_devolucao'),
     path('vendas/<int:venda_pk>/registrar-devolucao/', views.registrar_devolucao, name='registrar_devolucao'),
 
+    # URLs Produtos Chegando
+    path('chegando/', views.listar_produtos_chegando, name='listar_produtos_chegando'),
+    path('chegando/novo/', views.criar_produto_chegando, name='criar_produto_chegando'),
+    path('chegando/<int:pk>/excluir/', views.excluir_produto_chegando, name='excluir_produto_chegando'),
+    path('chegando/<int:pk>/incluir/', views.incluir_no_estoque, name='incluir_no_estoque'),
+
     # URLs API
     path('api/buscar-produtos/', views.buscar_produtos_json, name='buscar_produtos_json'),
     path('api/buscar-produtos-listagem/', views.buscar_produtos_listagem_json, name='buscar_produtos_listagem_json'),
+    path('api/buscar-vendas-listagem/', views.buscar_vendas_listagem_json, name='buscar_vendas_listagem_json'),
     path('api/criar-fornecedor/', views.criar_fornecedor_rapido_json, name='criar_fornecedor_rapido'),
 
     # URLs Configurações

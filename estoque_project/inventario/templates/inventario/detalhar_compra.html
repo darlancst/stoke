@@ -1,0 +1,154 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Pedido #{{ compra.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="mb-0">Pedido #{{ compra.id }}</h1>
+  <span class="badge {% if compra.status == 'ABERTO' %}bg-secondary{% elif compra.status == 'PARCIAL' %}bg-warning text-dark{% elif compra.status == 'RECEBIDO' %}bg-success{% else %}bg-danger{% endif %}">{{ compra.get_status_display }}</span>
+  </div>
+
+<div class="row g-3 mb-3">
+  <div class="col-12 col-md-4">
+    <div class="card h-100"><div class="card-body">
+      <h6 class="text-muted mb-1">Fornecedor</h6>
+      <div>{{ compra.fornecedor.nome }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="card h-100"><div class="card-body">
+      <h6 class="text-muted mb-1">Data do Pedido</h6>
+      <div>{{ compra.data_pedido|date:"d/m/Y H:i" }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="card h-100"><div class="card-body">
+      <h6 class="text-muted mb-1">Data Prevista</h6>
+      <div>{{ compra.data_prevista|date:"d/m/Y"|default:"—" }}</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="mb-3">Itens</h5>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th class="text-center">Qtd Pedida</th>
+            <th class="text-center">Qtd Recebida</th>
+            <th class="text-center">Pendente</th>
+            <th class="text-end">Preço Compra</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in compra.itens.all %}
+          <tr>
+            <td>{{ item.produto.nome }}</td>
+            <td class="text-center">{{ item.quantidade }}</td>
+            <td class="text-center">{{ item.quantidade_recebida }}</td>
+            <td class="text-center">{{ item.quantidade_pendente }}</td>
+            <td class="text-end">R$ {{ item.preco_compra|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center text-muted">Nenhum item</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if compra.status != 'RECEBIDO' and compra.status != 'CANCELADO' %}
+    <hr>
+    <h5 class="mb-3">Registrar Recebimento</h5>
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-6">
+        <label class="form-label">Item</label>
+        <select id="item_recebimento" class="form-select">
+          <option value="">Selecione...</option>
+          {% for item in compra.itens.all %}
+            {% if item.quantidade_pendente > 0 %}
+            <option value="{{ item.id }}">{{ item.produto.nome }} — pendente: {{ item.quantidade_pendente }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label">Quantidade</label>
+        <input type="number" id="quantidade_recebimento" class="form-control" min="1" value="1">
+      </div>
+      <div class="col-6 col-md-3">
+        <button class="btn btn-success w-100" id="btn-add-recebimento"><i class="bi bi-plus"></i> Adicionar</button>
+      </div>
+    </div>
+    <div class="table-responsive mt-3">
+      <table class="table" id="tabela-recebimentos">
+        <thead><tr><th>Item</th><th class="text-center">Quantidade</th><th class="text-center">Ações</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="text-end">
+      <button class="btn btn-primary" id="btn-salvar-recebimento"><i class="bi bi-check-circle"></i> Registrar Entrada</button>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const recebimentos = [];
+  const tbody = document.querySelector('#tabela-recebimentos tbody');
+  function render() {
+    tbody.innerHTML = recebimentos.map((r, idx) => `
+      <tr>
+        <td>${r.item_nome}</td>
+        <td class=\"text-center\">${r.quantidade}</td>
+        <td class=\"text-center\"><button class=\"btn btn-sm btn-outline-danger\" data-idx=\"${idx}\"><i class=\"bi bi-trash\"></i></button></td>
+      </tr>
+    `).join('');
+  }
+  document.getElementById('btn-add-recebimento')?.addEventListener('click', function() {
+    const sel = document.getElementById('item_recebimento');
+    const id = sel.value;
+    if (!id) return;
+    const nome = sel.options[sel.selectedIndex].text;
+    const qtd = parseInt(document.getElementById('quantidade_recebimento').value) || 0;
+    if (qtd <= 0) return;
+    recebimentos.push({item_id: id, item_nome: nome, quantidade: qtd});
+    render();
+  });
+  tbody.addEventListener('click', function(e) {
+    if (e.target.closest('button')) {
+      const idx = parseInt(e.target.closest('button').dataset.idx);
+      recebimentos.splice(idx, 1);
+      render();
+    }
+  });
+  document.getElementById('btn-salvar-recebimento')?.addEventListener('click', function() {
+    if (recebimentos.length === 0) {
+      alert('Adicione pelo menos um recebimento.');
+      return;
+    }
+    fetch('{% url "inventario:registrar_recebimento" pk=compra.pk %}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+      body: JSON.stringify({recebimentos: recebimentos.map(r => ({item_id: r.item_id, quantidade: r.quantidade}))})
+    }).then(r => r.json()).then(data => {
+      if (data.sucesso) {
+        window.location.reload();
+      } else {
+        alert('Erro: ' + data.erro);
+      }
+    }).catch(() => alert('Erro inesperado.'));
+  });
+});
+</script>
+{% endblock %}
+
+
+
+

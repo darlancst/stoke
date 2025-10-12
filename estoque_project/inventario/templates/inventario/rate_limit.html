@@ -1,0 +1,43 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Limite de Requisições Atingido{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card border-warning">
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+                </div>
+                <h2 class="card-title text-warning mb-3">Muitas Requisições</h2>
+                <p class="card-text mb-4">
+                    Você atingiu o limite de requisições permitidas por minuto.
+                    <br>
+                    Por favor, aguarde um momento antes de tentar novamente.
+                </p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Limite:</strong> 60 requisições por minuto
+                </div>
+                <a href="javascript:history.back()" class="btn btn-primary mt-3">
+                    <i class="bi bi-arrow-left me-2"></i>Voltar
+                </a>
+                <a href="{% url 'inventario:dashboard' %}" class="btn btn-secondary mt-3">
+                    <i class="bi bi-house me-2"></i>Ir para Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+}
+</style>
+{% endblock %}
+
+
+

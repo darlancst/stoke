@@ -17,6 +17,14 @@ class ProdutoForm(forms.ModelForm):
         }
 
 class ProdutoEditForm(forms.ModelForm):
+    quantidade_estoque = forms.IntegerField(
+        label="Quantidade em Estoque",
+        min_value=0,
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control'}),
+        help_text='Ajuste a quantidade total em estoque. Se aumentar, será criado um novo lote; se diminuir, será deduzido dos lotes mais antigos (FIFO).'
+    )
+    
     class Meta:
         model = Produto
         fields = ['nome', 'preco_venda', 'ativo']
@@ -29,9 +37,8 @@ class ProdutoEditForm(forms.ModelForm):
 class LoteForm(forms.ModelForm):
     class Meta:
         model = Lote
-        fields = ['fornecedor', 'quantidade_inicial', 'preco_compra']
+        fields = ['quantidade_inicial', 'preco_compra']
         widgets = {
-            'fornecedor': forms.Select(attrs={'class': 'form-select'}),
             'quantidade_inicial': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
             'preco_compra': forms.NumberInput(attrs={'class': 'form-control'}),
         }
@@ -39,13 +46,14 @@ class LoteForm(forms.ModelForm):
 class ConfiguracaoForm(forms.ModelForm):
     class Meta:
         model = Configuracao
-        fields = ['nome_empresa', 'limite_estoque_baixo', 'margem_lucro_ideal', 'logo']
+        fields = ['nome_empresa', 'limite_estoque_baixo', 'margem_lucro_ideal']
         widgets = {
             'nome_empresa': forms.TextInput(attrs={'class': 'form-control'}),
             'limite_estoque_baixo': forms.NumberInput(attrs={'class': 'form-control'}),
             'margem_lucro_ideal': forms.NumberInput(attrs={'class': 'form-control'}),
-            'logo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
         help_texts = {
-            'margem_lucro_ideal': 'Insira o valor percentual (ex: 30 para 30%).',
+            'nome_empresa': 'O nome que aparecerá no sistema.',
+            'limite_estoque_baixo': 'Receba alertas quando o estoque atingir este número.',
+            'margem_lucro_ideal': 'A margem de lucro que você considera ideal para seus produtos (em %).',
         } 

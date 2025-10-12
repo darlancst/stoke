@@ -3,63 +3,146 @@
 {% block title %}Detalhes da Devolução #{{ devolucao.id }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="mb-0">Detalhes da Devolução #{{ devolucao.id }}</h1>
-    <a href="{% url 'inventario:listar_devolucoes' %}" class="btn btn-secondary">Voltar para a Lista</a>
+<!-- Cabeçalho Responsivo -->
+<div class="row align-items-center mb-3">
+    <div class="col-12 col-md-6">
+        <h1 class="mb-2 mb-md-0">Detalhes da Devolução #{{ devolucao.id }}</h1>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+            <a href="{% url 'inventario:listar_devolucoes' %}" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
+            </a>
+        </div>
+    </div>
 </div>
 
-<div class="card mb-4">
+<!-- Informações Gerais -->
+<div class="card mb-3">
     <div class="card-header">
-        <h4>Informações Gerais</h4>
+        <h4 class="mb-0">Informações Gerais</h4>
     </div>
     <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <p><strong>Data da Devolução:</strong> {{ devolucao.data_devolucao|date:"d/m/Y H:i" }}</p>
-                <p>
-                    <strong>Venda Original:</strong> 
-                    <a href="{% url 'inventario:detalhar_venda' pk=devolucao.venda.pk %}">Venda #{{ devolucao.venda.id }}</a>
-                </p>
+        <div class="row g-3">
+            <!-- Dados Básicos -->
+            <div class="col-12 col-md-6">
+                <div class="row g-2">
+                    <div class="col-12">
+                        <h6 class="text-muted mb-1">Data da Devolução</h6>
+                        <p class="mb-2 fs-6">{{ devolucao.data|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <div class="col-12">
+                        <h6 class="text-muted mb-1">Venda Original</h6>
+                        <p class="mb-2">
+                            <a href="{% url 'inventario:detalhar_venda' pk=devolucao.venda_original.pk %}" class="text-decoration-none">
+                                <i class="bi bi-receipt me-1"></i>Venda #{{ devolucao.venda_original.id }}
+                            </a>
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <p><strong>Valor Total Restituído:</strong> <span class="fs-5 fw-bold">R$ {{ devolucao.valor_total_restituido|floatformat:2 }}</span></p>
-                {% if devolucao.motivo %}
-                    <p><strong>Motivo:</strong> {{ devolucao.motivo }}</p>
-                {% endif %}
+            
+            <!-- Valores e Detalhes -->
+            <div class="col-12 col-md-6">
+                <div class="row g-2">
+                    <div class="col-12">
+                        <h6 class="text-muted mb-1">Valor Total Restituído</h6>
+                        <p class="mb-2 fs-5 fw-bold text-success">R$ {{ devolucao.valor_total_restituido|floatformat:2 }}</p>
+                    </div>
+                    {% if devolucao.motivo %}
+                    <div class="col-12">
+                        <h6 class="text-muted mb-1">Motivo</h6>
+                        <p class="mb-0 fs-6">{{ devolucao.motivo }}</p>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Itens Devolvidos -->
 <div class="card">
     <div class="card-header">
-        <h4>Itens Devolvidos</h4>
+        <h4 class="mb-0">Itens Devolvidos</h4>
     </div>
     <div class="card-body">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Produto</th>
-                    <th>Quantidade Devolvida</th>
-                    <th>Valor Unitário</th>
-                    <th>Subtotal Restituído</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in devolucao.itens.all %}
-                <tr>
-                    <td>
-                        <a href="{% url 'inventario:detalhar_produto' pk=item.produto.pk %}">
-                            {{ item.produto.nome }}
-                        </a>
-                    </td>
-                    <td>{{ item.quantidade }}</td>
-                    <td>R$ {{ item.item_venda_original.preco_venda_unitario|floatformat:2 }}</td>
-                    <td>R$ {{ item.valor_restituido|floatformat:2 }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <!-- Tabela Desktop -->
+        <div class="d-none d-lg-block">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Produto</th>
+                            <th>Quantidade Devolvida</th>
+                            <th>Valor Unitário</th>
+                            <th>Subtotal Restituído</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in devolucao.itens_devolvidos.all %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'inventario:detalhar_produto' pk=item.item_venda_original.produto.pk %}" class="fw-bold text-decoration-none">
+                                    {{ item.item_venda_original.produto.nome }}
+                                </a>
+                            </td>
+                            <td>{{ item.quantidade }}</td>
+                            <td>R$ {{ item.item_venda_original.preco_venda_unitario|floatformat:2 }}</td>
+                            <td class="fw-bold text-success">R$ {{ item.valor_restituido|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                                Nenhum item devolvido encontrado.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Cards Mobile -->
+        <div class="d-lg-none">
+            {% if devolucao.itens_devolvidos.all %}
+                <div class="row g-2">
+                    {% for item in devolucao.itens_devolvidos.all %}
+                    <div class="col-12">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0 fw-bold text-truncate me-2">
+                                        <a href="{% url 'inventario:detalhar_produto' pk=item.item_venda_original.produto.pk %}" class="text-decoration-none">
+                                            {{ item.item_venda_original.produto.nome }}
+                                        </a>
+                                    </h6>
+                                    <span class="badge bg-danger">{{ item.quantidade }}x devolvido</span>
+                                </div>
+                                
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Valor Unitário</small>
+                                        <span class="fs-6">R$ {{ item.item_venda_original.preco_venda_unitario|floatformat:2 }}</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Total Restituído</small>
+                                        <span class="fs-6 fw-bold text-success">R$ {{ item.valor_restituido|floatformat:2 }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-inbox display-4 text-muted"></i>
+                    <p class="text-muted mt-2">Nenhum item devolvido encontrado.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %} 

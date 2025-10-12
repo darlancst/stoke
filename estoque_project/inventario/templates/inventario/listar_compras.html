@@ -1,0 +1,126 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Pedidos de Compra - Gestão de Estoque{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-3">
+    <div class="col-12 col-md-6">
+        <h1 class="mb-2 mb-md-0">Pedidos de Compra</h1>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="d-flex justify-content-md-end">
+            <a href="{% url 'inventario:criar_compra' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Novo</span> Pedido
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" placeholder="Buscar por fornecedor, ID (#123)..." name="q" value="{{ query_atual }}">
+                {% if query_atual %}
+                    <a href="{% url 'inventario:listar_compras' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Desktop -->
+<div class="card d-none d-lg-block">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Fornecedor</th>
+                        <th>Data do Pedido</th>
+                        <th>Data Prevista</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Itens Pendentes</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for compra in compras %}
+                    <tr class="align-middle">
+                        <td class="fw-semibold">#{{ compra.id }}</td>
+                        <td>{{ compra.fornecedor.nome }}</td>
+                        <td>{{ compra.data_pedido|date:"d/m/Y H:i" }}</td>
+                        <td>{{ compra.data_prevista|date:"d/m/Y"|default:"—" }}</td>
+                        <td class="text-center">
+                            <span class="badge {% if compra.status == 'ABERTO' %}bg-secondary{% elif compra.status == 'PARCIAL' %}bg-warning text-dark{% elif compra.status == 'RECEBIDO' %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ compra.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-end">{{ compra.total_pendente }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'inventario:detalhar_compra' pk=compra.pk %}" class="btn btn-sm btn-info" title="Detalhes">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="bi bi-truck display-1 text-muted"></i>
+                            <h5 class="text-muted mt-2">Nenhum pedido de compra</h5>
+                            <p class="text-muted">Crie seu primeiro pedido para acompanhar itens chegando.</p>
+                            <a href="{% url 'inventario:criar_compra' %}" class="btn btn-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Novo Pedido
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    </div>
+
+<!-- Mobile -->
+<div class="d-lg-none">
+    {% for compra in compras %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0">#{{ compra.id }} — {{ compra.fornecedor.nome }}</h6>
+                    <span class="badge {% if compra.status == 'ABERTO' %}bg-secondary{% elif compra.status == 'PARCIAL' %}bg-warning text-dark{% elif compra.status == 'RECEBIDO' %}bg-success{% else %}bg-danger{% endif %}">{{ compra.get_status_display }}</span>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Pedido:</small><br>
+                        <span>{{ compra.data_pedido|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Prevista:</small><br>
+                        <span>{{ compra.data_prevista|date:"d/m/Y"|default:"—" }}</span>
+                    </div>
+                </div>
+                <div class="d-flex">
+                    <a href="{% url 'inventario:detalhar_compra' pk=compra.pk %}" class="btn btn-info btn-sm">
+                        <i class="bi bi-eye"></i> Detalhes
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="text-center py-5">
+            <i class="bi bi-truck display-1 text-muted"></i>
+            <h5 class="text-muted mt-3">Nenhum pedido de compra</h5>
+            <a href="{% url 'inventario:criar_compra' %}" class="btn btn-primary mt-3"><i class="bi bi-plus-circle"></i> Novo Pedido</a>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+
+
+
