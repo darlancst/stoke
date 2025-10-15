@@ -707,22 +707,33 @@
             color: #ffc66d;
         }
         
-        /* Menu mobile - sidebar lateral */
+        /* Menu mobile - dropdown compacto */
         @media (max-width: 767.98px) {
             #sidebarMenu {
                 position: fixed;
                 top: 48px;
-                left: -100%;
-                bottom: 0;
-                width: 280px;
+                left: 0;
+                right: 0;
                 z-index: 1040;
-                transition: left 0.3s ease-in-out;
-                overflow-y: auto;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease-in-out;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             }
             
             #sidebarMenu.menu-open {
-                left: 0;
+                max-height: 400px;
+                overflow-y: auto;
+            }
+            
+            /* Fazer menu mais compacto em mobile */
+            #sidebarMenu .nav-link {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+            
+            #sidebarMenu .position-sticky {
+                padding-top: 0.5rem !important;
             }
             
             /* Remover comportamento padrão do Bootstrap collapse em mobile */
