@@ -707,28 +707,36 @@
             color: #ffc66d;
         }
         
-        /* Menu mobile - abre de cima para baixo */
+        /* Menu mobile - sidebar lateral */
         @media (max-width: 767.98px) {
             #sidebarMenu {
                 position: fixed;
                 top: 48px;
-                left: 0;
-                right: 0;
+                left: -100%;
+                bottom: 0;
+                width: 280px;
                 z-index: 1040;
-                max-height: 0;
-                overflow: hidden;
-                transition: max-height 0.3s ease-in-out;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                transition: left 0.3s ease-in-out;
+                overflow-y: auto;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.3);
             }
             
-            #sidebarMenu.show {
-                max-height: calc(100vh - 48px);
-                overflow-y: auto;
+            #sidebarMenu.menu-open {
+                left: 0;
+            }
+            
+            /* Remover comportamento padrão do Bootstrap collapse em mobile */
+            #sidebarMenu.collapse:not(.show) {
+                display: block;
+            }
+            
+            #sidebarMenu.collapsing {
+                transition: none;
+                height: auto !important;
             }
             
             /* Overlay semi-transparente quando menu está aberto */
             .sidebar-overlay {
-                display: none;
                 position: fixed;
                 top: 48px;
                 left: 0;
@@ -736,11 +744,14 @@
                 bottom: 0;
                 background-color: rgba(0, 0, 0, 0.5);
                 z-index: 1035;
-                transition: opacity 0.3s ease-in-out;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease-in-out, visibility 0.3s;
             }
             
-            .sidebar-overlay.show {
-                display: block;
+            .sidebar-overlay.active {
+                opacity: 1;
+                visibility: visible;
             }
             
             [data-theme="dark"] .sidebar-overlay {
@@ -758,7 +769,7 @@
             <button id="theme-toggle" class="btn btn-sm me-2" title="Alternar tema">
                 <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
             </button>
-            <button class="navbar-toggler d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler d-md-none" type="button" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
         </div>
@@ -896,44 +907,66 @@
         })();
     </script>
     
-    <!-- Script para controlar overlay do menu mobile -->
+    <!-- Script para controlar menu mobile -->
     <script>
         (function() {
             const sidebarMenu = document.getElementById('sidebarMenu');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const navbarToggler = document.querySelector('.navbar-toggler');
+            let menuOpen = false;
             
-            if (sidebarMenu && sidebarOverlay) {
-                // Quando o menu é aberto
-                sidebarMenu.addEventListener('show.bs.collapse', function () {
-                    sidebarOverlay.classList.add('show');
-                });
+            if (sidebarMenu && sidebarOverlay && navbarToggler) {
                 
-                // Quando o menu é fechado
-                sidebarMenu.addEventListener('hide.bs.collapse', function () {
-                    sidebarOverlay.classList.remove('show');
-                });
+                // Função para abrir o menu
+                function openMenu() {
+                    menuOpen = true;
+                    sidebarMenu.classList.add('menu-open');
+                    sidebarOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden'; // Previne scroll do body
+                }
                 
-                // Clicar no overlay fecha o menu usando Bootstrap
-                sidebarOverlay.addEventListener('click', function() {
-                    const bsCollapse = bootstrap.Collapse.getInstance(sidebarMenu);
-                    if (bsCollapse) {
-                        bsCollapse.hide();
+                // Função para fechar o menu
+                function closeMenu() {
+                    menuOpen = false;
+                    sidebarMenu.classList.remove('menu-open');
+                    sidebarOverlay.classList.remove('active');
+                    document.body.style.overflow = ''; // Restaura scroll do body
+                }
+                
+                // Toggle ao clicar no botão hambúrguer
+                navbarToggler.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (menuOpen) {
+                        closeMenu();
+                    } else {
+                        openMenu();
                     }
                 });
                 
-                // Clicar em qualquer link do menu também fecha
+                // Fechar ao clicar no overlay
+                sidebarOverlay.addEventListener('click', function() {
+                    closeMenu();
+                });
+                
+                // Fechar ao clicar em um link do menu
                 const menuLinks = sidebarMenu.querySelectorAll('.nav-link');
                 menuLinks.forEach(link => {
                     link.addEventListener('click', function() {
                         if (window.innerWidth < 768) {
                             setTimeout(() => {
-                                const bsCollapse = bootstrap.Collapse.getInstance(sidebarMenu);
-                                if (bsCollapse) {
-                                    bsCollapse.hide();
-                                }
-                            }, 200); // Pequeno delay para a navegação iniciar
+                                closeMenu();
+                            }, 300);
                         }
                     });
+                });
+                
+                // Fechar ao redimensionar para desktop
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth >= 768 && menuOpen) {
+                        closeMenu();
+                    }
                 });
             }
         })();
