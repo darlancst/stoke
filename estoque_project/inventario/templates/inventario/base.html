@@ -707,7 +707,7 @@
             color: #ffc66d;
         }
         
-        /* Menu mobile - dropdown compacto */
+        /* Menu mobile - dropdown compacto de cima para baixo */
         @media (max-width: 767.98px) {
             #sidebarMenu {
                 position: fixed;
@@ -722,14 +722,18 @@
             }
             
             #sidebarMenu.menu-open {
-                max-height: 400px;
+                max-height: 70vh;
                 overflow-y: auto;
             }
             
-            /* Fazer menu mais compacto em mobile */
+            /* Menu mais compacto */
             #sidebarMenu .nav-link {
-                padding: 0.5rem 1rem;
+                padding: 0.6rem 1rem;
                 font-size: 0.9rem;
+            }
+            
+            #sidebarMenu .nav-link i {
+                font-size: 1rem;
             }
             
             #sidebarMenu .position-sticky {
@@ -743,7 +747,7 @@
             
             #sidebarMenu.collapsing {
                 transition: none;
-                height: auto !important;
+                max-height: none !important;
             }
             
             /* Overlay semi-transparente quando menu está aberto */
