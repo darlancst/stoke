@@ -39,8 +39,16 @@
             
             <div class="col-12 col-md-6">
                 <label class="form-label">Preço de Venda (R$) *</label>
-                <input type="number" id="preco_venda" class="form-control" min="0" step="0.01" value="{{ produto_chegando.preco_compra|floatformat:2 }}" required>
-                <small class="text-muted">Por quanto você vai vender cada unidade</small>
+                <input type="number" id="preco_venda" class="form-control" min="0" step="0.01" 
+                       {% if produto_vinculado %}value="{{ produto_vinculado.preco_venda|floatformat:2 }}"{% endif %} 
+                       required>
+                <small class="text-muted">
+                    {% if produto_vinculado %}
+                        Preço atual do produto no estoque
+                    {% else %}
+                        Por quanto você vai vender cada unidade
+                    {% endif %}
+                </small>
             </div>
             
             <div class="col-12">
@@ -90,6 +98,15 @@ document.getElementById('btn-incluir').addEventListener('click', function() {
         alert('Preço de venda deve ser maior que zero.');
         return;
     }
+    
+    // Validação adicional: se não há produto vinculado, o preço de venda não pode ser igual ao de compra
+    {% if not produto_vinculado %}
+    const preco_compra = {{ produto_chegando.preco_compra }};
+    if (preco_venda === preco_compra) {
+        alert('O preço de venda não pode ser igual ao preço de compra. Por favor, defina um preço de venda adequado.');
+        return;
+    }
+    {% endif %}
     
     const payload = {
         fornecedor_id: fornecedor_id,

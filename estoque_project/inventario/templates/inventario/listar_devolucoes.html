@@ -4,9 +4,31 @@
 
 {% block content %}
 <!-- Cabeçalho Responsivo -->
-<div class="row align-items-center mb-4">
+<div class="row align-items-center mb-3">
     <div class="col-12">
         <h1 class="mb-0">Histórico de Devoluções</h1>
+    </div>
+</div>
+
+<!-- Campo de Pesquisa -->
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="form-control" 
+                placeholder="Buscar por cliente, ID da venda ou produto..."
+                autocomplete="off"
+            >
+            <button class="btn btn-outline-secondary" type="button" id="clearSearch" style="display: none;">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div id="searchStatus" class="mt-2 text-muted small" style="display: none;">
+            <i class="bi bi-hourglass-split"></i> Buscando...
+        </div>
     </div>
 </div>
 
@@ -32,6 +54,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>ID da Devolução</th>
+                        <th>Cliente</th>
                         <th>Venda Original</th>
                         <th>Data</th>
                         <th class="text-end">Valor Restituído</th>
@@ -43,6 +66,10 @@
                     <tr class="align-middle">
                         <td>
                             <span class="fw-semibold">#{{ devolucao.id }}</span>
+                        </td>
+                        <td>
+                            <i class="bi bi-person text-muted me-1"></i>
+                            {{ devolucao.venda_original.cliente|default:"Sem nome" }}
                         </td>
                         <td>
                             <a href="{% url 'inventario:detalhar_venda' pk=devolucao.venda_original.pk %}" class="text-decoration-none">
@@ -60,7 +87,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center py-4">
+                        <td colspan="6" class="text-center py-4">
                             <i class="bi bi-arrow-return-left display-1 text-muted"></i>
                             <h5 class="text-muted mt-2">Nenhuma devolução registrada</h5>
                             <p class="text-muted">As devoluções aparecerão aqui quando forem processadas.</p>
@@ -90,6 +117,7 @@
                                 Venda #{{ devolucao.venda_original.id }}
                             </a>
                         </h6>
+                        <small class="text-muted d-block"><i class="bi bi-person me-1"></i>{{ devolucao.venda_original.cliente|default:"Sem nome" }}</small>
                         <small class="text-muted">{{ devolucao.data|date:"d/m/Y H:i" }}</small>
                     </div>
                     <span class="badge bg-warning text-dark">
@@ -121,4 +149,146 @@
         </div>
     {% endfor %}
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const clearButton = document.getElementById('clearSearch');
+    const searchStatus = document.getElementById('searchStatus');
+    const desktopTableBody = document.querySelector('.d-none.d-lg-block table tbody');
+    const mobileContainer = document.querySelector('.d-lg-none');
+    
+    let searchTimeout;
+    
+    // Função para realizar a busca
+    function performSearch(query) {
+        searchStatus.style.display = 'block';
+        searchStatus.innerHTML = '<i class="bi bi-hourglass-split"></i> Buscando...';
+        
+        fetch(`/api/buscar-devolucoes-listagem/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                updateResults(data);
+                searchStatus.style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Erro na busca:', error);
+                searchStatus.innerHTML = '<i class="bi bi-exclamation-triangle text-danger"></i> Erro ao buscar';
+            });
+    }
+    
+    // Função para atualizar os resultados
+    function updateResults(devolucoes) {
+        // Atualizar tabela desktop
+        if (devolucoes.length === 0) {
+            desktopTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4">
+                        <i class="bi bi-search display-1 text-muted"></i>
+                        <h5 class="text-muted mt-2">Nenhuma devolução encontrada</h5>
+                        <p class="text-muted">Tente buscar por outro termo.</p>
+                    </td>
+                </tr>
+            `;
+            mobileContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-search display-1 text-muted"></i>
+                    <h5 class="text-muted mt-3">Nenhuma devolução encontrada</h5>
+                    <p class="text-muted">Tente buscar por outro termo.</p>
+                </div>
+            `;
+        } else {
+            // Desktop
+            let desktopHTML = '';
+            devolucoes.forEach(dev => {
+                desktopHTML += `
+                    <tr class="align-middle">
+                        <td><span class="fw-semibold">#${dev.id}</span></td>
+                        <td><i class="bi bi-person text-muted me-1"></i>${dev.cliente || 'Sem nome'}</td>
+                        <td>
+                            <a href="/venda/${dev.venda_id}/" class="text-decoration-none">
+                                <i class="bi bi-receipt text-muted me-1"></i>
+                                Venda #${dev.venda_id}
+                            </a>
+                        </td>
+                        <td>${dev.data}</td>
+                        <td class="text-end fw-bold text-danger">R$ ${dev.valor_restituido}</td>
+                        <td class="text-center">
+                            <a href="/devolucao/${dev.id}/" class="btn btn-sm btn-info" title="Detalhes">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+            desktopTableBody.innerHTML = desktopHTML;
+            
+            // Mobile
+            let mobileHTML = '';
+            devolucoes.forEach(dev => {
+                mobileHTML += `
+                    <div class="card mb-2">
+                        <div class="card-body py-2 px-3">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0 small">
+                                        <a href="/devolucao/${dev.id}/" class="text-decoration-none">
+                                            <span class="fw-bold">#${dev.id}</span>
+                                        </a>
+                                        <span class="text-muted">·</span>
+                                        <a href="/venda/${dev.venda_id}/" class="text-decoration-none text-muted">
+                                            Venda #${dev.venda_id}
+                                        </a>
+                                    </h6>
+                                    <small class="text-muted d-block"><i class="bi bi-person me-1"></i>${dev.cliente || 'Sem nome'}</small>
+                                    <small class="text-muted">${dev.data}</small>
+                                </div>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-arrow-return-left"></i>
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div>
+                                    <small class="text-muted">Restituído:</small>
+                                    <strong class="text-danger ms-1">R$ ${dev.valor_restituido}</strong>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-1 mt-2">
+                                <a href="/devolucao/${dev.id}/" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            mobileContainer.innerHTML = mobileHTML;
+        }
+    }
+    
+    // Event listener para o input de busca
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length > 0) {
+            clearButton.style.display = 'block';
+            searchTimeout = setTimeout(() => performSearch(query), 300);
+        } else {
+            clearButton.style.display = 'none';
+            window.location.reload(); // Recarrega para mostrar todos
+        }
+    });
+    
+    // Event listener para o botão de limpar
+    clearButton.addEventListener('click', function() {
+        searchInput.value = '';
+        clearButton.style.display = 'none';
+        window.location.reload();
+    });
+});
+</script>
 {% endblock %} 

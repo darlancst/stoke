@@ -173,6 +173,13 @@ class ItemVenda(models.Model):
     custo_compra_total_registrado = models.DecimalField(max_digits=10, decimal_places=2)
     eh_brinde = models.BooleanField('É Brinde', default=False)
 
+    @property
+    def subtotal(self):
+        """Calcula o subtotal do item (quantidade * preço unitário)"""
+        if self.eh_brinde:
+            return Decimal('0.00')
+        return self.quantidade * self.preco_venda_unitario
+
     def __str__(self):
         if self.eh_brinde:
             return f"{self.quantidade}x {self.produto.nome} (BRINDE)"
@@ -183,6 +190,7 @@ class Configuracao(models.Model):
     logo = models.ImageField('Logo da Empresa', upload_to='empresa/', blank=True, null=True)
     limite_estoque_baixo = models.PositiveIntegerField('Limite de Estoque Baixo', default=10)
     margem_lucro_ideal = models.DecimalField('Margem de Lucro Ideal (%)', max_digits=5, decimal_places=2, default=Decimal('30.00'))
+    dias_produto_parado = models.PositiveIntegerField('Dias sem vender para considerar parado', default=60, help_text='Produtos sem vendas neste período serão listados como parados')
 
     class Meta:
         verbose_name = 'Configuração'

@@ -9,9 +9,22 @@
         position: sticky;
         bottom: 0;
         background-color: #f8f9fa;
-        padding: 1rem;
+        padding: 1.5rem;
         border-top: 1px solid #dee2e6;
         z-index: 1020;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .desconto-mobile {
+        flex-shrink: 0;
+    }
+    
+    .desconto-mobile input {
+        width: 140px;
+    }
+    
+    .totais-mobile {
+        flex-shrink: 0;
     }
     
     .ui-autocomplete {
@@ -19,6 +32,13 @@
         overflow-y: auto;
         overflow-x: hidden;
         z-index: 1050;
+    }
+    
+    @media (min-width: 992px) {
+        .total-venda-fixed {
+            justify-content: center !important;
+            gap: 2rem;
+        }
     }
     
     @media (max-width: 991.98px) {
@@ -32,11 +52,17 @@
         .total-mobile-flex {
             flex-direction: column;
             gap: 1rem;
+            align-items: stretch !important;
         }
         
         .desconto-mobile {
             order: 1;
             width: 100% !important;
+            margin: 0 !important;
+        }
+        
+        .desconto-mobile input {
+            width: 100%;
         }
         
         .totais-mobile {
@@ -79,15 +105,15 @@
 
 {% block content %}
 <!-- Cabeçalho Responsivo -->
-<div class="row align-items-center mb-4">
-    <div class="col-12 col-md-6 mb-2 mb-md-0">
-        <h1 class="mb-0">Registrar Nova Venda</h1>
+<div class="row align-items-center mb-3">
+    <div class="col-12 col-md-6">
+        <h1 class="mb-2 mb-md-0">Registrar Nova Venda</h1>
     </div>
     <div class="col-12 col-md-6">
         <div class="d-flex justify-content-md-end">
-            <a href="{% url 'inventario:listar_vendas' %}" class="btn btn-secondary">
+            <button onclick="window.history.back()" class="btn btn-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
-            </a>
+            </button>
         </div>
     </div>
 </div>
@@ -100,7 +126,7 @@
                 <!-- Nome do Cliente -->
                 <div class="col-md-6">
                     <label for="cliente_nome" class="form-label">Nome do Cliente</label>
-                    <input type="text" id="cliente_nome" name="cliente_nome" class="form-control" placeholder="Nome do Cliente (opcional)">
+                    <input type="text" id="cliente_nome" name="cliente_nome" class="form-control" placeholder="Nome do Cliente ">
                 </div>
                 
                 <!-- Tipo de Venda -->
@@ -149,7 +175,7 @@
 
         <!-- Itens da Venda -->
         <div class="mt-4">
-            <h5 class="mb-3"><i class="bi bi-cart3"></i> Itens da Venda</h5>
+            <h5><i class="bi bi-cart3"></i> Itens da Venda</h5>
             
             <!-- Tabela para Desktop -->
             <div class="table-responsive d-none d-md-block">
@@ -186,17 +212,17 @@
 
 <!-- Área de Total e Finalização -->
 <div class="total-venda-fixed d-flex justify-content-end align-items-center total-mobile-flex">
-    <div class="desconto-mobile me-4">
-        <label for="desconto-venda" class="form-label">Desconto (R$)</label>
-        <input type="number" id="desconto-venda" class="form-control form-control-lg" style="width: 150px;" placeholder="0,00" min="0" step="0.01">
+    <div class="desconto-mobile">
+        <label for="desconto-venda" class="form-label mb-2">Desconto (R$)</label>
+        <input type="number" id="desconto-venda" class="form-control form-control-lg" placeholder="0,00" min="0" step="0.01">
     </div>
     
     <div class="totais-mobile">
-        <h6 class="text-muted mb-0">Subtotal: <span id="subtotal-venda">R$ 0,00</span></h6>
+        <h6 class="text-muted mb-1">Subtotal: <span id="subtotal-venda">R$ 0,00</span></h6>
         <h4 class="mb-0 fw-bold">Total Final: <span id="total-final-venda">R$ 0,00</span></h4>
     </div>
     
-    <button type="button" id="btn-finalizar-venda" class="btn btn-lg btn-success ms-4 btn-finalizar-mobile">
+    <button type="button" id="btn-finalizar-venda" class="btn btn-lg btn-success btn-finalizar-mobile">
         <i class="bi bi-check-circle"></i> Finalizar Venda
     </button>
 </div>

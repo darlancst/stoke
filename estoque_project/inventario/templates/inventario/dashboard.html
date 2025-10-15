@@ -10,10 +10,10 @@
             
             <!-- Formulário de Filtro de Data -->
             <form method="get" id="filtro-periodo-form">
-                <select class="form-select" name="periodo" id="periodo-select" style="width: auto; min-width: 150px;">
-                    <option value="7d" {% if periodo_selecionado == '7d' %}selected{% endif %}>Últimos 7 dias</option>
-                    <option value="30d" {% if periodo_selecionado == '30d' %}selected{% endif %}>Últimos 30 dias</option>
-                    <option value="anual" {% if periodo_selecionado == 'anual' %}selected{% endif %}>Último Ano</option>
+                <select class="form-select form-select-sm" name="periodo" id="periodo-select" style="width: auto; padding-right: 0.4rem; padding-left: 0.5rem;">
+                    <option value="7d" {% if periodo_selecionado == '7d' %}selected{% endif %}>7 dias</option>
+                    <option value="30d" {% if periodo_selecionado == '30d' %}selected{% endif %}>30 dias</option>
+                    <option value="anual" {% if periodo_selecionado == 'anual' %}selected{% endif %}>Anual</option>
                     <option value="custom" {% if periodo_selecionado == 'custom' %}selected{% endif %}>Personalizado</option>
                 </select>
             </form>
@@ -35,18 +35,16 @@
 </div>
 
 <style>
-/* ========== MELHORIAS DE UI/UX DO DASHBOARD ========== */
 .dashboard-card {
     border: none;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .dashboard-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.12);
 }
 
 .card-receita {
@@ -69,105 +67,32 @@
     color: white;
 }
 
-/* Dark mode adjustments for dashboard cards */
-[data-theme="dark"] .dashboard-card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="dark"] .dashboard-card:hover {
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
-}
-
-[data-theme="dark"] .card-receita {
-    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
-}
-
-[data-theme="dark"] .card-lucro {
-    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-}
-
-[data-theme="dark"] .card-vendas {
-    background: linear-gradient(135deg, #c27803 0%, #b45309 100%);
-}
-
-[data-theme="dark"] .card-estoque {
-    background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
-}
-
-/* Dark mode - ajustes específicos do dashboard */
-[data-theme="dark"] .card-header .text-danger {
-    color: #ff7b72 !important;
-}
-
-[data-theme="dark"] .card-header .text-warning {
-    color: #d29922 !important;
-}
-
 .dashboard-icon {
-    font-size: 2.25rem;
-    opacity: 0.85;
-    margin-bottom: 0.75rem;
+    font-size: 2rem;
+    opacity: 1;
+    margin-bottom: 0.5rem;
 }
 
 .dashboard-value {
     font-weight: 700;
     margin-bottom: 0;
-    line-height: 1.1;
-    font-size: 1.75rem;
+    line-height: 1.2;
 }
 
 .dashboard-title {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    opacity: 0.9;
-    margin-bottom: 0.75rem;
+    opacity: 1;
+    margin-bottom: 0.5rem;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.5px;
 }
 
-/* Melhorias nos cards de informação */
-.card {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
-}
-
-.card-header {
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0.85rem 1rem;
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #e9ecef;
-}
-
-/* Melhor espaçamento para listas nos cards */
-.list-group-item {
-    padding: 0.75rem 1rem;
-    border-left: none;
-    border-right: none;
-}
-
-.list-group-item:first-child {
-    border-top: none;
-}
-
-.list-group-item:last-child {
-    border-bottom: none;
-}
-
-/* Tabelas dentro de cards com melhor visual */
-.card-body .table {
-    margin-bottom: 0;
-}
-
-.card-body .table th,
-.card-body .table td {
-    padding: 0.65rem 0.75rem;
-}
-
-/* Badges dentro de tabelas com melhor alinhamento */
-.table .badge {
-    font-size: 0.7rem;
-    padding: 0.3rem 0.6rem;
+/* Força texto branco nos cards no modo escuro */
+[data-theme="dark"] .dashboard-card .dashboard-title,
+[data-theme="dark"] .dashboard-card .dashboard-value,
+[data-theme="dark"] .dashboard-card .dashboard-icon {
+    color: #fff !important;
 }
 
 @media (max-width: 767.98px) {
@@ -199,33 +124,7 @@
 </style>
 
 <div class="row g-2 g-md-3">
-    <!-- Card: Receita Total (1) -->
-    <div class="col-6 col-md-3">
-        <div class="card dashboard-card card-receita h-100">
-            <div class="card-body text-center">
-                <div class="dashboard-icon">
-                    <i class="bi bi-graph-up-arrow"></i>
-                </div>
-                <h6 class="dashboard-title">Receita Total</h6>
-                <p class="dashboard-value fs-3">R$ {{ receita_total|floatformat:2 }}</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card: Seu Lucro (2) -->
-    <div class="col-6 col-md-3">
-        <div class="card dashboard-card card-lucro h-100">
-            <div class="card-body text-center">
-                <div class="dashboard-icon">
-                    <i class="bi bi-trophy-fill"></i>
-                </div>
-                <h6 class="dashboard-title">Seu Lucro</h6>
-                <p class="dashboard-value fs-3">R$ {{ meu_lucro_total|floatformat:2 }}</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card: Vendas Realizadas (3) -->
+    <!-- Card: Vendas Realizadas -->
     <div class="col-6 col-md-3">
         <div class="card dashboard-card card-vendas h-100">
             <div class="card-body text-center">
@@ -237,8 +136,34 @@
             </div>
         </div>
     </div>
-
-    <!-- Card: Valor em Estoque (4) -->
+    
+    <!-- Card: Receita Total -->
+    <div class="col-6 col-md-3">
+        <div class="card dashboard-card card-receita h-100">
+            <div class="card-body text-center">
+                <div class="dashboard-icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <h6 class="dashboard-title">Receita Total</h6>
+                <p class="dashboard-value fs-3">R$ {{ receita_total|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card: Seu Lucro -->
+    <div class="col-6 col-md-3">
+        <div class="card dashboard-card card-lucro h-100">
+            <div class="card-body text-center">
+                <div class="dashboard-icon">
+                    <i class="bi bi-trophy-fill"></i>
+                </div>
+                <h6 class="dashboard-title">Seu Lucro</h6>
+                <p class="dashboard-value fs-3">R$ {{ meu_lucro_total|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card: Valor em Estoque -->
     <div class="col-6 col-md-3">
         <div class="card dashboard-card card-estoque h-100">
             <div class="card-body text-center">
@@ -268,7 +193,8 @@
     <!-- Coluna da Direita: Cards de Informação Rápida -->
     <div class="col-lg-5">
         <div class="row g-2 g-md-3">
-            <!-- Estoque Baixo -->
+            <!-- Estoque Baixo - Só aparece se houver produtos com estoque baixo -->
+            {% if produtos_estoque_baixo %}
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
@@ -288,53 +214,13 @@
                                     <td><a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}">{{ produto.nome }}</a></td>
                                     <td class="text-end"><span class="badge bg-danger">{{ produto.qtd_total }}</span></td>
                                 </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="2" class="text-center text-muted">Nenhum produto com estoque baixo.</td>
-                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-
-            <!-- Produtos Parados (Sem Vendas) -->
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="bi bi-clock-history text-warning"></i> Produtos Parados (60+ dias sem vender)
-                    </div>
-                    <div class="card-body p-2">
-                        {% if produtos_parados %}
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Produto</th>
-                                            <th class="text-center">Qtd.</th>
-                                            <th class="text-end">Dias Parado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for item in produtos_parados %}
-                                        <tr>
-                                            <td><a href="{% url 'inventario:detalhar_produto' pk=item.produto.pk %}">{{ item.produto.nome }}</a></td>
-                                            <td class="text-center"><span class="badge bg-secondary">{{ item.quantidade }}</span></td>
-                                            <td class="text-end">
-                                                <span class="badge bg-warning text-dark">{{ item.dias_parado }} dias</span>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <p class="text-center text-muted mb-0 py-2">Todos os produtos estão vendendo regularmente! 🎉</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+            {% endif %}
 
             <!-- Mais Vendidos -->
             <div class="col-md-6">
@@ -384,6 +270,41 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Produtos Parados (Sem Vendas) - Só aparece se houver produtos parados -->
+            {% if produtos_parados %}
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-clock-history text-warning"></i> Produtos Parados ({{ dias_limite_parado }}+ dias sem vender)
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th class="text-center">Qtd.</th>
+                                        <th class="text-end">Dias Parado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in produtos_parados %}
+                                    <tr>
+                                        <td><a href="{% url 'inventario:detalhar_produto' pk=item.produto.pk %}">{{ item.produto.nome }}</a></td>
+                                        <td class="text-center"><span class="badge bg-secondary">{{ item.quantidade }}</span></td>
+                                        <td class="text-end">
+                                            <span class="badge bg-warning text-dark">{{ item.dias_parado }} dias</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -475,16 +396,6 @@
 .heatmap-cell[data-level="3"] { background-color: #30a14e; }
 .heatmap-cell[data-level="4"] { background-color: #216e39; }
 
-/* Dark mode heatmap cells */
-[data-theme="dark"] .heatmap-cell {
-    background-color: #161b22;
-    border: 1px solid #30363d;
-}
-[data-theme="dark"] .heatmap-cell[data-level="1"] { background-color: rgba(88, 166, 255, 0.2); border-color: rgba(88, 166, 255, 0.3); }
-[data-theme="dark"] .heatmap-cell[data-level="2"] { background-color: rgba(88, 166, 255, 0.4); border-color: rgba(88, 166, 255, 0.5); }
-[data-theme="dark"] .heatmap-cell[data-level="3"] { background-color: rgba(88, 166, 255, 0.6); border-color: rgba(88, 166, 255, 0.7); }
-[data-theme="dark"] .heatmap-cell[data-level="4"] { background-color: rgba(88, 166, 255, 0.8); border-color: rgba(88, 166, 255, 0.9); }
-
 /* Heatmap Legend Cells */
 .heatmap-legend-cell {
     width: 12px;
@@ -569,43 +480,61 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // --- GRÁFICO DE LINHAS ---
+    let lineChart = null;
     try {
         const lineChartData = JSON.parse(document.getElementById('line-chart-data-json').textContent);
         const ctx = document.getElementById('lineChart');
         if (ctx) {
-            // Obter cores baseadas no tema atual
-            const chartColors = window.getChartColors();
-            
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: lineChartData.labels,
-                    datasets: [
-                        { label: 'Receita Final', data: lineChartData.receita, borderColor: 'rgb(75, 192, 192)', backgroundColor: 'rgba(75, 192, 192, 0.2)', fill: true, tension: 0.1 },
-                        { label: 'Seu Lucro', data: lineChartData.lucro, borderColor: 'rgb(54, 162, 235)', backgroundColor: 'rgba(54, 162, 235, 0.2)', fill: true, tension: 0.1 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { 
-                        y: { 
-                            beginAtZero: true,
-                            grid: { color: chartColors.gridColor },
-                            ticks: { color: chartColors.textColor }
-                        },
-                        x: {
-                            grid: { color: chartColors.gridColor },
-                            ticks: { color: chartColors.textColor }
-                        }
+            // Função para obter configuração do gráfico com cores atualizadas
+            function getLineChartConfig() {
+                const chartColors = window.getChartColors();
+                return {
+                    type: 'line',
+                    data: {
+                        labels: lineChartData.labels,
+                        datasets: [
+                            { label: 'Receita Final', data: lineChartData.receita, borderColor: 'rgb(75, 192, 192)', backgroundColor: 'rgba(75, 192, 192, 0.2)', fill: true, tension: 0.1 },
+                            { label: 'Seu Lucro', data: lineChartData.lucro, borderColor: 'rgb(54, 162, 235)', backgroundColor: 'rgba(54, 162, 235, 0.2)', fill: true, tension: 0.1 }
+                        ]
                     },
-                    plugins: {
-                        legend: {
-                            labels: { color: chartColors.textColor }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { 
+                            y: { 
+                                beginAtZero: true,
+                                grid: { color: chartColors.gridColor },
+                                ticks: { color: chartColors.textColor }
+                            },
+                            x: {
+                                grid: { color: chartColors.gridColor },
+                                ticks: { color: chartColors.textColor }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: chartColors.textColor }
+                            }
                         }
                     }
+                };
+            }
+            
+            // Criar gráfico inicial
+            lineChart = new Chart(ctx, getLineChartConfig());
+            
+            // Função para atualizar cores do gráfico
+            window.updateLineChartColors = function() {
+                if (lineChart) {
+                    const chartColors = window.getChartColors();
+                    lineChart.options.scales.y.grid.color = chartColors.gridColor;
+                    lineChart.options.scales.y.ticks.color = chartColors.textColor;
+                    lineChart.options.scales.x.grid.color = chartColors.gridColor;
+                    lineChart.options.scales.x.ticks.color = chartColors.textColor;
+                    lineChart.options.plugins.legend.labels.color = chartColors.textColor;
+                    lineChart.update();
                 }
-            });
+            };
         }
     } catch (e) {
         console.error("Erro ao renderizar o gráfico de linhas:", e);
@@ -617,6 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const heatmapMonthsContainer = document.getElementById('heatmap-months-container');
         if (heatmapContainer && heatmapMonthsContainer) {
             const heatmapData = JSON.parse(document.getElementById('heatmap-data-json').textContent);
+            const cores = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
             
             heatmapContainer.innerHTML = '';
             heatmapContainer.classList.remove('heatmap-loading');
@@ -627,7 +557,7 @@ document.addEventListener('DOMContentLoaded', function() {
             heatmapData.forEach((item, index) => {
                 const diaEl = document.createElement('div');
                 diaEl.classList.add('heatmap-cell');
-                diaEl.setAttribute('data-level', item.nivel); // Usa data-level para que o CSS controle as cores
+                diaEl.style.backgroundColor = cores[item.nivel];
                 
                 const dataObj = new Date(item.data);
                 const dataFormatada = new Date(dataObj.getUTCFullYear(), dataObj.getUTCMonth(), dataObj.getUTCDate()).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });

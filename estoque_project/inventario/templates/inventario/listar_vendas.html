@@ -4,13 +4,13 @@
 
 {% block content %}
 <!-- Cabeçalho Responsivo -->
-<div class="row align-items-center mb-4">
-    <div class="col-12 col-md-6 mb-2 mb-md-0">
-        <h1 class="mb-0">Histórico de Vendas</h1>
+<div class="row align-items-center mb-3">
+    <div class="col-12 col-md-6">
+        <h1 class="mb-2 mb-md-0">Histórico de Vendas</h1>
     </div>
     <div class="col-12 col-md-6">
-        <div class="d-flex justify-content-md-end gap-2">
-            <a href="{% url 'inventario:criar_venda' %}" class="btn btn-success">
+        <div class="d-flex justify-content-md-end">
+            <a href="{% url 'inventario:criar_venda' %}" class="btn btn-success btn-sm">
                 <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Registrar</span> Nova Venda
             </a>
         </div>
@@ -22,7 +22,7 @@
     <div class="card-body py-3">
         <div class="input-group">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input type="text" class="form-control" placeholder="Buscar por cliente, ID (#123), tipo (loja/externa)..." id="search-vendas-input" value="{{ query_atual }}">
+            <input type="text" class="form-control" placeholder="Buscar por cliente, produto, ID (#123), tipo (loja/externa)..." id="search-vendas-input" value="{{ query_atual }}">
             {% if query_atual %}
                 <a href="{% url 'inventario:listar_vendas' %}" class="btn btn-outline-secondary">
                     <i class="bi bi-x"></i>
@@ -56,14 +56,14 @@
                             <span class="fw-semibold">#{{ venda.id }}</span>
                             {% if venda.tipo_devolucao == 'total' %}
                                 <div class="mt-1">
-                                    <span class="badge bg-danger text-white" data-bs-toggle="tooltip" data-bs-placement="top" title="Todos os itens desta venda foram devolvidos">
+                                    <span class="badge bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Todos os itens desta venda foram devolvidos">
                                         <i class="bi bi-x-circle-fill me-1"></i>
                                         TOTALMENTE DEVOLVIDO
                                     </span>
                                 </div>
                             {% elif venda.tipo_devolucao == 'parcial' %}
                                 <div class="mt-1">
-                                    <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Alguns itens desta venda foram devolvidos ({{ venda.quantidade_total_devolvida }} de {{ venda.quantidade_total_vendida }} itens)">
+                                    <span class="badge bg-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Alguns itens desta venda foram devolvidos ({{ venda.quantidade_total_devolvida }} de {{ venda.quantidade_total_vendida }} itens)">
                                         <i class="bi bi-dash-circle-fill me-1"></i>
                                         PARCIALMENTE DEVOLVIDO
                                     </span>
@@ -121,8 +121,8 @@
 <!-- Cards para Mobile/Tablet -->
 <div class="d-lg-none" id="vendas-cards-mobile">
     {% for venda in vendas %}
-        <div class="card mb-3{% if venda.tipo_devolucao == 'total' %} border-danger bg-danger bg-opacity-10{% elif venda.tipo_devolucao == 'parcial' %} border-warning bg-warning bg-opacity-10{% endif %}" style="border-width: 1px;">
-            <div class="card-body py-3 px-3">
+        <div class="card mb-2{% if venda.tipo_devolucao == 'total' %} border-danger bg-danger bg-opacity-10{% elif venda.tipo_devolucao == 'parcial' %} border-warning bg-warning bg-opacity-10{% endif %}">
+            <div class="card-body py-2 px-3">
                 <!-- Linha 1: ID, Tipo, Cliente -->
                 <div class="d-flex justify-content-between align-items-start mb-1">
                     <div class="flex-grow-1">
@@ -169,7 +169,7 @@
                             <i class="bi bi-x-circle-fill"></i> Devolvido
                         </span>
                     {% elif venda.tipo_devolucao == 'parcial' %}
-                        <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="{{ venda.quantidade_total_devolvida }}/{{ venda.quantidade_total_vendida }} devolvidos">
+                        <span class="badge bg-warning" data-bs-toggle="tooltip" title="{{ venda.quantidade_total_devolvida }}/{{ venda.quantidade_total_vendida }} devolvidos">
                             <i class="bi bi-dash-circle-fill"></i> Parcial
                         </span>
                     {% endif %}
@@ -193,6 +193,68 @@
         </div>
     {% endfor %}
 </div>
+
+<!-- Paginação -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Navegação de páginas" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if query_atual %}&q={{ query_atual }}{% endif %}" aria-label="Primeira">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query_atual %}&q={{ query_atual }}{% endif %}" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&laquo;&laquo;</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">&laquo;</span>
+            </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <li class="page-item active" aria-current="page">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if query_atual %}&q={{ query_atual }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query_atual %}&q={{ query_atual }}{% endif %}" aria-label="Próxima">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query_atual %}&q={{ query_atual }}{% endif %}" aria-label="Última">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&raquo;</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">&raquo;&raquo;</span>
+            </li>
+        {% endif %}
+    </ul>
+    <p class="text-center text-muted">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} vendas no total)
+    </p>
+</nav>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -221,10 +283,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function badgeDevolucao(v) {
         if (v.tipo_devolucao === 'total') {
-            return `<div class="mt-1"><span class="badge bg-danger text-white" data-bs-toggle="tooltip" data-bs-placement="top" title="Todos os itens desta venda foram devolvidos"><i class="bi bi-x-circle-fill me-1"></i>TOTALMENTE DEVOLVIDO</span></div>`;
+            return `<div class="mt-1"><span class="badge bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Todos os itens desta venda foram devolvidos"><i class="bi bi-x-circle-fill me-1"></i>TOTALMENTE DEVOLVIDO</span></div>`;
         }
         if (v.tipo_devolucao === 'parcial') {
-            return `<div class="mt-1"><span class="badge bg-warning text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Alguns itens desta venda foram devolvidos (${v.quantidade_total_devolvida} de ${v.quantidade_total_vendida} itens)"><i class="bi bi-dash-circle-fill me-1"></i>PARCIALMENTE DEVOLVIDO</span></div>`;
+            return `<div class="mt-1"><span class="badge bg-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Alguns itens desta venda foram devolvidos (${v.quantidade_total_devolvida} de ${v.quantidade_total_vendida} itens)"><i class="bi bi-dash-circle-fill me-1"></i>PARCIALMENTE DEVOLVIDO</span></div>`;
         }
         return '';
     }
@@ -256,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (v.tipo_devolucao === 'total') {
             badges += `<span class="badge bg-danger" data-bs-toggle="tooltip" title="Totalmente devolvido"><i class="bi bi-x-circle-fill"></i> Devolvido</span>`;
         } else if (v.tipo_devolucao === 'parcial') {
-            badges += `<span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="${v.quantidade_total_devolvida}/${v.quantidade_total_vendida} devolvidos"><i class="bi bi-dash-circle-fill"></i> Parcial</span>`;
+            badges += `<span class="badge bg-warning" data-bs-toggle="tooltip" title="${v.quantidade_total_devolvida}/${v.quantidade_total_vendida} devolvidos"><i class="bi bi-dash-circle-fill"></i> Parcial</span>`;
         }
         if (v.tem_brindes) {
             const qtd = v.quantidade_brindes_dados || 0;

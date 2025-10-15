@@ -3,13 +3,13 @@
 {% block title %}Produtos Chegando{% endblock %}
 
 {% block content %}
-<div class="row align-items-center mb-4">
-    <div class="col-12 col-md-6 mb-2 mb-md-0">
-        <h1 class="mb-0">Produtos Chegando</h1>
+<div class="row align-items-center mb-3">
+    <div class="col-12 col-md-6">
+        <h1 class="mb-2 mb-md-0">Produtos Chegando</h1>
     </div>
     <div class="col-12 col-md-6">
         <div class="d-flex justify-content-md-end">
-            <a href="{% url 'inventario:criar_produto_chegando' %}" class="btn btn-primary">
+            <a href="{% url 'inventario:criar_produto_chegando' %}" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-circle"></i> Novo Produto Chegando
             </a>
         </div>

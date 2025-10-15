@@ -1,9 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Produto, Fornecedor, Lote, Venda, ItemVenda, Configuracao, Devolucao, ItemDevolucao, ProdutoChegando
 from .forms import ProdutoForm, ProdutoEditForm, LoteForm, ConfiguracaoForm
-from django.http import JsonResponse, HttpResponse
-from django.template.loader import render_to_string
-from django.conf import settings
+from django.http import JsonResponse
 import json
 from django.db import transaction
 from decimal import Decimal
@@ -103,8 +101,9 @@ def dashboard(request):
         qtd_total=Sum('lotes__quantidade_atual')
     ).filter(qtd_total__lt=config.limite_estoque_baixo, ativo=True)
     
-    # Produtos parados (há mais de 60 dias no estoque sem vender)
-    data_limite_parado = hoje - timedelta(days=60)
+    # Produtos parados (configurável pelo usuário)
+    dias_limite = config.dias_produto_parado
+    data_limite_parado = hoje - timedelta(days=dias_limite)
     
     # Produtos com estoque que não tiveram vendas nos últimos 60 dias
     produtos_com_estoque = Produto.objects.annotate(
@@ -123,13 +122,13 @@ def dashboard(request):
             # Pega o lote mais antigo para saber há quanto tempo está parado
             lote_mais_antigo = produto.lotes.filter(quantidade_atual__gt=0).order_by('data_entrada').first()
             if lote_mais_antigo:
-                # Converte data_entrada (datetime) para date para evitar TypeError
                 dias_parado = (hoje - lote_mais_antigo.data_entrada.date()).days
-                produtos_parados.append({
-                    'produto': produto,
-                    'dias_parado': dias_parado,
-                    'quantidade': produto.quantidade_total
-                })
+                if dias_parado >= dias_limite:
+                    produtos_parados.append({
+                        'produto': produto,
+                        'dias_parado': dias_parado,
+                        'quantidade': produto.quantidade_total
+                    })
     
     # Ordena por dias parado (maior tempo primeiro) e limita a 5
     produtos_parados = sorted(produtos_parados, key=lambda x: x['dias_parado'], reverse=True)[:5]
@@ -159,9 +158,8 @@ def dashboard(request):
                 vendas_por_unidade[mes_str]['meu_lucro'] += venda.meu_lucro
     
     labels_grafico = list(vendas_por_unidade.keys())
-    # Converte Decimals para float para garantir números no Chart.js
-    receita_grafico = [float(v['receita']) for v in vendas_por_unidade.values()]
-    meu_lucro_grafico = [float(v['meu_lucro']) for v in vendas_por_unidade.values()]
+    receita_grafico = [v['receita'] for v in vendas_por_unidade.values()]
+    meu_lucro_grafico = [v['meu_lucro'] for v in vendas_por_unidade.values()]
 
     # --- 4. Dados do Gráfico Heatmap (últimos 365 dias) ---
     heatmap_inicio = hoje - timedelta(days=364)
@@ -200,9 +198,10 @@ def dashboard(request):
         'meu_lucro_total': meu_lucro_total,
         'receita_total': receita_total,
         'produtos_estoque_baixo': produtos_estoque_baixo,
-        'produtos_parados': produtos_parados, # Produtos sem venda há 60+ dias
-        'top_produtos_vendidos': top_produtos_vendidos, # Adicionar ao contexto
-        'produtos_mais_lucrativos': produtos_mais_lucrativos, # Adicionar ao contexto
+        'produtos_parados': produtos_parados,
+        'dias_limite': dias_limite,
+        'top_produtos_vendidos': top_produtos_vendidos,
+        'produtos_mais_lucrativos': produtos_mais_lucrativos,
         
         # Dados para o formulário de filtro
         'periodo_selecionado': periodo,
@@ -349,20 +348,7 @@ def editar_produto(request, pk):
 def detalhar_produto(request, pk):
     config = Configuracao.objects.first()
     produto = get_object_or_404(Produto, pk=pk)
-    vendas_do_produto = ItemVenda.objects.select_related('venda').filter(
-        produto=produto
-    ).annotate(
-        subtotal=ExpressionWrapper(
-            F('quantidade') * F('preco_venda_unitario'),
-            output_field=fields.DecimalField(max_digits=12, decimal_places=2)
-        )
-    ).order_by('-venda__data')
-
-    context = {
-        'produto': produto,
-        'config': config,
-        'vendas_do_produto': vendas_do_produto,
-    }
+    context = {'produto': produto, 'config': config}
     return render(request, 'inventario/detalhar_produto.html', context)
 
 @require_POST
@@ -593,7 +579,7 @@ def criar_venda(request):
 
 def listar_vendas(request):
     query = request.GET.get('q', '').strip()
-    vendas = Venda.objects.all().prefetch_related('itens', 'itens__produto')
+    vendas = Venda.objects.all()
     if query:
         filtros = Q(cliente_nome__icontains=query)
         if query.isdigit():
@@ -604,9 +590,7 @@ def listar_vendas(request):
             filtros |= Q(tipo_venda='LOJA')
         if 'extern' in termo or 'externa' in termo or 'externo' in termo:
             filtros |= Q(tipo_venda='EXTERNA')
-        # Busca por nome de produto vendido nesta venda
-        filtros |= Q(itens__produto__nome__icontains=query)
-        vendas = vendas.filter(filtros).distinct()
+        vendas = vendas.filter(filtros)
     vendas = vendas.order_by('-data')
     return render(request, 'inventario/listar_vendas.html', {
         'vendas': vendas,
@@ -617,7 +601,7 @@ def listar_vendas(request):
 def buscar_vendas_listagem_json(request):
     """API para busca em tempo real na listagem de vendas - Limite: 60 req/min"""
     query = request.GET.get('q', '').strip()
-    vendas_qs = Venda.objects.all().prefetch_related('itens', 'itens__produto')
+    vendas_qs = Venda.objects.all()
     if query:
         filtros = Q(cliente_nome__icontains=query)
         if query.isdigit():
@@ -627,23 +611,11 @@ def buscar_vendas_listagem_json(request):
             filtros |= Q(tipo_venda='LOJA')
         if 'extern' in termo or 'externa' in termo or 'externo' in termo:
             filtros |= Q(tipo_venda='EXTERNA')
-        filtros |= Q(itens__produto__nome__icontains=query)
-        vendas_qs = vendas_qs.filter(filtros).distinct()
+        vendas_qs = vendas_qs.filter(filtros)
     vendas_qs = vendas_qs.order_by('-data')
 
     vendas_data = []
     for venda in vendas_qs:
-        itens_data = [
-            {
-                'produto_nome': item.produto.nome,
-                'quantidade': item.quantidade,
-                'preco_unitario': float(item.preco_venda_unitario),
-                'subtotal': float(item.preco_venda_unitario * item.quantidade),
-                'eh_brinde': item.eh_brinde,
-            }
-            for item in venda.itens.all()
-        ]
-
         vendas_data.append({
             'id': venda.id,
             'cliente_nome': venda.cliente_nome or 'Cliente não informado',
@@ -659,7 +631,6 @@ def buscar_vendas_listagem_json(request):
             'quantidade_brindes_dados': getattr(venda, 'quantidade_brindes_dados', 0),
             'valor_brindes_dados': float(getattr(venda, 'valor_brindes_dados', 0) or 0),
             'url_detalhes': reverse('inventario:detalhar_venda', kwargs={'pk': venda.pk}),
-            'itens': itens_data,
         })
 
     return JsonResponse({
@@ -688,6 +659,38 @@ def listar_devolucoes(request):
         'mensagem_filtro': mensagem_filtro
     }
     return render(request, 'inventario/listar_devolucoes.html', context)
+
+@ratelimit(key='ip', rate='60/m', method='GET')
+def buscar_devolucoes_listagem_json(request):
+    """API para busca em tempo real na listagem de devoluções - Limite: 60 req/min"""
+    query = request.GET.get('q', '')
+    
+    # Busca por cliente, ID da venda ou produtos nos itens devolvidos
+    devolucoes_list = Devolucao.objects.select_related('venda_original').prefetch_related(
+        'itens_devolvidos__item_venda_original__produto'
+    ).all()
+    
+    if query:
+        devolucoes_list = devolucoes_list.filter(
+            Q(venda_original__cliente__icontains=query) |
+            Q(venda_original__id__icontains=query) |
+            Q(itens_devolvidos__item_venda_original__produto__nome__icontains=query)
+        ).distinct()
+    
+    devolucoes_list = devolucoes_list.order_by('-data')
+    
+    resultado = [
+        {
+            'id': dev.id,
+            'venda_id': dev.venda_original.id,
+            'cliente': dev.venda_original.cliente or '',
+            'data': dev.data.strftime('%d/%m/%Y %H:%M'),
+            'valor_restituido': f'{dev.valor_total_restituido:.2f}',
+        }
+        for dev in devolucoes_list
+    ]
+    
+    return JsonResponse(resultado, safe=False)
 
 def detalhar_devolucao(request, pk):
     devolucao = get_object_or_404(Devolucao.objects.select_related('venda_original'), pk=pk)
@@ -910,12 +913,12 @@ def configuracoes(request):
     
     return render(request, 'inventario/configuracoes.html', {'form': form})
 
-# ---------------------- PWA ----------------------
-def service_worker(request):
-    """Serve the service worker from root scope (/sw.js)."""
-    js = render_to_string('inventario/sw.js')
-    return HttpResponse(js, content_type='application/javascript')
+# --- PWA ---
 
 def offline(request):
-    """Offline fallback page when network is unavailable."""
+    """Página offline para PWA"""
     return render(request, 'inventario/offline.html')
+
+def service_worker(request):
+    """Service worker para PWA"""
+    return render(request, 'inventario/sw.js', content_type='application/javascript')

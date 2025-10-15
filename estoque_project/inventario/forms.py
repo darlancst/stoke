@@ -46,14 +46,16 @@ class LoteForm(forms.ModelForm):
 class ConfiguracaoForm(forms.ModelForm):
     class Meta:
         model = Configuracao
-        fields = ['nome_empresa', 'limite_estoque_baixo', 'margem_lucro_ideal']
+        fields = ['nome_empresa', 'limite_estoque_baixo', 'margem_lucro_ideal', 'dias_produto_parado']
         widgets = {
             'nome_empresa': forms.TextInput(attrs={'class': 'form-control'}),
             'limite_estoque_baixo': forms.NumberInput(attrs={'class': 'form-control'}),
             'margem_lucro_ideal': forms.NumberInput(attrs={'class': 'form-control'}),
+            'dias_produto_parado': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
         }
         help_texts = {
             'nome_empresa': 'O nome que aparecerá no sistema.',
             'limite_estoque_baixo': 'Receba alertas quando o estoque atingir este número.',
             'margem_lucro_ideal': 'A margem de lucro que você considera ideal para seus produtos (em %).',
+            'dias_produto_parado': 'Produtos sem vendas neste período serão listados como parados no dashboard.',
         } 
