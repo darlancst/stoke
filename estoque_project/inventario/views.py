@@ -9,7 +9,7 @@ from django.db.models import Sum, F, OuterRef, Subquery, ExpressionWrapper, fiel
 from django.utils import timezone
 from datetime import timedelta, datetime
 from django.core.serializers.json import DjangoJSONEncoder
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.contrib import messages
 from django.urls import reverse
 from django_ratelimit.decorators import ratelimit
@@ -121,7 +121,7 @@ def dashboard(request):
             # Pega o lote mais antigo para saber há quanto tempo está parado
             lote_mais_antigo = produto.lotes.filter(quantidade_atual__gt=0).order_by('data_entrada').first()
             if lote_mais_antigo:
-                dias_parado = (hoje - lote_mais_antigo.data_entrada).days
+                dias_parado = (hoje - lote_mais_antigo.data_entrada.date()).days
                 produtos_parados.append({
                     'produto': produto,
                     'dias_parado': dias_parado,
@@ -345,7 +345,21 @@ def editar_produto(request, pk):
 def detalhar_produto(request, pk):
     config = Configuracao.objects.first()
     produto = get_object_or_404(Produto, pk=pk)
-    context = {'produto': produto, 'config': config}
+    
+    # Pega o lote FIFO (mais antigo disponível)
+    lote_fifo = produto.lotes.filter(quantidade_atual__gt=0).order_by('data_entrada').first()
+    
+    # Calcula o lucro unitário baseado no lote FIFO
+    lucro_unitario_fifo = None
+    if lote_fifo and produto.preco_venda:
+        lucro_unitario_fifo = produto.preco_venda - lote_fifo.preco_compra
+    
+    context = {
+        'produto': produto,
+        'config': config,
+        'lote_fifo': lote_fifo,
+        'lucro_unitario_fifo': lucro_unitario_fifo
+    }
     return render(request, 'inventario/detalhar_produto.html', context)
 
 @require_POST
@@ -435,16 +449,21 @@ def buscar_produtos_json(request):
         preco_venda__isnull=True
     )
 
-    resultado = [
-        {
+    resultado = []
+    for produto in produtos:
+        # Pega o custo FIFO (primeiro lote disponível, mais antigo)
+        lote_fifo = produto.lotes.filter(quantidade_atual__gt=0).order_by('data_entrada').first()
+        custo_fifo = lote_fifo.preco_compra if lote_fifo else Decimal('0')
+        
+        resultado.append({
             'id': produto.id,
             'label': f"{produto.nome} (Estoque: {produto.quantidade_total_agg})",
             'value': produto.nome,
             'preco': str(produto.preco_venda),
+            'custo': str(custo_fifo),
             'estoque': produto.quantidade_total_agg
-        }
-        for produto in produtos
-    ]
+        })
+    
     return JsonResponse(resultado, safe=False)
 
 @ratelimit(key='ip', rate='60/m', method='GET')
@@ -805,16 +824,15 @@ def incluir_no_estoque(request, pk):
             dados = json.loads(request.body)
             preco_venda = Decimal(str(dados.get('preco_venda')))
             
-            # Usa fornecedor do produto_chegando se existir, senão pega do form
-            if produto_chegando.fornecedor:
-                fornecedor = produto_chegando.fornecedor
-            else:
-                fornecedor_id = dados.get('fornecedor_id')
-                fornecedor = get_object_or_404(Fornecedor, pk=fornecedor_id)
+            # Define o fornecedor (usa do produto_chegando ou do produto existente)
+            fornecedor = produto_chegando.fornecedor
             
             # Se tem produto_existente vinculado, usa ele diretamente
             if produto_chegando.produto_existente:
                 produto = produto_chegando.produto_existente
+                # Usa fornecedor do produto existente se não tiver no produto_chegando
+                if not fornecedor:
+                    fornecedor = produto.fornecedor
             else:
                 # Verifica se já existe produto com esse nome
                 produto_existente = Produto.objects.filter(nome__iexact=produto_chegando.nome, ativo=True).first()
@@ -822,8 +840,11 @@ def incluir_no_estoque(request, pk):
                 if produto_existente:
                     # Adiciona lote ao produto existente
                     produto = produto_existente
+                    # Usa fornecedor do produto existente se não tiver no produto_chegando
+                    if not fornecedor:
+                        fornecedor = produto.fornecedor
                 else:
-                    # Cria novo produto
+                    # Cria novo produto (pode ser sem fornecedor)
                     produto = Produto.objects.create(
                         nome=produto_chegando.nome,
                         fornecedor=fornecedor,
@@ -834,7 +855,6 @@ def incluir_no_estoque(request, pk):
             # Cria lote
             Lote.objects.create(
                 produto=produto,
-                fornecedor=fornecedor,
                 quantidade_inicial=produto_chegando.quantidade,
                 quantidade_atual=produto_chegando.quantidade,
                 preco_compra=produto_chegando.preco_compra
@@ -878,46 +898,96 @@ def configuracoes(request):
     
     return render(request, 'inventario/configuracoes.html', {'form': form})
 
-# --- PWA ---
 
-def offline(request):
-    """Página offline para PWA"""
-    return render(request, 'inventario/offline.html')
+# --- Retornar Item de Devolução ao Estoque ---
 
-def service_worker(request):
-    """Service worker para PWA"""
-    return render(request, 'inventario/sw.js', content_type='application/javascript')
+@require_http_methods(["POST"])
+def retornar_item_ao_estoque(request, item_id):
+    """Retorna um item devolvido ao estoque com seu preço de compra original"""
+    item_devolucao = get_object_or_404(ItemDevolucao, pk=item_id)
+    
+    # Verifica se já foi devolvido
+    if item_devolucao.devolvido_ao_estoque:
+        messages.warning(request, 'Este item já foi retornado ao estoque.')
+        return redirect('inventario:detalhar_devolucao', pk=item_devolucao.devolucao.pk)
+    
+    try:
+        with transaction.atomic():
+            # Pega o produto e item de venda original
+            produto = item_devolucao.item_venda_original.produto
+            item_venda = item_devolucao.item_venda_original
+            
+            # Calcula o preço de compra unitário original
+            if item_venda.custo_compra_total_registrado and item_venda.quantidade > 0:
+                preco_compra_unitario = item_venda.custo_compra_total_registrado / item_venda.quantidade
+            else:
+                preco_compra_unitario = Decimal('0.00')
+            
+            # Cria um novo lote com a quantidade devolvida
+            lote = Lote.objects.create(
+                produto=produto,
+                quantidade_inicial=item_devolucao.quantidade,
+                quantidade_atual=item_devolucao.quantidade,
+                preco_compra=preco_compra_unitario,
+                data_entrada=timezone.now()
+            )
+            
+            # Marca o item como devolvido ao estoque
+            item_devolucao.devolvido_ao_estoque = True
+            item_devolucao.data_retorno_estoque = timezone.now()
+            item_devolucao.save()
+            
+            messages.success(
+                request, 
+                f'{item_devolucao.quantidade} unidade(s) de "{produto.nome}" retornada(s) ao estoque com sucesso!'
+            )
+    except Exception as e:
+        messages.error(request, f'Erro ao retornar item ao estoque: {str(e)}')
+    
+    return redirect('inventario:detalhar_devolucao', pk=item_devolucao.devolucao.pk)
 
-# --- API Busca Devoluções ---
+
+# --- API de Busca para Devoluções ---
 
 @ratelimit(key='ip', rate='60/m', method='GET')
 def buscar_devolucoes_listagem_json(request):
     """API para busca em tempo real na listagem de devoluções - Limite: 60 req/min"""
-    query = request.GET.get('q', '')
+    query = request.GET.get('q', '').strip()
     
-    # Busca por cliente, ID da venda ou produtos nos itens devolvidos
-    devolucoes_list = Devolucao.objects.select_related('venda_original').prefetch_related(
-        'itens_devolvidos__item_venda_original__produto'
-    ).all()
+    devolucoes_list = Devolucao.objects.all().select_related('venda_original')
     
     if query:
+        # Busca por cliente, ID da venda ou produto
         devolucoes_list = devolucoes_list.filter(
-            Q(venda_original__cliente__icontains=query) |
+            Q(venda_original__cliente_nome__icontains=query) |
             Q(venda_original__id__icontains=query) |
             Q(itens_devolvidos__item_venda_original__produto__nome__icontains=query)
         ).distinct()
     
     devolucoes_list = devolucoes_list.order_by('-data')
     
-    resultado = [
-        {
+    # Serializa os dados
+    devolucoes_data = []
+    for dev in devolucoes_list:
+        devolucoes_data.append({
             'id': dev.id,
-            'venda_id': dev.venda_original.id,
-            'cliente': dev.venda_original.cliente or '',
             'data': dev.data.strftime('%d/%m/%Y %H:%M'),
-            'valor_restituido': f'{dev.valor_total_restituido:.2f}',
-        }
-        for dev in devolucoes_list
-    ]
+            'venda_id': dev.venda_original.id,
+            'cliente': dev.venda_original.cliente_nome or 'Sem nome',
+            'valor_total': float(dev.valor_total_restituido),
+            'motivo': dev.motivo or '',
+        })
     
-    return JsonResponse(resultado, safe=False)
+    return JsonResponse({'devolucoes': devolucoes_data})
+
+
+# --- PWA Support ---
+
+def offline(request):
+    """Página offline para PWA"""
+    return render(request, 'inventario/offline.html')
+
+
+def service_worker(request):
+    """Service Worker para PWA"""
+    return render(request, 'inventario/sw.js', content_type='application/javascript')

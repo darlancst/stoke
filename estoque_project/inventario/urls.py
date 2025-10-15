@@ -39,6 +39,7 @@ urlpatterns = [
     path('api/buscar-produtos-listagem/', views.buscar_produtos_listagem_json, name='buscar_produtos_listagem_json'),
     path('api/buscar-vendas-listagem/', views.buscar_vendas_listagem_json, name='buscar_vendas_listagem_json'),
     path('api/buscar-devolucoes-listagem/', views.buscar_devolucoes_listagem_json, name='buscar_devolucoes_listagem_json'),
+    path('devolucao/item/<int:item_id>/retornar-estoque/', views.retornar_item_ao_estoque, name='retornar_item_ao_estoque'),
     path('api/criar-fornecedor/', views.criar_fornecedor_rapido_json, name='criar_fornecedor_rapido'),
 
     # URLs Configurações

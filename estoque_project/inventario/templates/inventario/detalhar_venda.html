@@ -40,67 +40,56 @@
     <div class="card-header py-2">
         <h6 class="mb-0"><i class="bi bi-info-circle"></i> Informações Gerais</h6>
     </div>
-    <div class="card-body py-2">
-        <div class="row g-3 align-items-center">
-            <!-- Cliente -->
-            <div class="col-6 col-md-3">
-                <small class="text-muted d-block">Cliente</small>
+    <div class="card-body py-2 px-3">
+        <!-- Linha 1: Dados básicos -->
+        <div class="row g-2 align-items-center mb-2">
+            <div class="col-6 col-sm-4 col-md-3">
+                <small class="text-muted d-block mb-0">Cliente</small>
                 <strong>{{ venda.cliente_nome|default:"—" }}</strong>
             </div>
-            
-            <!-- Data -->
-            <div class="col-6 col-md-2">
-                <small class="text-muted d-block">Data</small>
-                <strong>{{ venda.data|date:"d/m/Y H:i" }}</strong>
+            <div class="col-6 col-sm-4 col-md-2">
+                <small class="text-muted d-block mb-0">Data</small>
+                <strong>{{ venda.data|date:"d/m/y H:i" }}</strong>
             </div>
-            
-            <!-- Tipo -->
-            <div class="col-6 col-md-2">
-                <small class="text-muted d-block">Tipo</small>
-                <strong>{{ venda.get_tipo_venda_display }}</strong>
+            <div class="col-4 col-sm-4 col-md-2">
+                <small class="text-muted d-block mb-0">Tipo</small>
+                <span class="badge bg-{% if venda.tipo_venda == 'LOJA' %}primary{% else %}secondary{% endif %}">
+                    {{ venda.get_tipo_venda_display }}
+                </span>
             </div>
-            
-            <!-- Subtotal -->
-            <div class="col-6 col-md-2">
-                <small class="text-muted d-block">Subtotal</small>
+            <div class="col-4 col-md-2">
+                <small class="text-muted d-block mb-0">Subtotal</small>
                 <strong>R$ {{ venda.valor_bruto|floatformat:2 }}</strong>
             </div>
-            
-            <!-- Desconto (se houver) -->
             {% if venda.desconto > 0 %}
-            <div class="col-6 col-md-2">
-                <small class="text-muted d-block">Desconto</small>
+            <div class="col-4 col-md-2">
+                <small class="text-muted d-block mb-0">Desconto</small>
                 <strong class="text-danger">- R$ {{ venda.desconto|floatformat:2 }}</strong>
             </div>
             {% endif %}
-            
-            <!-- Brindes (se houver) -->
             {% if venda.tem_brindes %}
-            <div class="col-6 col-md-2">
-                <small class="text-muted d-block">Brindes</small>
-                <strong class="text-warning">
-                    <i class="bi bi-gift-fill"></i> {{ venda.quantidade_brindes_dados }}
-                </strong>
+            <div class="col-12 col-sm-auto">
+                <span class="badge bg-success">
+                    <i class="bi bi-gift-fill"></i> {{ venda.quantidade_brindes_dados }} brinde{{ venda.quantidade_brindes_dados|pluralize:'s' }} (R$ {{ venda.valor_brindes_dados|floatformat:2 }})
+                </span>
             </div>
             {% endif %}
         </div>
         
-        <!-- Valores Finais (destaque) -->
-        <div class="row g-3 align-items-center mt-2 pt-2 border-top">
+        <!-- Linha 2: Valores finais (destaque) -->
+        <div class="row g-2 align-items-center pt-2 border-top">
             <div class="col-6 col-md-3">
-                <small class="text-muted d-block">Valor Final</small>
+                <small class="text-muted d-block mb-0">Valor Final</small>
                 <strong class="text-primary fs-5">R$ {{ venda.valor_total|floatformat:2 }}</strong>
             </div>
-            
             <div class="col-6 col-md-3">
-                <small class="text-muted d-block">Seu Lucro</small>
+                <small class="text-muted d-block mb-0">Seu Lucro</small>
                 <strong class="text-success fs-5">R$ {{ venda.meu_lucro|floatformat:2 }}</strong>
             </div>
-            
             {% if venda.tem_brindes %}
             <div class="col-12 col-md-6">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> Custo dos brindes (R$ {{ venda.valor_brindes_dados|floatformat:2 }}) já descontado do lucro
+                <small class="text-muted fst-italic">
+                    <i class="bi bi-info-circle"></i> Custo dos brindes já descontado
                 </small>
             </div>
             {% endif %}

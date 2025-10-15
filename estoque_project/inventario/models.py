@@ -17,7 +17,7 @@ class Produto(models.Model):
     descricao = models.TextField(blank=True, null=True)
     imagem = models.ImageField(upload_to='produtos/', blank=True, null=True)
     ativo = models.BooleanField(default=True)
-    fornecedor = models.ForeignKey(Fornecedor, on_delete=models.PROTECT, related_name='produtos')
+    fornecedor = models.ForeignKey(Fornecedor, on_delete=models.PROTECT, related_name='produtos', null=True, blank=True)
     preco_venda = models.DecimalField('Preço de Venda', max_digits=10, decimal_places=2, null=True, blank=True)
     
     def __str__(self):
@@ -218,6 +218,8 @@ class ItemDevolucao(models.Model):
     devolucao = models.ForeignKey(Devolucao, on_delete=models.CASCADE, related_name='itens_devolvidos')
     item_venda_original = models.ForeignKey(ItemVenda, on_delete=models.CASCADE, related_name='itens_devolvidos')
     quantidade = models.PositiveIntegerField()
+    devolvido_ao_estoque = models.BooleanField('Devolvido ao estoque', default=False)
+    data_retorno_estoque = models.DateTimeField('Data de retorno ao estoque', null=True, blank=True)
 
     def __str__(self):
         return f"{self.quantidade}x {self.item_venda_original.produto.nome} devolvido"

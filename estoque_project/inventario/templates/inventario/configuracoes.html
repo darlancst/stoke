@@ -2,54 +2,73 @@
 
 {% block title %}Configurações - Gestão de Estoque{% endblock %}
 
+{% block extra_css %}
+<style>
+.input-group-text-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<h1 class="mb-4">Configurações</h1>
+<h1 class="mb-2">Configurações</h1>
 
 <div class="card">
-    <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
+    <div class="card-body py-3 px-3">
+        <form method="post" enctype="multipart/form-data" style="max-width: 800px;">
             {% csrf_token %}
             
-            <div class="mb-3">
-                <label for="{{ form.nome_empresa.id_for_label }}" class="form-label">{{ form.nome_empresa.label }}</label>
+            <!-- Nome da Empresa -->
+            <div class="mb-2">
+                <label for="{{ form.nome_empresa.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.nome_empresa.label }}</small></label>
                 {{ form.nome_empresa }}
             </div>
 
-            <div class="mb-3">
-                <label for="{{ form.limite_estoque_baixo.id_for_label }}" class="form-label">{{ form.limite_estoque_baixo.label }}</label>
-                {{ form.limite_estoque_baixo }}
-                <div class="form-text">{{ form.limite_estoque_baixo.help_text }}</div>
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.margem_lucro_ideal.id_for_label }}" class="form-label">{{ form.margem_lucro_ideal.label }}</label>
-                <div class="input-group">
-                    {{ form.margem_lucro_ideal }}
-                    <span class="input-group-text">%</span>
+            <!-- Campos Numéricos em Grid -->
+            <div class="row g-2 mb-2">
+                <!-- Limite Estoque Baixo -->
+                <div class="col-md-4">
+                    <label for="{{ form.limite_estoque_baixo.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.limite_estoque_baixo.label }}</small></label>
+                    {{ form.limite_estoque_baixo }}
+                    <div class="form-text small">{{ form.limite_estoque_baixo.help_text }}</div>
                 </div>
-                <div class="form-text">{{ form.margem_lucro_ideal.help_text }}</div>
-            </div>
 
-            <div class="mb-3">
-                <label for="{{ form.dias_produto_parado.id_for_label }}" class="form-label">{{ form.dias_produto_parado.label }}</label>
-                <div class="input-group">
-                    {{ form.dias_produto_parado }}
-                    <span class="input-group-text">dias</span>
+                <!-- Margem de Lucro Ideal -->
+                <div class="col-md-4">
+                    <label for="{{ form.margem_lucro_ideal.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.margem_lucro_ideal.label }}</small></label>
+                    <div class="input-group">
+                        {{ form.margem_lucro_ideal }}
+                        <span class="input-group-text input-group-text-sm">%</span>
+                    </div>
+                    <div class="form-text small">{{ form.margem_lucro_ideal.help_text }}</div>
                 </div>
-                <div class="form-text">{{ form.dias_produto_parado.help_text }}</div>
+
+                <!-- Dias Produto Parado -->
+                <div class="col-md-4">
+                    <label for="{{ form.dias_produto_parado.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.dias_produto_parado.label }}</small></label>
+                    <div class="input-group">
+                        {{ form.dias_produto_parado }}
+                        <span class="input-group-text input-group-text-sm">dias</span>
+                    </div>
+                    <div class="form-text small">{{ form.dias_produto_parado.help_text }}</div>
+                </div>
             </div>
 
-            <div class="mb-3">
-                <label for="{{ form.logo.id_for_label }}" class="form-label">{{ form.logo.label }}</label>
+            <!-- Logo -->
+            <div class="mb-2">
+                <label for="{{ form.logo.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.logo.label }}</small></label>
                 {{ form.logo }}
                 {% if form.instance.logo %}
-                    <p class="mt-2">Logo Atual: <img src="{{ form.instance.logo.url }}" alt="Logo" style="max-height: 50px;"></p>
+                    <div class="mt-1"><small>Logo Atual:</small> <img src="{{ form.instance.logo.url }}" alt="Logo" style="max-height: 40px;"></div>
                 {% endif %}
             </div>
 
-            <hr>
+            <hr class="my-2">
             
-            <button type="submit" class="btn btn-primary">Salvar Configurações</button>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-check-circle"></i> Salvar Configurações
+            </button>
         </form>
     </div>
 </div>

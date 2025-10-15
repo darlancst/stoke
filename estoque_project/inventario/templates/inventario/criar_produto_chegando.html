@@ -49,12 +49,17 @@
       
       <div class="col-12 col-md-4">
         <label class="form-label">Fornecedor</label>
-        <select id="fornecedor" class="form-select">
-          <option value="">Selecione (opcional)</option>
-          {% for fornecedor in fornecedores %}
-            <option value="{{ fornecedor.id }}">{{ fornecedor.nome }}</option>
-          {% endfor %}
-        </select>
+        <div class="input-group">
+          <select id="fornecedor" class="form-select">
+            <option value="">Selecione (opcional)</option>
+            {% for fornecedor in fornecedores %}
+              <option value="{{ fornecedor.id }}">{{ fornecedor.nome }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-outline-success" type="button" data-bs-toggle="modal" data-bs-target="#modalNovoFornecedor">
+            <i class="bi bi-plus-lg"></i> Novo
+          </button>
+        </div>
       </div>
       
       <div class="col-12 col-md-4">
@@ -77,12 +82,85 @@
   </div>
 </div>
 
+<!-- Modal Novo Fornecedor -->
+<div class="modal fade" id="modalNovoFornecedor" tabindex="-1" aria-labelledby="modalNovoFornecedorLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalNovoFornecedorLabel">Cadastrar Novo Fornecedor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="form-novo-fornecedor" onsubmit="return false;">
+            <div class="mb-3">
+                <label for="nome_novo_fornecedor" class="form-label">Nome do Fornecedor</label>
+                <input type="text" class="form-control" id="nome_novo_fornecedor" required>
+            </div>
+            <div id="modal-fornecedor-erro" class="alert alert-danger d-none"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        <button type="button" class="btn btn-primary" id="btn-salvar-novo-fornecedor">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.min.js"></script>
 <script>
+// Funcionalidade para criar novo fornecedor
+document.addEventListener('DOMContentLoaded', function() {
+    const modalNovoFornecedor = new bootstrap.Modal(document.getElementById('modalNovoFornecedor'));
+    const btnSalvarFornecedor = document.getElementById('btn-salvar-novo-fornecedor');
+    const nomeFornecedorInput = document.getElementById('nome_novo_fornecedor');
+    const selectFornecedor = document.getElementById('fornecedor');
+    const erroModal = document.getElementById('modal-fornecedor-erro');
+    
+    btnSalvarFornecedor.addEventListener('click', function() {
+        const nomeFornecedor = nomeFornecedorInput.value.trim();
+        if (!nomeFornecedor) {
+            erroModal.textContent = 'Por favor, insira um nome para o fornecedor.';
+            erroModal.classList.remove('d-none');
+            return;
+        }
+
+        fetch("{% url 'inventario:criar_fornecedor_rapido' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ nome: nomeFornecedor })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                // Adiciona a nova opção ao select
+                const novaOpcao = new Option(data.nome, data.id, true, true);
+                selectFornecedor.add(novaOpcao);
+                
+                // Limpa o formulário e fecha o modal
+                nomeFornecedorInput.value = '';
+                erroModal.classList.add('d-none');
+                modalNovoFornecedor.hide();
+            } else {
+                erroModal.textContent = 'Erro: ' + data.erro;
+                erroModal.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            console.error('Erro no fetch:', error);
+            erroModal.textContent = 'Ocorreu um erro de comunicação. Tente novamente.';
+            erroModal.classList.remove('d-none');
+        });
+    });
+});
+
 $(document).ready(function() {
     // Autocomplete para buscar produtos existentes
     $("#nome").autocomplete({

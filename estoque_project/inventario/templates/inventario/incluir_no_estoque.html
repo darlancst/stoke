@@ -18,25 +18,6 @@
         <p class="text-muted">Complete os dados para adicionar este produto ao seu estoque de vendas.</p>
         
         <div class="row g-3">
-            {% if not produto_chegando.fornecedor %}
-            <div class="col-12 col-md-6">
-                <label class="form-label">Fornecedor *</label>
-                <select id="fornecedor" class="form-select" required>
-                    <option value="">Selecione...</option>
-                    {% for f in fornecedores %}
-                    <option value="{{ f.id }}">{{ f.nome }}</option>
-                    {% endfor %}
-                </select>
-                <small class="text-muted">De qual fornecedor você comprou este produto</small>
-            </div>
-            {% else %}
-            <div class="col-12 col-md-6">
-                <label class="form-label">Fornecedor</label>
-                <input type="text" class="form-control" value="{{ produto_chegando.fornecedor.nome }}" disabled>
-                <small class="text-muted">Fornecedor já definido no cadastro</small>
-            </div>
-            {% endif %}
-            
             <div class="col-12 col-md-6">
                 <label class="form-label">Preço de Venda (R$) *</label>
                 <input type="number" id="preco_venda" class="form-control" min="0" step="0.01" 
@@ -83,25 +64,33 @@
 
 {% block extra_scripts %}
 <script>
-document.getElementById('btn-incluir').addEventListener('click', function() {
-    const fornecedor_select = document.getElementById('fornecedor');
-    const fornecedor_id = fornecedor_select ? fornecedor_select.value : null;
-    const preco_venda = parseFloat(document.getElementById('preco_venda').value);
+document.addEventListener('DOMContentLoaded', function() {
+    const btnIncluir = document.getElementById('btn-incluir');
     
-    // Só valida fornecedor se o campo existir (quando não está pré-preenchido)
-    if (fornecedor_select && !fornecedor_id) {
-        alert('Por favor, selecione um fornecedor.');
+    if (!btnIncluir) {
+        console.error('ERRO: Botão #btn-incluir não encontrado!');
         return;
     }
     
-    if (preco_venda <= 0) {
+    btnIncluir.addEventListener('click', function() {
+    const preco_venda_input = document.getElementById('preco_venda');
+    
+    if (!preco_venda_input) {
+        alert('Erro: Campo de preço de venda não encontrado.');
+        return;
+    }
+    
+    const preco_venda = parseFloat(preco_venda_input.value);
+    
+    if (isNaN(preco_venda) || preco_venda <= 0) {
         alert('Preço de venda deve ser maior que zero.');
         return;
     }
     
     // Validação adicional: se não há produto vinculado, o preço de venda não pode ser igual ao de compra
     {% if not produto_vinculado %}
-    const preco_compra = {{ produto_chegando.preco_compra }};
+    const preco_compra = parseFloat({{ produto_chegando.preco_compra }});
+    
     if (preco_venda === preco_compra) {
         alert('O preço de venda não pode ser igual ao preço de compra. Por favor, defina um preço de venda adequado.');
         return;
@@ -109,14 +98,15 @@ document.getElementById('btn-incluir').addEventListener('click', function() {
     {% endif %}
     
     const payload = {
-        fornecedor_id: fornecedor_id,
         preco_venda: preco_venda
     };
     
-    this.disabled = true;
-    this.innerHTML = '<i class="bi bi-hourglass-split"></i> Processando...';
+    btnIncluir.disabled = true;
+    btnIncluir.innerHTML = '<i class="bi bi-hourglass-split"></i> Processando...';
     
-    fetch('{% url "inventario:incluir_no_estoque" pk=produto_chegando.pk %}', {
+    const url = '{% url "inventario:incluir_no_estoque" pk=produto_chegando.pk %}';
+    
+    fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -124,22 +114,31 @@ document.getElementById('btn-incluir').addEventListener('click', function() {
         },
         body: JSON.stringify(payload)
     })
-    .then(r => r.json())
+    .then(response => {
+        // Tenta ler a resposta JSON mesmo se der erro
+        return response.json().then(data => {
+            if (!response.ok) {
+                throw new Error(data.erro || 'Erro HTTP ' + response.status);
+            }
+            return data;
+        });
+    })
     .then(data => {
         if (data.sucesso) {
             alert('Produto incluído no estoque com sucesso!');
             window.location.href = '{% url "inventario:listar_produtos" %}';
         } else {
             alert('Erro: ' + data.erro);
-            this.disabled = false;
-            this.innerHTML = '<i class="bi bi-box-arrow-in-down"></i> Incluir no Estoque';
+            btnIncluir.disabled = false;
+            btnIncluir.innerHTML = '<i class="bi bi-box-arrow-in-down"></i> Incluir no Estoque';
         }
     })
-    .catch(() => {
-        alert('Erro inesperado.');
-        this.disabled = false;
-        this.innerHTML = '<i class="bi bi-box-arrow-in-down"></i> Incluir no Estoque';
+    .catch((error) => {
+        alert('Erro: ' + error.message);
+        btnIncluir.disabled = false;
+        btnIncluir.innerHTML = '<i class="bi bi-box-arrow-in-down"></i> Incluir no Estoque';
     });
+});
 });
 </script>
 {% endblock %}

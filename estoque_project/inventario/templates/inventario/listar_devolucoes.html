@@ -69,7 +69,7 @@
                         </td>
                         <td>
                             <i class="bi bi-person text-muted me-1"></i>
-                            {{ devolucao.venda_original.cliente|default:"Sem nome" }}
+                            {{ devolucao.venda_original.cliente_nome|default:"Sem nome" }}
                         </td>
                         <td>
                             <a href="{% url 'inventario:detalhar_venda' pk=devolucao.venda_original.pk %}" class="text-decoration-none">
@@ -117,7 +117,7 @@
                                 Venda #{{ devolucao.venda_original.id }}
                             </a>
                         </h6>
-                        <small class="text-muted d-block"><i class="bi bi-person me-1"></i>{{ devolucao.venda_original.cliente|default:"Sem nome" }}</small>
+                        <small class="text-muted d-block"><i class="bi bi-person me-1"></i>{{ devolucao.venda_original.cliente_nome|default:"Sem nome" }}</small>
                         <small class="text-muted">{{ devolucao.data|date:"d/m/Y H:i" }}</small>
                     </div>
                     <span class="badge bg-warning text-dark">

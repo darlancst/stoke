@@ -48,10 +48,10 @@ class ConfiguracaoForm(forms.ModelForm):
         model = Configuracao
         fields = ['nome_empresa', 'limite_estoque_baixo', 'margem_lucro_ideal', 'dias_produto_parado']
         widgets = {
-            'nome_empresa': forms.TextInput(attrs={'class': 'form-control'}),
-            'limite_estoque_baixo': forms.NumberInput(attrs={'class': 'form-control'}),
-            'margem_lucro_ideal': forms.NumberInput(attrs={'class': 'form-control'}),
-            'dias_produto_parado': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'nome_empresa': forms.TextInput(attrs={'class': 'form-control form-control-sm'}),
+            'limite_estoque_baixo': forms.NumberInput(attrs={'class': 'form-control form-control-sm'}),
+            'margem_lucro_ideal': forms.NumberInput(attrs={'class': 'form-control form-control-sm'}),
+            'dias_produto_parado': forms.NumberInput(attrs={'class': 'form-control form-control-sm', 'min': '1'}),
         }
         help_texts = {
             'nome_empresa': 'O nome que aparecerá no sistema.',

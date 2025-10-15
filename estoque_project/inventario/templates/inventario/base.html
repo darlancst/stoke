@@ -34,16 +34,26 @@
             bottom: 0;
             left: 0;
             z-index: 100;
-            padding: 48px 0 0;
+            padding: 48px 0 0; /* Mantém apenas para desktop */
             box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
         }
+        
+        /* Ajustes para mobile - REMOVIDO - consolidado no bloco principal abaixo */
         .sidebar-sticky {
             position: relative;
             top: 0;
             height: calc(100vh - 48px);
-            padding-top: .5rem;
+            padding-top: 0; /* Removido espaço extra no topo */
             overflow-x: hidden;
             overflow-y: auto;
+        }
+        
+        /* Sidebar-sticky em mobile: altura automática */
+        @media (max-width: 767.98px) {
+            .sidebar-sticky {
+                height: auto !important;
+                overflow: visible !important;
+            }
         }
         
         /* Estilização personalizada do botão hambúrguer */
@@ -707,22 +717,69 @@
             color: #ffc66d;
         }
         
-        /* Sidebar mobile: aparece por cima do conteúdo sem escondê-lo */
+        /* Sidebar mobile: dropdown que sai do header - ULTRA FAST - v4.2 - 15/10/2025 09:30 */
         @media (max-width: 767.98px) {
+            .sidebar,
             #sidebarMenu {
-                position: fixed;
-                top: 48px;
-                left: 0;
-                bottom: 0;
-                z-index: 1040;
-                max-width: 280px;
-                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
-                transform: translateX(-100%);
-                transition: transform 0.3s ease-in-out;
+                position: fixed !important;
+                top: 48px !important; /* Começa exatamente abaixo do header */
+                bottom: auto !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                z-index: 1040 !important;
+                box-shadow: none !important;
+                transform: translateY(-100%) !important; /* Esconde para cima (100% da própria altura) */
+                transform-origin: top !important; /* Animação começa do topo */
+                transition: transform 0.08s ease-out !important; /* ULTRA RÁPIDO */
+                padding-top: 0 !important;
+                padding: 0 !important;
+                margin-top: 0 !important;
+                border-top: 2px solid rgba(0, 0, 0, 0.15) !important; /* Linha de separação do header */
+                border-bottom-left-radius: 8px !important;
+                border-bottom-right-radius: 8px !important;
+                overflow: hidden !important; /* Importante para a animação suave */
             }
             
+            [data-theme="dark"] .sidebar,
+            [data-theme="dark"] #sidebarMenu {
+                border-top: 2px solid rgba(255, 255, 255, 0.15) !important;
+            }
+            
+            .sidebar.show,
             #sidebarMenu.show {
-                transform: translateX(0);
+                transform: translateY(0) !important; /* Desce para posição normal (logo abaixo do header em top: 48px) */
+                box-shadow: 
+                    inset 0 1px 3px rgba(0, 0, 0, 0.08), /* Sombra interna sutil no topo */
+                    0 4px 12px rgba(0, 0, 0, 0.25) !important; /* Sombra externa suave */
+            }
+            
+            [data-theme="dark"] .sidebar.show,
+            [data-theme="dark"] #sidebarMenu.show {
+                box-shadow: 
+                    inset 0 1px 4px rgba(0, 0, 0, 0.4), /* Sombra interna no dark mode */
+                    0 6px 16px rgba(0, 0, 0, 0.6) !important; /* Sombra externa no dark mode */
+            }
+            
+            .sidebar .position-sticky,
+            #sidebarMenu .position-sticky {
+                position: relative !important; /* Remove sticky em mobile */
+                padding-top: 0 !important;
+                height: auto !important; /* Altura baseada no conteúdo */
+            }
+            
+            .sidebar .nav.flex-column,
+            #sidebarMenu .nav.flex-column {
+                margin-top: 0 !important;
+                padding-top: 0.25rem !important; /* Pequeno espaço no topo */
+                padding-bottom: 0.5rem !important; /* Pequeno espaço no final */
+            }
+            
+            .sidebar .nav-item:first-child,
+            #sidebarMenu .nav-item:first-child {
+                margin-top: 0 !important;
             }
             
             /* Backdrop semi-transparente */
@@ -768,7 +825,7 @@
     <div class="container-fluid">
         <div class="row">
             <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-                <div class="position-sticky pt-3">
+                <div class="position-sticky">
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a href="{% url 'inventario:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" aria-current="page">
@@ -899,7 +956,6 @@
         (function() {
             const sidebarMenu = document.getElementById('sidebarMenu');
             const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-            const navbarToggler = document.querySelector('.navbar-toggler');
             
             // Controla abertura/fechamento do menu mobile
             if (sidebarMenu && sidebarBackdrop) {
