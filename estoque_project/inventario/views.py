@@ -101,9 +101,8 @@ def dashboard(request):
         qtd_total=Sum('lotes__quantidade_atual')
     ).filter(qtd_total__lt=config.limite_estoque_baixo, ativo=True)
     
-    # Produtos parados (configurável pelo usuário)
-    dias_limite = config.dias_produto_parado
-    data_limite_parado = hoje - timedelta(days=dias_limite)
+    # Produtos parados (há mais de 60 dias no estoque sem vender)
+    data_limite_parado = hoje - timedelta(days=60)
     
     # Produtos com estoque que não tiveram vendas nos últimos 60 dias
     produtos_com_estoque = Produto.objects.annotate(
@@ -122,13 +121,12 @@ def dashboard(request):
             # Pega o lote mais antigo para saber há quanto tempo está parado
             lote_mais_antigo = produto.lotes.filter(quantidade_atual__gt=0).order_by('data_entrada').first()
             if lote_mais_antigo:
-                dias_parado = (hoje - lote_mais_antigo.data_entrada.date()).days
-                if dias_parado >= dias_limite:
-                    produtos_parados.append({
-                        'produto': produto,
-                        'dias_parado': dias_parado,
-                        'quantidade': produto.quantidade_total
-                    })
+                dias_parado = (hoje - lote_mais_antigo.data_entrada).days
+                produtos_parados.append({
+                    'produto': produto,
+                    'dias_parado': dias_parado,
+                    'quantidade': produto.quantidade_total
+                })
     
     # Ordena por dias parado (maior tempo primeiro) e limita a 5
     produtos_parados = sorted(produtos_parados, key=lambda x: x['dias_parado'], reverse=True)[:5]
@@ -198,10 +196,9 @@ def dashboard(request):
         'meu_lucro_total': meu_lucro_total,
         'receita_total': receita_total,
         'produtos_estoque_baixo': produtos_estoque_baixo,
-        'produtos_parados': produtos_parados,
-        'dias_limite': dias_limite,
-        'top_produtos_vendidos': top_produtos_vendidos,
-        'produtos_mais_lucrativos': produtos_mais_lucrativos,
+        'produtos_parados': produtos_parados, # Produtos sem venda há 60+ dias
+        'top_produtos_vendidos': top_produtos_vendidos, # Adicionar ao contexto
+        'produtos_mais_lucrativos': produtos_mais_lucrativos, # Adicionar ao contexto
         
         # Dados para o formulário de filtro
         'periodo_selecionado': periodo,
@@ -660,38 +657,6 @@ def listar_devolucoes(request):
     }
     return render(request, 'inventario/listar_devolucoes.html', context)
 
-@ratelimit(key='ip', rate='60/m', method='GET')
-def buscar_devolucoes_listagem_json(request):
-    """API para busca em tempo real na listagem de devoluções - Limite: 60 req/min"""
-    query = request.GET.get('q', '')
-    
-    # Busca por cliente, ID da venda ou produtos nos itens devolvidos
-    devolucoes_list = Devolucao.objects.select_related('venda_original').prefetch_related(
-        'itens_devolvidos__item_venda_original__produto'
-    ).all()
-    
-    if query:
-        devolucoes_list = devolucoes_list.filter(
-            Q(venda_original__cliente__icontains=query) |
-            Q(venda_original__id__icontains=query) |
-            Q(itens_devolvidos__item_venda_original__produto__nome__icontains=query)
-        ).distinct()
-    
-    devolucoes_list = devolucoes_list.order_by('-data')
-    
-    resultado = [
-        {
-            'id': dev.id,
-            'venda_id': dev.venda_original.id,
-            'cliente': dev.venda_original.cliente or '',
-            'data': dev.data.strftime('%d/%m/%Y %H:%M'),
-            'valor_restituido': f'{dev.valor_total_restituido:.2f}',
-        }
-        for dev in devolucoes_list
-    ]
-    
-    return JsonResponse(resultado, safe=False)
-
 def detalhar_devolucao(request, pk):
     devolucao = get_object_or_404(Devolucao.objects.select_related('venda_original'), pk=pk)
     context = {
@@ -922,3 +887,37 @@ def offline(request):
 def service_worker(request):
     """Service worker para PWA"""
     return render(request, 'inventario/sw.js', content_type='application/javascript')
+
+# --- API Busca Devoluções ---
+
+@ratelimit(key='ip', rate='60/m', method='GET')
+def buscar_devolucoes_listagem_json(request):
+    """API para busca em tempo real na listagem de devoluções - Limite: 60 req/min"""
+    query = request.GET.get('q', '')
+    
+    # Busca por cliente, ID da venda ou produtos nos itens devolvidos
+    devolucoes_list = Devolucao.objects.select_related('venda_original').prefetch_related(
+        'itens_devolvidos__item_venda_original__produto'
+    ).all()
+    
+    if query:
+        devolucoes_list = devolucoes_list.filter(
+            Q(venda_original__cliente__icontains=query) |
+            Q(venda_original__id__icontains=query) |
+            Q(itens_devolvidos__item_venda_original__produto__nome__icontains=query)
+        ).distinct()
+    
+    devolucoes_list = devolucoes_list.order_by('-data')
+    
+    resultado = [
+        {
+            'id': dev.id,
+            'venda_id': dev.venda_original.id,
+            'cliente': dev.venda_original.cliente or '',
+            'data': dev.data.strftime('%d/%m/%Y %H:%M'),
+            'valor_restituido': f'{dev.valor_total_restituido:.2f}',
+        }
+        for dev in devolucoes_list
+    ]
+    
+    return JsonResponse(resultado, safe=False)
