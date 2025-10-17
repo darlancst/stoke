@@ -12,28 +12,39 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
-from decouple import config, Csv
 import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Função helper para pegar variáveis de ambiente com default
+def get_env(key, default=''):
+    return os.environ.get(key, default)
+
+def get_env_bool(key, default=False):
+    val = os.environ.get(key, str(default))
+    return val.lower() in ('true', '1', 'yes', 'on')
+
+def get_env_list(key, default=''):
+    val = os.environ.get(key, default)
+    return [x.strip() for x in val.split(',') if x.strip()]
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-m#z5#z=p+*o_j$*a&j$d8_z&z(i$8@g9&!y#t$n$d#c^w)i)@b')
+SECRET_KEY = get_env('SECRET_KEY', 'django-insecure-m#z5#z=p+*o_j$*a&j$d8_z&z(i$8@g9&!y#t$n$d#c^w)i)@b')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = get_env_bool('DEBUG', True)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost,.vercel.app', cast=Csv())
+ALLOWED_HOSTS = get_env_list('ALLOWED_HOSTS', '127.0.0.1,localhost,.vercel.app')
 
 # Security Settings
-SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=not DEBUG, cast=bool)
-SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=not DEBUG, cast=bool)
-CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=not DEBUG, cast=bool)
+SECURE_SSL_REDIRECT = get_env_bool('SECURE_SSL_REDIRECT', not DEBUG)
+SESSION_COOKIE_SECURE = get_env_bool('SESSION_COOKIE_SECURE', not DEBUG)
+CSRF_COOKIE_SECURE = get_env_bool('CSRF_COOKIE_SECURE', not DEBUG)
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
@@ -87,7 +98,7 @@ WSGI_APPLICATION = 'estoque_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASE_URL = config('DATABASE_URL', default=f'sqlite:///{BASE_DIR / "db.sqlite3"}')
+DATABASE_URL = get_env('DATABASE_URL', f'sqlite:///{BASE_DIR / "db.sqlite3"}')
 
 DATABASES = {
     'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
