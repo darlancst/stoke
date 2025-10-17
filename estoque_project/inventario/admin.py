@@ -1,7 +1,12 @@
 from django.contrib import admin
-from .models import Produto, Fornecedor, Lote, Venda, ItemVenda, Configuracao
+from .models import Produto, Fornecedor, Lote, Venda, ItemVenda, ItemVendaLote, Configuracao
 
 # Register your models here.
+
+class ItemVendaLoteInline(admin.TabularInline):
+    model = ItemVendaLote
+    extra = 0
+    readonly_fields = ('lote', 'quantidade_retirada', 'preco_compra_lote')
 
 class ItemVendaInline(admin.TabularInline):
     model = ItemVenda
@@ -13,6 +18,13 @@ class VendaAdmin(admin.ModelAdmin):
     list_filter = ('status', 'data', 'tipo_venda')
     search_fields = ('id',)
     inlines = [ItemVendaInline]
+
+@admin.register(ItemVenda)
+class ItemVendaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'venda', 'produto', 'quantidade', 'preco_venda_unitario')
+    list_filter = ('venda', 'produto')
+    search_fields = ('produto__nome',)
+    inlines = [ItemVendaLoteInline]
 
 @admin.register(Produto)
 class ProdutoAdmin(admin.ModelAdmin):

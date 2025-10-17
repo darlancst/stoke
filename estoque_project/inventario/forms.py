@@ -11,14 +11,14 @@ class ProdutoForm(forms.ModelForm):
     # Campos do Lote
     fornecedor = forms.ModelChoiceField(queryset=Fornecedor.objects.all(), required=True, label="Fornecedor", widget=forms.Select(attrs={'class': 'form-select'}))
     quantidade_inicial = forms.IntegerField(label="Quantidade Inicial", min_value=1, widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    preco_compra = forms.DecimalField(label="Preço de Compra (Unitário)", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    preco_compra = forms.DecimalField(label="Preço de Compra (Unitário)", widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0,00'}))
 
     class Meta:
         model = Produto
         fields = ['nome', 'preco_venda', 'ativo']
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'preco_venda': forms.NumberInput(attrs={'class': 'form-control'}),
+            'preco_venda': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0,00'}),
             'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
     
@@ -37,13 +37,11 @@ class ProdutoEditForm(forms.ModelForm):
     
     class Meta:
         model = Produto
-        fields = ['nome', 'preco_venda', 'ativo', 'lead_time_dias', 'dias_cobertura_minima']
+        fields = ['nome', 'preco_venda', 'ativo']
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'preco_venda': forms.NumberInput(attrs={'class': 'form-control'}),
+            'preco_venda': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0,00'}),
             'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'lead_time_dias': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
-            'dias_cobertura_minima': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
         }
     
     def clean_nome(self):
@@ -56,7 +54,7 @@ class LoteForm(forms.ModelForm):
         fields = ['quantidade_inicial', 'preco_compra']
         widgets = {
             'quantidade_inicial': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
-            'preco_compra': forms.NumberInput(attrs={'class': 'form-control'}),
+            'preco_compra': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0,00'}),
         }
 
 class ConfiguracaoForm(forms.ModelForm):

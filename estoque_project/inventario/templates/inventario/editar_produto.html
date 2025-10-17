@@ -37,24 +37,6 @@
             </div>
 
             <hr>
-
-            <h5 class="mb-3"><i class="bi bi-graph-up"></i> Configurações de Previsão de Estoque</h5>
-            
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="{{ form.lead_time_dias.id_for_label }}" class="form-label">{{ form.lead_time_dias.label }}</label>
-                    {{ form.lead_time_dias }}
-                    <div class="form-text">{{ form.lead_time_dias.help_text }}</div>
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label for="{{ form.dias_cobertura_minima.id_for_label }}" class="form-label">{{ form.dias_cobertura_minima.label }}</label>
-                    {{ form.dias_cobertura_minima }}
-                    <div class="form-text">{{ form.dias_cobertura_minima.help_text }}</div>
-                </div>
-            </div>
-
-            <hr>
             
             <button type="submit" class="btn btn-primary">Salvar Alterações</button>
             <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="btn btn-secondary">Cancelar</a>

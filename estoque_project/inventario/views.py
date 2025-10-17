@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Produto, Fornecedor, Lote, Venda, ItemVenda, Configuracao, Devolucao, ItemDevolucao, ProdutoChegando
+from .models import Produto, Fornecedor, Lote, Venda, ItemVenda, ItemVendaLote, Configuracao, Devolucao, ItemDevolucao, ProdutoChegando
 from .forms import ProdutoForm, ProdutoEditForm, LoteForm, ConfiguracaoForm, FornecedorForm
 from django.http import JsonResponse
 import json
@@ -633,6 +633,7 @@ def criar_venda(request):
                     quantidade_a_baixar = quantidade_vendida
                     custo_total_item = Decimal('0')
                     lotes_disponiveis = produto.lotes.filter(quantidade_atual__gt=0).order_by('data_entrada')
+                    lotes_utilizados_info = []
 
                     for lote in lotes_disponiveis:
                         if quantidade_a_baixar == 0:
@@ -642,8 +643,15 @@ def criar_venda(request):
                         lote.quantidade_atual -= quantidade_retirada_lote
                         lote.save()
                         quantidade_a_baixar -= quantidade_retirada_lote
+                        
+                        # Guardar informação do lote utilizado
+                        lotes_utilizados_info.append({
+                            'lote': lote,
+                            'quantidade_retirada': quantidade_retirada_lote,
+                            'preco_compra': lote.preco_compra
+                        })
                     
-                    ItemVenda.objects.create(
+                    item_venda = ItemVenda.objects.create(
                         venda=venda,
                         produto=produto,
                         quantidade=quantidade_vendida,
@@ -651,6 +659,15 @@ def criar_venda(request):
                         custo_compra_total_registrado=custo_total_item,
                         eh_brinde=eh_brinde
                     )
+                    
+                    # Registrar os lotes utilizados
+                    for lote_info in lotes_utilizados_info:
+                        ItemVendaLote.objects.create(
+                            item_venda=item_venda,
+                            lote=lote_info['lote'],
+                            quantidade_retirada=lote_info['quantidade_retirada'],
+                            preco_compra_lote=lote_info['preco_compra']
+                        )
 
             return JsonResponse({'sucesso': True, 'venda_id': venda.id})
         except Exception as e:
@@ -743,7 +760,10 @@ def buscar_vendas_listagem_json(request):
     })
 
 def detalhar_venda(request, pk):
-    venda = get_object_or_404(Venda, pk=pk)
+    venda = get_object_or_404(Venda.objects.prefetch_related(
+        'itens__lotes_utilizados__lote',
+        'itens__produto'
+    ), pk=pk)
     return render(request, 'inventario/detalhar_venda.html', {'venda': venda})
 
 # --- Devoluções ---
@@ -789,7 +809,10 @@ def listar_devolucoes(request):
     return render(request, 'inventario/listar_devolucoes.html', context)
 
 def detalhar_devolucao(request, pk):
-    devolucao = get_object_or_404(Devolucao.objects.select_related('venda_original'), pk=pk)
+    devolucao = get_object_or_404(Devolucao.objects.select_related('venda_original').prefetch_related(
+        'itens_devolvidos__item_venda_original__lotes_utilizados__lote',
+        'itens_devolvidos__item_venda_original__produto'
+    ), pk=pk)
     context = {
         'devolucao': devolucao
     }
@@ -833,14 +856,36 @@ def registrar_devolucao(request, venda_pk):
 
         # Processar a devolução
         for dados in itens_devolvidos_dados:
-            ItemDevolucao.objects.create(devolucao=devolucao, **dados)
+            item_devolucao = ItemDevolucao.objects.create(devolucao=devolucao, **dados)
             
-            # Restaurar estoque no lote mais recente
-            produto = dados['item_venda_original'].produto
-            lote_mais_recente = produto.lotes.order_by('-data_entrada').first()
-            if lote_mais_recente:
-                lote_mais_recente.quantidade_atual += dados['quantidade']
-                lote_mais_recente.save()
+            # Restaurar estoque aos lotes FIFO originais (na mesma ordem FIFO)
+            item_venda_original = dados['item_venda_original']
+            quantidade_a_devolver = dados['quantidade']
+            
+            # Buscar os lotes utilizados na venda original (mesma ordem FIFO)
+            lotes_utilizados = item_venda_original.lotes_utilizados.all().order_by('id')
+            
+            if lotes_utilizados.exists():
+                # Devolver aos lotes originais
+                for lote_usado in lotes_utilizados:
+                    if quantidade_a_devolver <= 0:
+                        break
+                    
+                    # Calcular quanto devolver para este lote
+                    quantidade_devolver_lote = min(quantidade_a_devolver, lote_usado.quantidade_retirada)
+                    
+                    # Restaurar ao lote original
+                    lote_usado.lote.quantidade_atual += quantidade_devolver_lote
+                    lote_usado.lote.save()
+                    
+                    quantidade_a_devolver -= quantidade_devolver_lote
+            else:
+                # Fallback: se não houver rastreamento FIFO (vendas antigas), usar lote mais recente
+                produto = item_venda_original.produto
+                lote_mais_recente = produto.lotes.order_by('-data_entrada').first()
+                if lote_mais_recente:
+                    lote_mais_recente.quantidade_atual += quantidade_a_devolver
+                    lote_mais_recente.save()
         
         messages.success(request, "Devolução registrada com sucesso e estoque atualizado.")
         return redirect('inventario:listar_devolucoes')
@@ -1070,7 +1115,7 @@ def excluir_fornecedor(request, pk):
 
 @require_http_methods(["POST"])
 def retornar_item_ao_estoque(request, item_id):
-    """Retorna um item devolvido ao estoque com seu preço de compra original"""
+    """Retorna um item devolvido aos lotes FIFO originais"""
     item_devolucao = get_object_or_404(ItemDevolucao, pk=item_id)
     
     # Verifica se já foi devolvido
@@ -1083,21 +1128,39 @@ def retornar_item_ao_estoque(request, item_id):
             # Pega o produto e item de venda original
             produto = item_devolucao.item_venda_original.produto
             item_venda = item_devolucao.item_venda_original
+            quantidade_a_devolver = item_devolucao.quantidade
             
-            # Calcula o preço de compra unitário original
-            if item_venda.custo_compra_total_registrado and item_venda.quantidade > 0:
-                preco_compra_unitario = item_venda.custo_compra_total_registrado / item_venda.quantidade
+            # Buscar os lotes utilizados na venda original (mesma ordem FIFO)
+            lotes_utilizados = item_venda.lotes_utilizados.all().order_by('id')
+            
+            if lotes_utilizados.exists():
+                # Devolver aos lotes originais
+                for lote_usado in lotes_utilizados:
+                    if quantidade_a_devolver <= 0:
+                        break
+                    
+                    # Calcular quanto devolver para este lote
+                    quantidade_devolver_lote = min(quantidade_a_devolver, lote_usado.quantidade_retirada)
+                    
+                    # Restaurar ao lote original
+                    lote_usado.lote.quantidade_atual += quantidade_devolver_lote
+                    lote_usado.lote.save()
+                    
+                    quantidade_a_devolver -= quantidade_devolver_lote
             else:
-                preco_compra_unitario = Decimal('0.00')
-            
-            # Cria um novo lote com a quantidade devolvida
-            lote = Lote.objects.create(
-                produto=produto,
-                quantidade_inicial=item_devolucao.quantidade,
-                quantidade_atual=item_devolucao.quantidade,
-                preco_compra=preco_compra_unitario,
-                data_entrada=timezone.now()
-            )
+                # Fallback: se não houver rastreamento FIFO (vendas antigas), criar novo lote
+                if item_venda.custo_compra_total_registrado and item_venda.quantidade > 0:
+                    preco_compra_unitario = item_venda.custo_compra_total_registrado / item_venda.quantidade
+                else:
+                    preco_compra_unitario = Decimal('0.00')
+                
+                Lote.objects.create(
+                    produto=produto,
+                    quantidade_inicial=item_devolucao.quantidade,
+                    quantidade_atual=item_devolucao.quantidade,
+                    preco_compra=preco_compra_unitario,
+                    data_entrada=timezone.now()
+                )
             
             # Marca o item como devolvido ao estoque
             item_devolucao.devolvido_ao_estoque = True
@@ -1106,7 +1169,7 @@ def retornar_item_ao_estoque(request, item_id):
             
             messages.success(
                 request, 
-                f'{item_devolucao.quantidade} unidade(s) de "{produto.nome}" retornada(s) ao estoque com sucesso!'
+                f'{item_devolucao.quantidade} unidade(s) de "{produto.nome}" retornada(s) aos lotes originais com sucesso!'
             )
     except Exception as e:
         messages.error(request, f'Erro ao retornar item ao estoque: {str(e)}')

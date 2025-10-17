@@ -113,6 +113,7 @@
                             <th>Quantidade</th>
                             <th>Preço Unitário</th>
                             <th>Subtotal</th>
+                            <th>Lotes FIFO</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -129,6 +130,21 @@
                             <td>{{ item.quantidade }}</td>
                             <td>R$ {{ item.preco_venda_unitario|floatformat:2 }}</td>
                             <td class="fw-bold">R$ {% widthratio item.preco_venda_unitario 1 item.quantidade as subtotal %}{{ subtotal|floatformat:2 }}</td>
+                            <td>
+                                {% if item.lotes_utilizados.exists %}
+                                    <small class="text-muted">
+                                        {% for lote_usado in item.lotes_utilizados.all %}
+                                            <div class="mb-1">
+                                                <span class="badge bg-secondary">Lote #{{ lote_usado.lote.id }}</span>
+                                                {{ lote_usado.quantidade_retirada }} un. × R$ {{ lote_usado.preco_compra_lote|floatformat:2 }}
+                                                <small class="text-muted">({{ lote_usado.lote.data_entrada|date:"d/m/y" }})</small>
+                                            </div>
+                                        {% endfor %}
+                                    </small>
+                                {% else %}
+                                    <small class="text-muted fst-italic">—</small>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -168,6 +184,19 @@
                                         <span class="fs-6 fw-bold text-success">R$ {% widthratio item.preco_venda_unitario 1 item.quantidade as subtotal %}{{ subtotal|floatformat:2 }}</span>
                                     </div>
                                 </div>
+                                
+                                {% if item.lotes_utilizados.exists %}
+                                <div class="mt-2 pt-2 border-top">
+                                    <small class="text-muted d-block mb-1"><strong>Lotes FIFO utilizados:</strong></small>
+                                    {% for lote_usado in item.lotes_utilizados.all %}
+                                        <div class="mb-1">
+                                            <span class="badge bg-secondary">Lote #{{ lote_usado.lote.id }}</span>
+                                            <small>{{ lote_usado.quantidade_retirada }} un. × R$ {{ lote_usado.preco_compra_lote|floatformat:2 }}</small>
+                                            <small class="text-muted">({{ lote_usado.lote.data_entrada|date:"d/m/y" }})</small>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

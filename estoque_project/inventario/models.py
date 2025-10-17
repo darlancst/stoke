@@ -199,6 +199,20 @@ class ItemVenda(models.Model):
             return f"{self.quantidade}x {self.produto.nome} (BRINDE)"
         return f"{self.quantidade}x {self.produto.nome}"
 
+class ItemVendaLote(models.Model):
+    """Rastreamento de quais lotes foram utilizados em cada item de venda (FIFO)"""
+    item_venda = models.ForeignKey(ItemVenda, related_name='lotes_utilizados', on_delete=models.CASCADE)
+    lote = models.ForeignKey(Lote, on_delete=models.PROTECT)
+    quantidade_retirada = models.PositiveIntegerField()
+    preco_compra_lote = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    class Meta:
+        verbose_name = 'Lote Utilizado em Venda'
+        verbose_name_plural = 'Lotes Utilizados em Vendas'
+    
+    def __str__(self):
+        return f"Lote #{self.lote.id} - {self.quantidade_retirada} un. - {self.item_venda}"
+
 class Configuracao(models.Model):
     nome_empresa = models.CharField('Nome da Empresa', max_length=255, default='Minha Empresa')
     logo = models.ImageField('Logo da Empresa', upload_to='empresa/', blank=True, null=True)
