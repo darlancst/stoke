@@ -123,7 +123,7 @@
     {% for venda in vendas %}
         <div class="card mb-2{% if venda.tipo_devolucao == 'total' %} border-danger bg-danger bg-opacity-10{% elif venda.tipo_devolucao == 'parcial' %} border-warning bg-warning bg-opacity-10{% endif %}">
             <div class="card-body py-2 px-3">
-                <!-- Linha 1: ID, Tipo, Cliente -->
+                <!-- Linha 1: ID, Cliente e Badge de Tipo -->
                 <div class="d-flex justify-content-between align-items-start mb-1">
                     <div class="flex-grow-1">
                         <h6 class="mb-0 small">
@@ -132,54 +132,44 @@
                             </a>
                             <span class="text-muted">· {{ venda.cliente_nome|default:"S/ cliente"|truncatechars:20 }}</span>
                         </h6>
-                        <small class="text-muted">{{ venda.data|date:"d/m/Y H:i" }}</small>
+                        <small class="text-muted">
+                            {{ venda.data|date:"d/m/Y H:i" }}
+                            {% if venda.tipo_devolucao or venda.tem_brindes %}
+                            ·
+                            {% if venda.tipo_devolucao == 'total' %}
+                                <span class="badge bg-danger" data-bs-toggle="tooltip" title="Totalmente devolvido">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                </span>
+                            {% elif venda.tipo_devolucao == 'parcial' %}
+                                <span class="badge bg-warning" data-bs-toggle="tooltip" title="{{ venda.quantidade_total_devolvida }}/{{ venda.quantidade_total_vendida }} devolvidos">
+                                    <i class="bi bi-dash-circle-fill"></i>
+                                </span>
+                            {% endif %}
+                            {% if venda.tem_brindes %}
+                                <span class="badge bg-success" data-bs-toggle="tooltip" title="{{ venda.quantidade_brindes_dados }} brinde(s) - R$ {{ venda.valor_brindes_dados|floatformat:2 }}">
+                                    <i class="bi bi-gift-fill"></i> {{ venda.quantidade_brindes_dados }}
+                                </span>
+                            {% endif %}
+                            {% endif %}
+                        </small>
                     </div>
                     <span class="badge {% if venda.tipo_venda == 'LOJA' %}bg-primary{% else %}bg-secondary{% endif %}">
                         {{ venda.get_tipo_venda_display }}
                     </span>
                 </div>
                 
-                <!-- Linha 2: Valores -->
-                <div class="d-flex justify-content-between align-items-center mb-1">
+                <!-- Linha 2: Valores e Ação -->
+                <div class="d-flex justify-content-between align-items-center mt-2">
                     <div>
-                        <strong class="text-primary">R$ {{ venda.valor_total|floatformat:2 }}</strong>
-                    </div>
-                    <div class="text-end">
+                        <strong class="text-primary fs-6">R$ {{ venda.valor_total|floatformat:2 }}</strong>
+                        <span class="text-muted mx-1">·</span>
                         <small class="text-muted">Lucro:</small>
-                        <strong class="text-success ms-1">R$ {{ venda.meu_lucro|floatformat:2 }}</strong>
+                        <strong class="text-success">R$ {{ venda.meu_lucro|floatformat:2 }}</strong>
                     </div>
+                    <a href="{% url 'inventario:detalhar_venda' pk=venda.pk %}" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes">
+                        <i class="bi bi-eye"></i>
+                    </a>
                 </div>
-
-                <!-- Linha 3: Itens -->
-                <div class="mt-2">
-                    <ul class="list-group list-group-flush">
-                        {% for item in venda.itens.all %}
-                        <li class="list-group-item py-1 px-0 bg-transparent">
-                            <small>{{ item.quantidade }}x {{ item.produto.nome }} - R$ {{ item.preco_venda_unitario|floatformat:2 }}</small>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                
-                <!-- Linha 3: Badges Informativos -->
-                {% if venda.tipo_devolucao or venda.tem_brindes %}
-                <div class="d-flex flex-wrap gap-1">
-                    {% if venda.tipo_devolucao == 'total' %}
-                        <span class="badge bg-danger" data-bs-toggle="tooltip" title="Totalmente devolvido">
-                            <i class="bi bi-x-circle-fill"></i> Devolvido
-                        </span>
-                    {% elif venda.tipo_devolucao == 'parcial' %}
-                        <span class="badge bg-warning" data-bs-toggle="tooltip" title="{{ venda.quantidade_total_devolvida }}/{{ venda.quantidade_total_vendida }} devolvidos">
-                            <i class="bi bi-dash-circle-fill"></i> Parcial
-                        </span>
-                    {% endif %}
-                    {% if venda.tem_brindes %}
-                        <span class="badge bg-success" data-bs-toggle="tooltip" title="{{ venda.quantidade_brindes_dados }} brinde(s) - R$ {{ venda.valor_brindes_dados|floatformat:2 }}">
-                            <i class="bi bi-gift-fill"></i> {{ venda.quantidade_brindes_dados }}
-                        </span>
-                    {% endif %}
-                </div>
-                {% endif %}
             </div>
         </div>
     {% empty %}
@@ -303,29 +293,19 @@ document.addEventListener('DOMContentLoaded', function () {
         return '<ul class="list-unstyled mb-0 small">' + itens.map(item => `<li>${item.quantidade}x ${item.produto_nome}</li>`).join('') + '</ul>';
     }
 
-    function renderizarItensMobile(itens) {
-        if (!itens || itens.length === 0) return '';
-        let itensHtml = '<ul class="list-group list-group-flush mt-2">';
-        itens.forEach(item => {
-            itensHtml += `<li class="list-group-item py-1 px-0 bg-transparent"><small>${item.quantidade}x ${item.produto_nome} - R$ ${item.preco_unitario.toFixed(2)}</small></li>`;
-        });
-        itensHtml += '</ul>';
-        return itensHtml;
-    }
-
-    function badgesDevolucaoBrindeCompacto(v) {
+    function badgesDevolucaoBrindeInline(v) {
         let badges = '';
         if (v.tipo_devolucao === 'total') {
-            badges += `<span class="badge bg-danger" data-bs-toggle="tooltip" title="Totalmente devolvido"><i class="bi bi-x-circle-fill"></i> Devolvido</span>`;
+            badges += `<span class="badge bg-danger" data-bs-toggle="tooltip" title="Totalmente devolvido"><i class="bi bi-x-circle-fill"></i></span>`;
         } else if (v.tipo_devolucao === 'parcial') {
-            badges += `<span class="badge bg-warning" data-bs-toggle="tooltip" title="${v.quantidade_total_devolvida}/${v.quantidade_total_vendida} devolvidos"><i class="bi bi-dash-circle-fill"></i> Parcial</span>`;
+            badges += `<span class="badge bg-warning" data-bs-toggle="tooltip" title="${v.quantidade_total_devolvida}/${v.quantidade_total_vendida} devolvidos"><i class="bi bi-dash-circle-fill"></i></span>`;
         }
         if (v.tem_brindes) {
             const qtd = v.quantidade_brindes_dados || 0;
             const valor = (v.valor_brindes_dados || 0).toFixed(2);
-            badges += `<span class="badge bg-success ms-1" data-bs-toggle="tooltip" title="${qtd} brinde(s) - R$ ${valor}"><i class="bi bi-gift-fill"></i> ${qtd}</span>`;
+            badges += `<span class="badge bg-success" data-bs-toggle="tooltip" title="${qtd} brinde(s) - R$ ${valor}"><i class="bi bi-gift-fill"></i> ${qtd}</span>`;
         }
-        return badges ? `<div class="d-flex flex-wrap gap-1">${badges}</div>` : '';
+        return badges ? ` · ${badges}` : '';
     }
 
     function buscarVendas(query) {
@@ -383,19 +363,16 @@ document.addEventListener('DOMContentLoaded', function () {
         vendas.forEach(v => {
             const cardClass = v.tipo_devolucao === 'total' ? ' border-danger bg-danger bg-opacity-10' : (v.tipo_devolucao === 'parcial' ? ' border-warning bg-warning bg-opacity-10' : '');
             const clienteTrunc = v.cliente_nome && v.cliente_nome.length > 20 ? v.cliente_nome.substring(0,17) + '...' : (v.cliente_nome || 'S/ cliente');
-            const itensHtml = renderizarItensMobile(v.itens);
             html += `<div class="card mb-2${cardClass}"><div class="card-body py-2 px-3">`
                 + `<div class="d-flex justify-content-between align-items-start mb-1">`
                 + `<div class="flex-grow-1"><h6 class="mb-0 small"><a href="${v.url_detalhes}" class="text-decoration-none"><span class="fw-bold">#${v.id}</span></a> <span class="text-muted">· ${clienteTrunc}</span></h6>`
-                + `<small class="text-muted">${v.data}</small></div>`
+                + `<small class="text-muted">${v.data}${badgesDevolucaoBrindeInline(v)}</small></div>`
                 + `<span class="badge ${v.tipo_venda === 'LOJA' ? 'bg-primary' : 'bg-secondary'}">${v.tipo_venda_label}</span>`
                 + `</div>`
-                + `<div class="d-flex justify-content-between align-items-center mb-1">`
-                + `<div><strong class="text-primary">R$ ${v.valor_total.toFixed(2)}</strong></div>`
-                + `<div class="text-end"><small class="text-muted">Lucro:</small> <strong class="text-success ms-1">R$ ${v.meu_lucro.toFixed(2)}</strong></div>`
+                + `<div class="d-flex justify-content-between align-items-center mt-2">`
+                + `<div><strong class="text-primary fs-6">R$ ${v.valor_total.toFixed(2)}</strong> <span class="text-muted mx-1">·</span> <small class="text-muted">Lucro:</small> <strong class="text-success">R$ ${v.meu_lucro.toFixed(2)}</strong></div>`
+                + `<a href="${v.url_detalhes}" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes"><i class="bi bi-eye"></i></a>`
                 + `</div>`
-                + itensHtml
-                + badgesDevolucaoBrindeCompacto(v)
                 + `</div></div>`;
         });
         cardsMobile.innerHTML = html;

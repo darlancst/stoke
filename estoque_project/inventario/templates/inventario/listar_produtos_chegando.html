@@ -62,7 +62,7 @@
                                 </a>
                                 <form action="{% url 'inventario:excluir_produto_chegando' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Excluir este produto chegando?');">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
@@ -92,39 +92,38 @@
     {% for produto in produtos_chegando %}
         <div class="card mb-2">
             <div class="card-body py-2 px-3">
-                <!-- Linha 1: Nome, Data e Quantidade -->
+                <!-- Linha 1: Nome e Quantidade -->
                 <div class="d-flex justify-content-between align-items-start mb-1">
                     <div class="flex-grow-1">
                         <h6 class="mb-0 small">
                             <span class="fw-bold">{{ produto.nome }}</span>
                         </h6>
-                        <small class="text-muted">{{ produto.data_compra|date:"d/m/Y" }}</small>
+                        <small class="text-muted">
+                            Compra: {{ produto.data_compra|date:"d/m/Y" }}
+                            {% if produto.data_prevista_chegada %}
+                                · Prev: {{ produto.data_prevista_chegada|date:"d/m/Y" }}
+                            {% endif %}
+                        </small>
                     </div>
                     <span class="badge bg-info text-dark">{{ produto.quantidade }}</span>
                 </div>
                 
-                <!-- Linha 2: Preço e Previsão -->
-                <div class="d-flex justify-content-between align-items-center mb-1">
+                <!-- Linha 2: Preço e Ações -->
+                <div class="d-flex justify-content-between align-items-center mt-2">
                     <div>
-                        <strong class="text-success">R$ {{ produto.preco_compra|floatformat:2 }}</strong>
+                        <strong class="text-success fs-6">R$ {{ produto.preco_compra|floatformat:2 }}</strong>
                     </div>
-                    <div class="text-end">
-                        <small class="text-muted">Prev:</small>
-                        <small class="text-muted ms-1">{{ produto.data_prevista_chegada|date:"d/m"|default:"—" }}</small>
+                    <div class="d-flex gap-1">
+                        <a href="{% url 'inventario:incluir_no_estoque' pk=produto.pk %}" class="btn btn-success btn-sm py-0 px-2" title="Incluir no estoque">
+                            <i class="bi bi-box-arrow-in-down"></i>
+                        </a>
+                        <form action="{% url 'inventario:excluir_produto_chegando' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Excluir este produto?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger py-0 px-2" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
                     </div>
-                </div>
-                
-                <!-- Linha 3: Ações (ícones apenas) -->
-                <div class="d-flex gap-1 mt-2">
-                    <a href="{% url 'inventario:incluir_no_estoque' pk=produto.pk %}" class="btn btn-success btn-sm py-0 px-2" title="Incluir no estoque">
-                        <i class="bi bi-box-arrow-in-down"></i>
-                    </a>
-                    <form action="{% url 'inventario:excluir_produto_chegando' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Excluir este produto?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm py-0 px-2" title="Excluir">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </form>
                 </div>
             </div>
         </div>

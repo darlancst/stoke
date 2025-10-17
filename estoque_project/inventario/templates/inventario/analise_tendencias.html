@@ -1,0 +1,922 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Análise de Tendências e Previsão de Estoque{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Cards de Resumo - Otimização Dark Mode */
+.card-tendencia {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-tendencia:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-icon {
+    font-size: 2rem;
+    opacity: 1;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-value {
+    font-weight: 700;
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+.dashboard-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 1;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card-tendencia-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.card-tendencia-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.card-tendencia-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.card-tendencia-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* Dark Mode - Ajustes nos cards */
+[data-theme="dark"] .card-tendencia {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .card-tendencia:hover {
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .card-tendencia-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+}
+
+[data-theme="dark"] .card-tendencia-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
+}
+
+[data-theme="dark"] .card-tendencia-danger {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+}
+
+[data-theme="dark"] .card-tendencia-success {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+/* Mobile - Cards mais compactos */
+@media (max-width: 767.98px) {
+    .card-tendencia {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+    
+    .card-tendencia .card-body {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .dashboard-value {
+        font-size: 1.1rem !important;
+        line-height: 1.1;
+    }
+    
+    .dashboard-icon {
+        font-size: 1.2rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .dashboard-title {
+        font-size: 0.7rem;
+        margin-bottom: 0.25rem;
+        letter-spacing: 0.3px;
+    }
+}
+
+/* Tabela Responsiva para Mobile */
+@media (max-width: 767.98px) {
+    .table-responsive-mobile {
+        display: none;
+    }
+    
+    .mobile-card-list {
+        display: block;
+    }
+}
+
+@media (min-width: 768px) {
+    .table-responsive-mobile {
+        display: block;
+    }
+    
+    .mobile-card-list {
+        display: none;
+    }
+}
+
+/* Cards Mobile */
+.produto-mobile-card {
+    border-left: 4px solid;
+}
+
+.produto-mobile-card.urgencia-alta {
+    border-left-color: #dc2626;
+}
+
+.produto-mobile-card.urgencia-média {
+    border-left-color: #f59e0b;
+}
+
+.produto-mobile-card.urgencia-baixa {
+    border-left-color: #10b981;
+}
+
+[data-theme="dark"] .produto-mobile-card {
+    background-color: #161b22;
+    border-color: #30363d;
+}
+
+/* Garantir texto branco nos cards coloridos */
+[data-theme="dark"] .card-tendencia .dashboard-title,
+[data-theme="dark"] .card-tendencia .dashboard-value,
+[data-theme="dark"] .card-tendencia .dashboard-icon {
+    color: #fff !important;
+}
+
+/* Forçar cor branca nos cards coloridos */
+.card-tendencia-primary,
+.card-tendencia-warning,
+.card-tendencia-danger,
+.card-tendencia-success {
+    color: white !important;
+}
+
+.card-tendencia-primary .dashboard-title,
+.card-tendencia-primary .dashboard-value,
+.card-tendencia-primary .dashboard-icon,
+.card-tendencia-warning .dashboard-title,
+.card-tendencia-warning .dashboard-value,
+.card-tendencia-warning .dashboard-icon,
+.card-tendencia-danger .dashboard-title,
+.card-tendencia-danger .dashboard-value,
+.card-tendencia-danger .dashboard-icon,
+.card-tendencia-success .dashboard-title,
+.card-tendencia-success .dashboard-value,
+.card-tendencia-success .dashboard-icon {
+    color: #fff !important;
+}
+
+/* Alert em Dark Mode */
+[data-theme="dark"] .alert-info {
+    background-color: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
+}
+
+/* Melhoria nos modais para mobile */
+@media (max-width: 767.98px) {
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+}
+
+/* Filtros e Busca */
+#buscarProduto:focus,
+#filtroUrgencia:focus,
+#filtroTendencia:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+[data-theme="dark"] #buscarProduto,
+[data-theme="dark"] #filtroUrgencia,
+[data-theme="dark"] #filtroTendencia {
+    background-color: #161b22;
+    border-color: #30363d;
+    color: #c9d1d9;
+}
+
+[data-theme="dark"] #buscarProduto::placeholder {
+    color: #8b949e;
+}
+
+[data-theme="dark"] #buscarProduto:focus,
+[data-theme="dark"] #filtroUrgencia:focus,
+[data-theme="dark"] #filtroTendencia:focus {
+    background-color: #0d1117;
+    border-color: #58a6ff;
+    box-shadow: 0 0 0 0.2rem rgba(88, 166, 255, 0.25);
+}
+
+/* Contador de resultados */
+#contadorResultados {
+    background-color: #f8f9fa;
+}
+
+[data-theme="dark"] #contadorResultados {
+    background-color: #0d1117;
+    border-color: #30363d !important;
+}
+
+/* Animação suave ao ocultar/mostrar produtos */
+.produto-row,
+.produto-card-item {
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Mensagem de vazio */
+#mensagemVazio i {
+    opacity: 0.3;
+}
+
+[data-theme="dark"] #mensagemVazio {
+    background-color: #0d1117;
+}
+
+/* Esconder hint do atalho quando o campo está focado ou com valor */
+#buscarProduto:focus ~ small,
+#buscarProduto:not(:placeholder-shown) ~ small {
+    display: none !important;
+}
+
+[data-theme="dark"] .position-relative small {
+    color: #8b949e;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 mb-md-4">
+    <h1 class="h3 h1-md"><i class="bi bi-graph-up"></i> <span class="d-none d-md-inline">Análise de Tendências e Previsão de Estoque</span><span class="d-md-none">Análise de Tendências</span></h1>
+</div>
+
+<!-- Cards de Resumo -->
+<div class="row g-2 g-md-3 mb-3 mb-md-4">
+    <div class="col-6 col-md-3">
+        <div class="card card-tendencia card-tendencia-primary text-white h-100">
+            <div class="card-body text-center">
+                <div class="dashboard-icon">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <h6 class="dashboard-title">Produtos Analisados</h6>
+                <p class="dashboard-value fs-3">{{ total_produtos_analisados }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6 col-md-3">
+        <div class="card card-tendencia card-tendencia-warning text-white h-100">
+            <div class="card-body text-center">
+                <div class="dashboard-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <h6 class="dashboard-title">Precisam Reposição</h6>
+                <p class="dashboard-value fs-3">{{ produtos_precisam_reposicao }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6 col-md-3">
+        <div class="card card-tendencia card-tendencia-danger text-white h-100">
+            <div class="card-body text-center">
+                <div class="dashboard-icon">
+                    <i class="bi bi-alarm-fill"></i>
+                </div>
+                <h6 class="dashboard-title">Urgência Alta</h6>
+                <p class="dashboard-value fs-3">{{ produtos_urgencia_alta }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6 col-md-3">
+        <div class="card card-tendencia card-tendencia-success text-white h-100">
+            <div class="card-body text-center">
+                <div class="dashboard-icon">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+                <h6 class="dashboard-title">Custo Reposição</h6>
+                <p class="dashboard-value fs-3">R$ {{ custo_total_reposicao|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informação sobre o período de análise -->
+<div class="alert alert-info mb-3 mb-md-4">
+    <i class="bi bi-info-circle-fill"></i>
+    <strong>Período:</strong> {{ data_inicio_analise|date:"d/m/Y" }} até {{ data_fim_analise|date:"d/m/Y" }} <span class="d-none d-md-inline">({{ dias_analise }} dias)</span>
+    <br class="d-none d-md-block">
+    <small class="d-block d-md-inline mt-1 mt-md-0">Previsões baseadas no histórico de vendas. <a href="{% url 'inventario:configuracoes' %}" class="alert-link">Alterar período</a></small>
+</div>
+
+<!-- Tabela de Análises -->
+{% if analises_produtos %}
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center g-2">
+            <div class="col-12 col-md-4">
+                <h5 class="mb-0"><i class="bi bi-table"></i> Análise Detalhada por Produto</h5>
+            </div>
+            <div class="col-12 col-md-8">
+                <div class="row g-2">
+                    <!-- Busca -->
+                    <div class="col-12 col-md-5">
+                        <div class="position-relative">
+                            <input type="text" 
+                                   id="buscarProduto" 
+                                   class="form-control form-control-sm" 
+                                   placeholder="🔍 Buscar produto...">
+                            <small class="position-absolute d-none d-md-block" 
+                                   style="right: 8px; top: 50%; transform: translateY(-50%); opacity: 0.5; pointer-events: none; font-size: 0.7rem;">
+                                Ctrl+K
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Filtro por Urgência -->
+                    <div class="col-6 col-md-4">
+                        <select id="filtroUrgencia" class="form-select form-select-sm">
+                            <option value="">Todas Urgências</option>
+                            <option value="alta">🔴 Alta</option>
+                            <option value="média">🟡 Média</option>
+                            <option value="baixa">🟢 Baixa</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Filtro por Tendência -->
+                    <div class="col-6 col-md-3">
+                        <select id="filtroTendencia" class="form-select form-select-sm">
+                            <option value="">Todas Tendências</option>
+                            <option value="crescente">📈 Crescente</option>
+                            <option value="estável">➡️ Estável</option>
+                            <option value="decrescente">📉 Decrescente</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <!-- Versão Desktop: Tabela -->
+        <div class="table-responsive table-responsive-mobile">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Produto</th>
+                        <th class="text-center">Estoque</th>
+                        <th class="text-center">Chegando</th>
+                        <th class="text-center">Dias Cobertura</th>
+                        <th class="text-center">Tendência</th>
+                        <th class="text-center">Média 30d</th>
+                        <th class="text-center">Melhor Dia</th>
+                        <th class="text-center">Urgência</th>
+                        <th class="text-center">Qtd. Sugerida</th>
+                        <th class="text-center">Custo</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaProdutos">
+                    {% for analise in analises_produtos %}
+                    <tr class="produto-row" 
+                        data-nome="{{ analise.produto.nome|lower }}"
+                        data-urgencia="{{ analise.urgencia }}"
+                        data-tendencia="{{ analise.tendencia }}">
+                        <td>
+                            <a href="{% url 'inventario:detalhar_produto' pk=analise.produto.pk %}" class="text-decoration-none">
+                                <strong>{{ analise.produto.nome }}</strong>
+                            </a>
+                            <br>
+                            <small class="text-muted">Vendido: {{ analise.total_vendido_periodo }} un. ({{ dias_analise }}d)</small>
+                        </td>
+                        
+                        <td class="text-center">
+                            <span class="badge {% if analise.estoque_atual < analise.ponto_reposicao %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ analise.estoque_atual }}
+                            </span>
+                        </td>
+                        
+                        <td class="text-center">
+                            {% if analise.quantidade_chegando > 0 %}
+                                <span class="badge bg-info">{{ analise.quantidade_chegando }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="text-center">
+                            {% if analise.dias_cobertura_atual < 999 %}
+                                <span class="badge {% if analise.dias_cobertura_atual < analise.produto.lead_time_dias %}bg-danger{% elif analise.dias_cobertura_atual < analise.produto.dias_cobertura_minima %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                    {{ analise.dias_cobertura_atual }} dias
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">∞</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="text-center">
+                            <span class="badge bg-{{ analise.tendencia_class }}">
+                                {{ analise.tendencia_icon }} {{ analise.tendencia }}
+                            </span>
+                            {% if analise.variacao_percentual != 0 %}
+                                <br><small class="text-muted">{{ analise.variacao_percentual|floatformat:1 }}%</small>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="text-center">
+                            <strong>{{ analise.media_movel_30_dias }}</strong> un/dia
+                            <br>
+                            <small class="text-muted">
+                                7d: {{ analise.media_movel_7_dias }}
+                            </small>
+                        </td>
+                        
+                        <td class="text-center">
+                            <span class="badge bg-info">{{ analise.dia_mais_vendas }}</span>
+                            <br>
+                            <small class="text-muted">{{ analise.media_dia_mais_vendas }} un</small>
+                        </td>
+                        
+                        <td class="text-center">
+                            <span class="badge bg-{{ analise.urgencia_class }}">
+                                {{ analise.urgencia|upper }}
+                            </span>
+                        </td>
+                        
+                        <td class="text-center">
+                            {% if analise.precisa_repor %}
+                                <strong class="text-danger">{{ analise.quantidade_sugerida }} un.</strong>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="text-center">
+                            {% if analise.custo_estimado_reposicao > 0 %}
+                                <strong>R$ {{ analise.custo_estimado_reposicao|floatformat:2 }}</strong>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#modalDetalhes{{ analise.produto.pk }}"
+                                    title="Ver Detalhes">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Versão Mobile: Cards -->
+        <div class="mobile-card-list p-3" id="mobileCardList">
+            {% for analise in analises_produtos %}
+            <div class="card produto-mobile-card urgencia-{{ analise.urgencia }} produto-card-item mb-2" 
+                 data-nome="{{ analise.produto.nome|lower }}"
+                 data-urgencia="{{ analise.urgencia }}"
+                 data-tendencia="{{ analise.tendencia }}">
+                <div class="card-body py-2 px-3">
+                    <!-- Linha 1: Nome e Urgência -->
+                    <div class="d-flex justify-content-between align-items-start mb-1 gap-2">
+                        <div class="flex-grow-1" style="min-width: 0;">
+                            <h6 class="mb-0 small">
+                                <a href="{% url 'inventario:detalhar_produto' pk=analise.produto.pk %}" class="text-decoration-none">
+                                    <span class="fw-bold">{{ analise.produto.nome }}</span>
+                                </a>
+                            </h6>
+                            <small class="text-muted">
+                                Estoque: <span class="badge {% if analise.estoque_atual < analise.ponto_reposicao %}bg-danger{% else %}bg-secondary{% endif %}">{{ analise.estoque_atual }}</span>
+                                · Cobertura: 
+                                {% if analise.dias_cobertura_atual < 999 %}
+                                    <span class="badge {% if analise.dias_cobertura_atual < analise.produto.lead_time_dias %}bg-danger{% elif analise.dias_cobertura_atual < analise.produto.dias_cobertura_minima %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                        {{ analise.dias_cobertura_atual }}d
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">∞</span>
+                                {% endif %}
+                                · <span class="badge bg-{{ analise.tendencia_class }}">{{ analise.tendencia_icon }}</span>
+                            </small>
+                        </div>
+                        <span class="badge bg-{{ analise.urgencia_class }} flex-shrink-0">
+                            {{ analise.urgencia|upper }}
+                        </span>
+                    </div>
+                    
+                    <!-- Linha 2: Informações e Ação -->
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div>
+                            <small class="text-muted">Média: </small><strong>{{ analise.media_movel_30_dias }} un/d</strong>
+                            {% if analise.precisa_repor %}
+                                <span class="text-muted mx-1">·</span>
+                                <small class="text-muted">Repor: </small><strong class="text-danger">{{ analise.quantidade_sugerida }}</strong>
+                            {% endif %}
+                        </div>
+                        <button class="btn btn-info btn-sm py-0 px-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modalDetalhes{{ analise.produto.pk }}"
+                                title="Ver detalhes">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Contador de Resultados e Mensagem Vazia -->
+        <div class="p-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2" id="contadorResultados">
+            <small class="text-muted">
+                Mostrando <strong id="totalVisivel">{{ analises_produtos|length }}</strong> de <strong>{{ analises_produtos|length }}</strong> produtos
+            </small>
+            <button class="btn btn-sm btn-outline-secondary d-none" id="btnLimparFiltros" onclick="limparFiltros()">
+                <i class="bi bi-x-circle"></i> Limpar Filtros
+            </button>
+        </div>
+        
+        <div class="p-5 text-center d-none" id="mensagemVazio">
+            <i class="bi bi-search fs-1 text-muted"></i>
+            <p class="text-muted mt-3">Nenhum produto encontrado com os filtros aplicados.</p>
+            <button class="btn btn-sm btn-outline-secondary" onclick="limparFiltros()">
+                <i class="bi bi-x-circle"></i> Limpar Filtros
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modais de Detalhes -->
+{% for analise in analises_produtos %}
+<div class="modal fade" id="modalDetalhes{{ analise.produto.pk }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-graph-up"></i> Análise Detalhada: {{ analise.produto.nome }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <!-- Informações Gerais -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <i class="bi bi-info-circle"></i> Informações de Estoque
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm mb-0">
+                                    <tr>
+                                        <th>Estoque Atual:</th>
+                                        <td class="text-end"><strong>{{ analise.estoque_atual }}</strong> un.</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Produtos Chegando:</th>
+                                        <td class="text-end">{{ analise.quantidade_chegando }} un.</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Estoque Projetado:</th>
+                                        <td class="text-end"><strong>{{ analise.estoque_projetado }}</strong> un.</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Ponto de Reposição:</th>
+                                        <td class="text-end"><span class="badge bg-warning text-dark">{{ analise.ponto_reposicao }}</span> un.</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Lead Time:</th>
+                                        <td class="text-end">{{ analise.produto.lead_time_dias }} dias</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Cobertura Mínima:</th>
+                                        <td class="text-end">{{ analise.produto.dias_cobertura_minima }} dias</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Análise de Vendas -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white">
+                                <i class="bi bi-graph-up-arrow"></i> Análise de Vendas
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm mb-0">
+                                    <tr>
+                                        <th>Total Vendido ({{ dias_analise }}d):</th>
+                                        <td class="text-end"><strong>{{ analise.total_vendido_periodo }}</strong> un.</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Média 7 dias:</th>
+                                        <td class="text-end">{{ analise.media_movel_7_dias }} un/dia</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Média 14 dias:</th>
+                                        <td class="text-end">{{ analise.media_movel_14_dias }} un/dia</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Média 30 dias:</th>
+                                        <td class="text-end"><strong>{{ analise.media_movel_30_dias }}</strong> un/dia</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Desvio Padrão:</th>
+                                        <td class="text-end">{{ analise.desvio_padrao }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Melhor Dia:</th>
+                                        <td class="text-end"><span class="badge bg-info">{{ analise.dia_mais_vendas }}</span></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recomendação -->
+                    <div class="col-12">
+                        <div class="card {% if analise.precisa_repor %}border-{{ analise.urgencia_class }}{% endif %}">
+                            <div class="card-header bg-{{ analise.urgencia_class }} text-white">
+                                <i class="bi bi-cart-plus"></i> Recomendação de Reposição
+                            </div>
+                            <div class="card-body">
+                                {% if analise.precisa_repor %}
+                                    <div class="alert alert-{{ analise.urgencia_class }} mb-3">
+                                        <h5>
+                                            <i class="bi bi-exclamation-triangle-fill"></i> 
+                                            Reposição Necessária - Urgência {{ analise.urgencia|upper }}
+                                        </h5>
+                                        <hr>
+                                        <p class="mb-2">
+                                            <strong>Quantidade Sugerida:</strong> {{ analise.quantidade_sugerida }} unidades
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Custo Estimado:</strong> R$ {{ analise.custo_estimado_reposicao|floatformat:2 }}
+                                        </p>
+                                        <p class="mb-0">
+                                            <strong>Dias de Cobertura Atual:</strong> {{ analise.dias_cobertura_atual }} dias
+                                            {% if analise.dias_cobertura_atual < analise.produto.lead_time_dias %}
+                                                <span class="badge bg-danger">Abaixo do Lead Time!</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'inventario:criar_produto_chegando' %}?produto={{ analise.produto.nome }}&quantidade={{ analise.quantidade_sugerida }}" 
+                                           class="btn btn-{{ analise.urgencia_class }}">
+                                            <i class="bi bi-cart-plus"></i> Criar Pedido de Compra
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-success mb-0">
+                                        <h5><i class="bi bi-check-circle-fill"></i> Estoque em Bom Nível</h5>
+                                        <p class="mb-0">
+                                            O estoque atual está adequado para a demanda prevista.
+                                            Cobertura de <strong>{{ analise.dias_cobertura_atual }} dias</strong>.
+                                        </p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Gráfico de Vendas -->
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-graph-up"></i> Histórico de Vendas (Últimos 30 dias)
+                            </div>
+                            <div class="card-body">
+                                <canvas id="graficoVendas{{ analise.produto.pk }}" style="max-height: 200px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'inventario:detalhar_produto' pk=analise.produto.pk %}" class="btn btn-primary">
+                    <i class="bi bi-box-seam"></i> Ver Produto
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% else %}
+<div class="alert alert-warning">
+    <i class="bi bi-info-circle"></i>
+    <strong>Nenhum produto com vendas nos últimos {{ dias_analise }} dias.</strong>
+    <p class="mb-0">Realize vendas para que a análise de tendências possa ser gerada.</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Função para obter cores do gráfico baseadas no tema
+    function getChartColors() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        return {
+            gridColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+            textColor: isDark ? '#adb5bd' : '#495057'
+        };
+    }
+    
+    {% for analise in analises_produtos %}
+    // Gráfico de vendas para {{ analise.produto.nome }}
+    (function() {
+        const ctx = document.getElementById('graficoVendas{{ analise.produto.pk }}');
+        if (!ctx) return;
+        
+        const vendas = {{ analise.vendas_lista|safe }};
+        const labels = [];
+        for (let i = 0; i < vendas.length; i++) {
+            labels.push('Dia ' + (i + 1));
+        }
+        
+        const chartColors = getChartColors();
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Vendas Diárias',
+                    data: vendas,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: chartColors.gridColor },
+                        ticks: { 
+                            color: chartColors.textColor,
+                            stepSize: 1
+                        }
+                    },
+                    x: {
+                        grid: { color: chartColors.gridColor },
+                        ticks: { 
+                            color: chartColors.textColor,
+                            maxTicksLimit: 10
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: chartColors.textColor }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                return 'Dia ' + (context[0].dataIndex + 1);
+                            },
+                            label: function(context) {
+                                return 'Vendas: ' + context.parsed.y + ' un.';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    })();
+    {% endfor %}
+    
+    // ===== Sistema de Filtros e Busca =====
+    const buscarInput = document.getElementById('buscarProduto');
+    const filtroUrgencia = document.getElementById('filtroUrgencia');
+    const filtroTendencia = document.getElementById('filtroTendencia');
+    const produtoRows = document.querySelectorAll('.produto-row');
+    const produtoCards = document.querySelectorAll('.produto-card-item');
+    const totalVisivel = document.getElementById('totalVisivel');
+    const contadorResultados = document.getElementById('contadorResultados');
+    const mensagemVazio = document.getElementById('mensagemVazio');
+    const btnLimparFiltros = document.getElementById('btnLimparFiltros');
+    const totalProdutos = {{ analises_produtos|length }};
+    
+    function aplicarFiltros() {
+        const textoBusca = buscarInput.value.toLowerCase().trim();
+        const urgenciaSelecionada = filtroUrgencia.value;
+        const tendenciaSelecionada = filtroTendencia.value;
+        
+        // Verificar se há filtros ativos
+        const temFiltrosAtivos = textoBusca || urgenciaSelecionada || tendenciaSelecionada;
+        
+        let visiveisCount = 0;
+        
+        // Filtrar linhas da tabela (desktop)
+        produtoRows.forEach(row => {
+            const nome = row.dataset.nome;
+            const urgencia = row.dataset.urgencia;
+            const tendencia = row.dataset.tendencia;
+            
+            const matchBusca = !textoBusca || nome.includes(textoBusca);
+            const matchUrgencia = !urgenciaSelecionada || urgencia === urgenciaSelecionada;
+            const matchTendencia = !tendenciaSelecionada || tendencia === tendenciaSelecionada;
+            
+            if (matchBusca && matchUrgencia && matchTendencia) {
+                row.style.display = '';
+                visiveisCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Filtrar cards mobile
+        produtoCards.forEach(card => {
+            const nome = card.dataset.nome;
+            const urgencia = card.dataset.urgencia;
+            const tendencia = card.dataset.tendencia;
+            
+            const matchBusca = !textoBusca || nome.includes(textoBusca);
+            const matchUrgencia = !urgenciaSelecionada || urgencia === urgenciaSelecionada;
+            const matchTendencia = !tendenciaSelecionada || tendencia === tendenciaSelecionada;
+            
+            if (matchBusca && matchUrgencia && matchTendencia) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        // Atualizar contador e mensagem vazia
+        totalVisivel.textContent = visiveisCount;
+        
+        // Mostrar/esconder botão de limpar filtros
+        if (temFiltrosAtivos) {
+            btnLimparFiltros.classList.remove('d-none');
+        } else {
+            btnLimparFiltros.classList.add('d-none');
+        }
+        
+        if (visiveisCount === 0) {
+            contadorResultados.classList.add('d-none');
+            mensagemVazio.classList.remove('d-none');
+        } else {
+            contadorResultados.classList.remove('d-none');
+            mensagemVazio.classList.add('d-none');
+        }
+    }
+    
+    // Event listeners
+    buscarInput.addEventListener('input', aplicarFiltros);
+    filtroUrgencia.addEventListener('change', aplicarFiltros);
+    filtroTendencia.addEventListener('change', aplicarFiltros);
+    
+    // Função global para limpar filtros
+    window.limparFiltros = function() {
+        buscarInput.value = '';
+        filtroUrgencia.value = '';
+        filtroTendencia.value = '';
+        aplicarFiltros();
+        buscarInput.focus();
+    };
+    
+    // Atalho de teclado: Ctrl+K ou Cmd+K para focar na busca
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            buscarInput.focus();
+        }
+        
+        // ESC para limpar a busca
+        if (e.key === 'Escape' && document.activeElement === buscarInput) {
+            if (buscarInput.value) {
+                buscarInput.value = '';
+                aplicarFiltros();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+

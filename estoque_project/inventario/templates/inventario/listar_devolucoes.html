@@ -105,7 +105,7 @@
     {% for devolucao in devolucoes %}
         <div class="card mb-2">
             <div class="card-body py-2 px-3">
-                <!-- Linha 1: ID, Venda Original -->
+                <!-- Linha 1: ID, Venda Original e Badge -->
                 <div class="d-flex justify-content-between align-items-start mb-1">
                     <div class="flex-grow-1">
                         <h6 class="mb-0 small">
@@ -117,24 +117,21 @@
                                 Venda #{{ devolucao.venda_original.id }}
                             </a>
                         </h6>
-                        <small class="text-muted d-block"><i class="bi bi-person me-1"></i>{{ devolucao.venda_original.cliente_nome|default:"Sem nome" }}</small>
-                        <small class="text-muted">{{ devolucao.data|date:"d/m/Y H:i" }}</small>
+                        <small class="text-muted">
+                            <i class="bi bi-person me-1"></i>{{ devolucao.venda_original.cliente_nome|default:"Sem nome" }}
+                            · {{ devolucao.data|date:"d/m/Y H:i" }}
+                        </small>
                     </div>
                     <span class="badge bg-warning text-dark">
                         <i class="bi bi-arrow-return-left"></i>
                     </span>
                 </div>
                 
-                <!-- Linha 2: Valor Restituído -->
-                <div class="d-flex justify-content-between align-items-center mb-1">
+                <!-- Linha 2: Valor Restituído e Ação -->
+                <div class="d-flex justify-content-between align-items-center mt-2">
                     <div>
-                        <small class="text-muted">Restituído:</small>
-                        <strong class="text-danger ms-1">R$ {{ devolucao.valor_total_restituido|floatformat:2 }}</strong>
+                        <strong class="text-danger fs-6">R$ {{ devolucao.valor_total_restituido|floatformat:2 }}</strong>
                     </div>
-                </div>
-                
-                <!-- Linha 3: Ação -->
-                <div class="d-flex gap-1 mt-2">
                     <a href="{% url 'inventario:detalhar_devolucao' pk=devolucao.pk %}" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes">
                         <i class="bi bi-eye"></i>
                     </a>
@@ -243,20 +240,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                             Venda #${dev.venda_id}
                                         </a>
                                     </h6>
-                                    <small class="text-muted d-block"><i class="bi bi-person me-1"></i>${dev.cliente || 'Sem nome'}</small>
-                                    <small class="text-muted">${dev.data}</small>
+                                    <small class="text-muted">
+                                        <i class="bi bi-person me-1"></i>${dev.cliente || 'Sem nome'}
+                                        · ${dev.data}
+                                    </small>
                                 </div>
                                 <span class="badge bg-warning text-dark">
                                     <i class="bi bi-arrow-return-left"></i>
                                 </span>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="d-flex justify-content-between align-items-center mt-2">
                                 <div>
-                                    <small class="text-muted">Restituído:</small>
-                                    <strong class="text-danger ms-1">R$ ${dev.valor_restituido}</strong>
+                                    <strong class="text-danger fs-6">R$ ${dev.valor_restituido}</strong>
                                 </div>
-                            </div>
-                            <div class="d-flex gap-1 mt-2">
                                 <a href="/devolucao/${dev.id}/" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes">
                                     <i class="bi bi-eye"></i>
                                 </a>

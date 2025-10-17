@@ -44,4 +44,9 @@ urlpatterns = [
 
     # URLs Configurações
     path('configuracoes/', views.configuracoes, name='configuracoes'),
+    path('configuracoes/fornecedores/adicionar/', views.adicionar_fornecedor, name='adicionar_fornecedor'),
+    path('configuracoes/fornecedores/<int:pk>/excluir/', views.excluir_fornecedor, name='excluir_fornecedor'),
+    
+    # URLs Análise de Tendências
+    path('analise-tendencias/', views.analise_tendencias, name='analise_tendencias'),
 ] 

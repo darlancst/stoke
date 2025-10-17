@@ -2,6 +2,58 @@
 
 {% block title %}{{ titulo }}{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Destaque extra para nome dos produtos */
+    .produto-nome-link {
+        font-weight: 700;
+        color: #0d6efd;
+        transition: color 0.2s ease, transform 0.1s ease;
+        display: inline-block;
+    }
+    
+    .produto-nome-link:hover {
+        color: #0a58ca;
+        transform: translateX(2px);
+    }
+    
+    [data-theme="dark"] .produto-nome-link {
+        color: #58a6ff;
+    }
+    
+    [data-theme="dark"] .produto-nome-link:hover {
+        color: #79c0ff;
+    }
+    
+    /* Cards de produtos mobile - design compacto */
+    .produto-card-mobile {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        transition: box-shadow 0.2s ease;
+        background-color: #fff;
+    }
+    
+    [data-theme="dark"] .produto-card-mobile {
+        background-color: #161b22;
+        border-color: #30363d;
+    }
+    
+    /* Link do nome do produto */
+    .produto-card-mobile .produto-nome-link {
+        color: inherit;
+        font-weight: 600;
+    }
+    
+    .produto-card-mobile .produto-nome-link:hover {
+        color: #0d6efd;
+    }
+    
+    [data-theme="dark"] .produto-card-mobile .produto-nome-link:hover {
+        color: #58a6ff;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Cabeçalho Responsivo -->
 <div class="row align-items-center mb-3">
@@ -74,7 +126,7 @@
                     {% for produto in produtos %}
                         <tr class="align-middle">
                             <td>
-                                <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="fw-semibold text-decoration-none">
+                                <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="produto-nome-link text-decoration-none fs-6">
                                     {{ produto.nome }}
                                 </a>
                             </td>
@@ -152,17 +204,27 @@
 <!-- Cards para Mobile/Tablet -->
 <div class="d-lg-none" id="produtos-cards-mobile">
     {% for produto in produtos %}
-        <div class="card mb-2">
+        <div class="card produto-card-mobile mb-2">
             <div class="card-body py-2 px-3">
-                <!-- Linha 1: Nome e Badges de Estoque -->
+                <!-- Linha 1: Nome e Estoque -->
                 <div class="d-flex justify-content-between align-items-start mb-1">
                     <div class="flex-grow-1">
                         <h6 class="mb-0 small">
-                            <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="text-decoration-none">
+                            <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="produto-nome-link text-decoration-none">
                                 <span class="fw-bold">{{ produto.nome }}</span>
                             </a>
                         </h6>
-                        <small class="text-muted">Custo: R$ {{ produto.custo_medio_ponderado_agg|floatformat:2|default:"0.00" }}</small>
+                        <small class="text-muted">
+                            Custo: R$ {{ produto.custo_medio_ponderado_agg|floatformat:2|default:"0.00" }}
+                            · Margem: 
+                            {% if produto.margem_lucro_agg is not None %}
+                                <span class="{% if config and produto.margem_lucro_agg < config.margem_lucro_ideal %}text-danger{% else %}text-success{% endif %} fw-semibold">
+                                    {{ produto.margem_lucro_agg|floatformat:1 }}%
+                                </span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </small>
                     </div>
                     <div class="text-end">
                         <span class="badge bg-primary">{{ produto.quantidade_total_agg|default:"0" }}</span>
@@ -174,55 +236,43 @@
                     </div>
                 </div>
                 
-                <!-- Linha 2: Preço e Margem -->
-                <div class="d-flex justify-content-between align-items-center mb-1">
+                <!-- Linha 2: Preço e Ações -->
+                <div class="d-flex justify-content-between align-items-center mt-2">
                     <div>
-                        <strong class="text-primary">R$ {{ produto.preco_venda|floatformat:2 }}</strong>
+                        <strong class="text-success fs-6">R$ {{ produto.preco_venda|floatformat:2 }}</strong>
                     </div>
-                    <div class="text-end">
-                        <small class="text-muted">Margem:</small>
-                        {% if produto.margem_lucro_agg is not None %}
-                            <span class="badge {% if config and produto.margem_lucro_agg < config.margem_lucro_ideal %}bg-danger{% else %}bg-success{% endif %} ms-1">
-                                {{ produto.margem_lucro_agg|floatformat:1 }}%
-                            </span>
+                    <div class="d-flex gap-1">
+                        <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="btn btn-info btn-sm py-0 px-2" title="Detalhes">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-success btn-sm py-0 px-2" title="Adicionar lote">
+                            <i class="bi bi-plus-lg"></i>
+                        </a>
+                        <a href="{% url 'inventario:editar_produto' pk=produto.pk %}" class="btn btn-warning btn-sm py-0 px-2" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        {% if produto.ativo %}
+                            <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Pausar este produto?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-secondary btn-sm py-0 px-2" title="Pausar">
+                                    <i class="bi bi-pause-fill"></i>
+                                </button>
+                            </form>
                         {% else %}
-                            <span class="badge bg-secondary ms-1">N/A</span>
+                            <form action="{% url 'inventario:reativar_produto' pk=produto.pk %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm py-0 px-2" title="Reativar">
+                                    <i class="bi bi-play-fill"></i>
+                                </button>
+                            </form>
+                            <form action="{% url 'inventario:excluir_produto_permanente' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('EXCLUSÃO PERMANENTE!\n\nContinuar?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm py-0 px-2" title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                         {% endif %}
                     </div>
-                </div>
-                
-                <!-- Linha 3: Ações (ícones apenas) -->
-                <div class="d-flex flex-wrap gap-1 mt-2">
-                    <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes">
-                        <i class="bi bi-eye"></i>
-                    </a>
-                    <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-success btn-sm py-0 px-2" title="Adicionar lote">
-                        <i class="bi bi-plus-lg"></i>
-                    </a>
-                    <a href="{% url 'inventario:editar_produto' pk=produto.pk %}" class="btn btn-warning btn-sm py-0 px-2" title="Editar">
-                        <i class="bi bi-pencil"></i>
-                    </a>
-                    {% if produto.ativo %}
-                        <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Pausar este produto?');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-secondary btn-sm py-0 px-2" title="Pausar">
-                                <i class="bi bi-pause-fill"></i>
-                            </button>
-                        </form>
-                    {% else %}
-                        <form action="{% url 'inventario:reativar_produto' pk=produto.pk %}" method="post" class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-success btn-sm py-0 px-2" title="Reativar">
-                                <i class="bi bi-play-fill"></i>
-                            </button>
-                        </form>
-                        <form action="{% url 'inventario:excluir_produto_permanente' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('EXCLUSÃO PERMANENTE!\n\nContinuar?');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm py-0 px-2" title="Excluir">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -402,9 +452,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>`;
         } else {
             produtos.forEach(produto => {
-                const margemBadge = produto.margem_lucro_agg !== null 
-                    ? `<span class="badge bg-${produto.margem_cor} ms-1">${produto.margem_lucro_agg.toFixed(1)}%</span>`
-                    : '<span class="badge bg-secondary ms-1">N/A</span>';
+                const margemTexto = produto.margem_lucro_agg !== null 
+                    ? `<span class="fw-semibold ${produto.margem_cor === 'danger' ? 'text-danger' : 'text-success'}">${produto.margem_lucro_agg.toFixed(1)}%</span>`
+                    : '<span class="text-muted">N/A</span>';
                 
                 const chegandoBadge = produto.quantidade_chegando > 0 
                     ? `<span class="badge bg-info text-dark">+${produto.quantidade_chegando}</span>`
@@ -412,17 +462,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const acoesBotoesIcones = gerarBotoesIconesMobile(produto);
                 
-                html += `<div class="card mb-2">
+                html += `<div class="card produto-card-mobile mb-2">
                     <div class="card-body py-2 px-3">
-                        <!-- Linha 1: Nome e Badges -->
+                        <!-- Linha 1: Nome e Estoque -->
                         <div class="d-flex justify-content-between align-items-start mb-1">
                             <div class="flex-grow-1">
                                 <h6 class="mb-0 small">
-                                    <a href="/produtos/${produto.id}/" class="text-decoration-none">
+                                    <a href="/produtos/${produto.id}/" class="produto-nome-link text-decoration-none">
                                         <span class="fw-bold">${produto.nome}</span>
                                     </a>
                                 </h6>
-                                <small class="text-muted">Custo: R$ ${produto.custo_medio_ponderado_agg.toFixed(2)}</small>
+                                <small class="text-muted">
+                                    Custo: R$ ${produto.custo_medio_ponderado_agg.toFixed(2)}
+                                    · Margem: ${margemTexto}
+                                </small>
                             </div>
                             <div class="text-end">
                                 <span class="badge bg-primary">${produto.quantidade_total_agg}</span>
@@ -430,20 +483,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                         
-                        <!-- Linha 2: Preço e Margem -->
-                        <div class="d-flex justify-content-between align-items-center mb-1">
+                        <!-- Linha 2: Preço e Ações -->
+                        <div class="d-flex justify-content-between align-items-center mt-2">
                             <div>
-                                <strong class="text-primary">R$ ${produto.preco_venda.toFixed(2)}</strong>
+                                <strong class="text-success fs-6">R$ ${produto.preco_venda.toFixed(2)}</strong>
                             </div>
-                            <div class="text-end">
-                                <small class="text-muted">Margem:</small>
-                                ${margemBadge}
+                            <div class="d-flex gap-1">
+                                ${acoesBotoesIcones}
                             </div>
-                        </div>
-                        
-                        <!-- Linha 3: Ações -->
-                        <div class="d-flex flex-wrap gap-1 mt-2">
-                            ${acoesBotoesIcones}
                         </div>
                     </div>
                 </div>`;

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Produto, Fornecedor, Lote, Venda, ItemVenda, Configuracao, Devolucao, ItemDevolucao, ProdutoChegando
-from .forms import ProdutoForm, ProdutoEditForm, LoteForm, ConfiguracaoForm
+from .forms import ProdutoForm, ProdutoEditForm, LoteForm, ConfiguracaoForm, FornecedorForm
 from django.http import JsonResponse
 import json
 from django.db import transaction
@@ -16,6 +16,12 @@ from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 
 # Create your views here.
+
+def capitalizar_nome(nome):
+    """Capitaliza a primeira letra de cada palavra em um nome"""
+    if not nome:
+        return nome
+    return ' '.join(palavra.capitalize() for palavra in nome.strip().split())
 
 def dashboard(request):
     """
@@ -101,32 +107,41 @@ def dashboard(request):
         qtd_total=Sum('lotes__quantidade_atual')
     ).filter(qtd_total__lt=config.limite_estoque_baixo, ativo=True)
     
-    # Produtos parados (há mais de 60 dias no estoque sem vender)
-    data_limite_parado = hoje - timedelta(days=60)
-    
-    # Produtos com estoque que não tiveram vendas nos últimos 60 dias
+    # Produtos parados (há mais de X dias no estoque sem vender, conforme configuração)
     produtos_com_estoque = Produto.objects.annotate(
         qtd_total=Sum('lotes__quantidade_atual')
     ).filter(qtd_total__gt=0, ativo=True)
     
     produtos_parados = []
     for produto in produtos_com_estoque:
-        # Verifica se teve vendas nos últimos 60 dias
-        ultima_venda = ItemVenda.objects.filter(
-            produto=produto,
-            venda__data__gte=data_limite_parado
-        ).exists()
+        # Busca a última venda deste produto
+        ultima_venda_item = ItemVenda.objects.filter(
+            produto=produto
+        ).order_by('-venda__data').first()
         
-        if not ultima_venda:
-            # Pega o lote mais antigo para saber há quanto tempo está parado
+        # Calcula há quantos dias está parado
+        if ultima_venda_item:
+            # Produto já foi vendido - calcula dias desde a última venda
+            # Converter para timezone local antes de extrair a data
+            data_ultima_venda = timezone.localtime(ultima_venda_item.venda.data).date()
+            dias_parado = (hoje - data_ultima_venda).days
+        else:
+            # Produto nunca foi vendido - calcula dias desde o lote mais antigo
             lote_mais_antigo = produto.lotes.filter(quantidade_atual__gt=0).order_by('data_entrada').first()
             if lote_mais_antigo:
-                dias_parado = (hoje - lote_mais_antigo.data_entrada.date()).days
-                produtos_parados.append({
-                    'produto': produto,
-                    'dias_parado': dias_parado,
-                    'quantidade': produto.quantidade_total
-                })
+                # data_entrada também precisa de conversão se for DateTimeField
+                data_entrada = timezone.localtime(lote_mais_antigo.data_entrada).date()
+                dias_parado = (hoje - data_entrada).days
+            else:
+                continue  # Pula se não houver lote
+        
+        # Só adiciona se o produto está parado há X dias ou mais (conforme configuração)
+        if dias_parado >= config.dias_produto_parado:
+            produtos_parados.append({
+                'produto': produto,
+                'dias_parado': dias_parado,
+                'quantidade': produto.quantidade_total
+            })
     
     # Ordena por dias parado (maior tempo primeiro) e limita a 5
     produtos_parados = sorted(produtos_parados, key=lambda x: x['dias_parado'], reverse=True)[:5]
@@ -140,17 +155,27 @@ def dashboard(request):
             vendas_por_unidade[dia.strftime('%d/%m')] = {'receita': Decimal('0'), 'meu_lucro': Decimal('0')}
         
         for venda in vendas_periodo:
-            dia_str = venda.data.strftime('%d/%m')
+            # Converter para timezone local antes de formatar
+            data_local = timezone.localtime(venda.data)
+            dia_str = data_local.strftime('%d/%m')
             if dia_str in vendas_por_unidade:
                 vendas_por_unidade[dia_str]['receita'] += venda.valor_total
                 vendas_por_unidade[dia_str]['meu_lucro'] += venda.meu_lucro
     else: # Agrupar por mês para períodos longos
-        vendas_periodo_meses = vendas_periodo.dates('data', 'month')
-        for mes_inicio in vendas_periodo_meses:
-            vendas_por_unidade[mes_inicio.strftime('%b/%y')] = {'receita': Decimal('0'), 'meu_lucro': Decimal('0')}
+        # Criar dicionário de meses primeiro (baseado no período)
+        meses = set()
+        for venda in vendas_periodo:
+            data_local = timezone.localtime(venda.data)
+            mes_str = data_local.strftime('%b/%y')
+            meses.add(mes_str)
+        
+        for mes_str in sorted(meses):
+            vendas_por_unidade[mes_str] = {'receita': Decimal('0'), 'meu_lucro': Decimal('0')}
 
         for venda in vendas_periodo:
-            mes_str = venda.data.strftime('%b/%y')
+            # Converter para timezone local antes de formatar
+            data_local = timezone.localtime(venda.data)
+            mes_str = data_local.strftime('%b/%y')
             if mes_str in vendas_por_unidade:
                 vendas_por_unidade[mes_str]['receita'] += venda.valor_total
                 vendas_por_unidade[mes_str]['meu_lucro'] += venda.meu_lucro
@@ -161,13 +186,19 @@ def dashboard(request):
 
     # --- 4. Dados do Gráfico Heatmap (últimos 365 dias) ---
     heatmap_inicio = hoje - timedelta(days=364)
-    vendas_heatmap = Venda.objects.filter(data__range=[heatmap_inicio, data_fim_query])
+    vendas_heatmap = Venda.objects.filter(
+        data__range=[heatmap_inicio, data_fim_query],
+        status='CONCLUIDA'  # Apenas vendas concluídas
+    ).prefetch_related('itens', 'devolucoes__itens_devolvidos')
     
     lucro_por_dia = {}
     for venda in vendas_heatmap:
-        dia = venda.data.date()
+        # Converter para timezone local antes de extrair a data
+        data_local = timezone.localtime(venda.data)
+        dia = data_local.date()
         lucro_por_dia.setdefault(dia, Decimal('0'))
-        lucro_por_dia[dia] += venda.meu_lucro
+        lucro_venda = venda.meu_lucro
+        lucro_por_dia[dia] += lucro_venda
 
     heatmap_data = []
     max_lucro = max(lucro_por_dia.values()) if lucro_por_dia else 0
@@ -196,9 +227,11 @@ def dashboard(request):
         'meu_lucro_total': meu_lucro_total,
         'receita_total': receita_total,
         'produtos_estoque_baixo': produtos_estoque_baixo,
-        'produtos_parados': produtos_parados, # Produtos sem venda há 60+ dias
-        'top_produtos_vendidos': top_produtos_vendidos, # Adicionar ao contexto
-        'produtos_mais_lucrativos': produtos_mais_lucrativos, # Adicionar ao contexto
+        'produtos_parados': produtos_parados,
+        'dias_limite_parado': config.dias_produto_parado,  # Quantidade de dias conforme configuração
+        'top_produtos_vendidos': top_produtos_vendidos,
+        'produtos_mais_lucrativos': produtos_mais_lucrativos,
+        'config': config,  # Adiciona config ao contexto para uso no template
         
         # Dados para o formulário de filtro
         'periodo_selecionado': periodo,
@@ -220,11 +253,13 @@ def listar_produtos(request):
     config = Configuracao.objects.first()
 
     if status == 'pausados':
-        produtos_list = Produto.objects.filter(ativo=False)
+        # Otimização: carrega fornecedor junto
+        produtos_list = Produto.objects.select_related('fornecedor').filter(ativo=False)
         titulo = "Produtos Pausados"
         status_atual = 'pausados'
     else:
-        produtos_list = Produto.objects.filter(ativo=True)
+        # Otimização: carrega fornecedor junto
+        produtos_list = Produto.objects.select_related('fornecedor').filter(ativo=True)
         titulo = "Produtos em Estoque"
         status_atual = 'ativos'
 
@@ -443,25 +478,33 @@ def buscar_produtos_json(request):
         quantidade_total_agg=Sum('lotes__quantidade_atual')
     ).filter(
         nome__icontains=termo,
-        ativo=True,
-        quantidade_total_agg__gt=0
+        ativo=True
     ).exclude(
         preco_venda__isnull=True
     )
 
     resultado = []
     for produto in produtos:
+        estoque_atual = produto.quantidade_total_agg if produto.quantidade_total_agg else 0
+        
         # Pega o custo FIFO (primeiro lote disponível, mais antigo)
         lote_fifo = produto.lotes.filter(quantidade_atual__gt=0).order_by('data_entrada').first()
         custo_fifo = lote_fifo.preco_compra if lote_fifo else Decimal('0')
         
+        # Adiciona indicador visual se sem estoque
+        if estoque_atual == 0:
+            label = f"{produto.nome} (SEM ESTOQUE)"
+        else:
+            label = f"{produto.nome} (Estoque: {estoque_atual})"
+        
         resultado.append({
             'id': produto.id,
-            'label': f"{produto.nome} (Estoque: {produto.quantidade_total_agg})",
+            'label': label,
             'value': produto.nome,
             'preco': str(produto.preco_venda),
             'custo': str(custo_fifo),
-            'estoque': produto.quantidade_total_agg
+            'estoque': estoque_atual,
+            'sem_estoque': estoque_atual == 0
         })
     
     return JsonResponse(resultado, safe=False)
@@ -528,7 +571,8 @@ def criar_venda(request):
     if request.method == 'POST':
         try:
             dados = json.loads(request.body)
-            cliente_nome = dados.get('cliente_nome', '').strip() or None
+            cliente_nome = dados.get('cliente_nome', '').strip()
+            cliente_nome = capitalizar_nome(cliente_nome) if cliente_nome else None
             tipo_venda = dados.get('tipo_venda', 'LOJA')
             desconto = Decimal(dados.get('desconto', '0.00'))
             itens_venda = dados.get('itens', [])
@@ -595,7 +639,13 @@ def criar_venda(request):
 
 def listar_vendas(request):
     query = request.GET.get('q', '').strip()
-    vendas = Venda.objects.all()
+    # Otimização: usa prefetch_related para evitar N+1 queries
+    vendas = Venda.objects.prefetch_related(
+        'itens',
+        'itens__produto',
+        'devolucoes',
+        'devolucoes__itens_devolvidos'
+    )
     if query:
         filtros = Q(cliente_nome__icontains=query)
         if query.isdigit():
@@ -617,7 +667,13 @@ def listar_vendas(request):
 def buscar_vendas_listagem_json(request):
     """API para busca em tempo real na listagem de vendas - Limite: 60 req/min"""
     query = request.GET.get('q', '').strip()
-    vendas_qs = Venda.objects.all()
+    # Otimização: usa prefetch_related para evitar N+1 queries
+    vendas_qs = Venda.objects.prefetch_related(
+        'itens',
+        'itens__produto',
+        'devolucoes',
+        'devolucoes__itens_devolvidos'
+    )
     if query:
         filtros = Q(cliente_nome__icontains=query)
         if query.isdigit():
@@ -635,7 +691,7 @@ def buscar_vendas_listagem_json(request):
         vendas_data.append({
             'id': venda.id,
             'cliente_nome': venda.cliente_nome or 'Cliente não informado',
-            'data': venda.data.strftime('%d/%m/%Y %H:%M') if venda.data else '',
+            'data': timezone.localtime(venda.data).strftime('%d/%m/%Y %H:%M') if venda.data else '',
             'tipo_venda': venda.tipo_venda,
             'tipo_venda_label': venda.get_tipo_venda_display(),
             'valor_total': float(venda.valor_total),
@@ -662,11 +718,24 @@ def detalhar_venda(request, pk):
 
 def listar_devolucoes(request):
     venda_id = request.GET.get('venda_id')
+    # Otimização: carrega venda e itens devolvidos de uma vez
     if venda_id:
-        devolucoes = Devolucao.objects.filter(venda_original_id=venda_id).select_related('venda_original').order_by('-data')
+        devolucoes = Devolucao.objects.filter(
+            venda_original_id=venda_id
+        ).select_related('venda_original').prefetch_related(
+            'itens_devolvidos',
+            'itens_devolvidos__item_venda_original',
+            'itens_devolvidos__item_venda_original__produto'
+        ).order_by('-data')
         mensagem_filtro = f"Exibindo devoluções para a Venda #{venda_id}"
     else:
-        devolucoes = Devolucao.objects.select_related('venda_original').all().order_by('-data')
+        devolucoes = Devolucao.objects.select_related(
+            'venda_original'
+        ).prefetch_related(
+            'itens_devolvidos',
+            'itens_devolvidos__item_venda_original',
+            'itens_devolvidos__item_venda_original__produto'
+        ).all().order_by('-data')
         mensagem_filtro = None
 
     context = {
@@ -766,7 +835,7 @@ def criar_produto_chegando(request):
     if request.method == 'POST':
         try:
             dados = json.loads(request.body)
-            nome = dados.get('nome')
+            nome = capitalizar_nome(dados.get('nome'))
             quantidade = int(dados.get('quantidade'))
             preco_compra = Decimal(str(dados.get('preco_compra')))
             fornecedor_id = dados.get('fornecedor_id')
@@ -892,11 +961,54 @@ def configuracoes(request):
         form = ConfiguracaoForm(request.POST, request.FILES, instance=config)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Configurações salvas com sucesso!')
             return redirect('inventario:configuracoes')
     else:
         form = ConfiguracaoForm(instance=config)
     
-    return render(request, 'inventario/configuracoes.html', {'form': form})
+    # Buscar todos os fornecedores
+    fornecedores = Fornecedor.objects.all().order_by('nome')
+    fornecedor_form = FornecedorForm()
+    
+    return render(request, 'inventario/configuracoes.html', {
+        'form': form,
+        'fornecedores': fornecedores,
+        'fornecedor_form': fornecedor_form,
+    })
+
+
+@require_http_methods(["POST"])
+def adicionar_fornecedor(request):
+    """Adiciona um novo fornecedor"""
+    form = FornecedorForm(request.POST)
+    if form.is_valid():
+        fornecedor = form.save()
+        messages.success(request, f'Fornecedor "{fornecedor.nome}" adicionado com sucesso!')
+    else:
+        messages.error(request, 'Erro ao adicionar fornecedor. Verifique os dados.')
+    return redirect('inventario:configuracoes')
+
+
+@require_http_methods(["POST"])
+def excluir_fornecedor(request, pk):
+    """Exclui um fornecedor se não estiver sendo usado"""
+    fornecedor = get_object_or_404(Fornecedor, pk=pk)
+    
+    # Verifica se o fornecedor está sendo usado em produtos ou produtos chegando
+    produtos_usando = fornecedor.produtos.count()
+    produtos_chegando_usando = fornecedor.produtos_chegando.count()
+    
+    if produtos_usando > 0 or produtos_chegando_usando > 0:
+        messages.error(
+            request, 
+            f'Não é possível excluir o fornecedor "{fornecedor.nome}" pois está sendo usado em {produtos_usando} produto(s) e {produtos_chegando_usando} produto(s) chegando.'
+        )
+    else:
+        nome_fornecedor = fornecedor.nome
+        fornecedor.delete()
+        messages.success(request, f'Fornecedor "{nome_fornecedor}" excluído com sucesso!')
+    
+    return redirect('inventario:configuracoes')
 
 
 # --- Retornar Item de Devolução ao Estoque ---
@@ -971,7 +1083,7 @@ def buscar_devolucoes_listagem_json(request):
     for dev in devolucoes_list:
         devolucoes_data.append({
             'id': dev.id,
-            'data': dev.data.strftime('%d/%m/%Y %H:%M'),
+            'data': timezone.localtime(dev.data).strftime('%d/%m/%Y %H:%M'),
             'venda_id': dev.venda_original.id,
             'cliente': dev.venda_original.cliente_nome or 'Sem nome',
             'valor_total': float(dev.valor_total_restituido),
@@ -991,3 +1103,232 @@ def offline(request):
 def service_worker(request):
     """Service Worker para PWA"""
     return render(request, 'inventario/sw.js', content_type='application/javascript')
+
+
+# --- Análise de Tendências e Previsão de Estoque ---
+
+def analise_tendencias(request):
+    """
+    Análise de tendências de vendas e previsão de necessidade de reposição de estoque.
+    Calcula médias móveis, detecta sazonalidade e sugere reposições baseadas em histórico.
+    """
+    from collections import defaultdict
+    from statistics import mean, stdev
+    
+    hoje = timezone.localtime(timezone.now()).date()
+    
+    # Obter período de análise das configurações
+    config, _ = Configuracao.objects.get_or_create()
+    dias_analise = config.dias_analise_tendencias
+    
+    # Período de análise
+    data_inicio_analise = hoje - timedelta(days=dias_analise - 1)
+    
+    # Buscar todos os produtos ativos
+    produtos = Produto.objects.filter(ativo=True).prefetch_related('lotes')
+    
+    analises_produtos = []
+    
+    for produto in produtos:
+        # Histórico de vendas diárias dos últimos 90 dias
+        vendas_diarias = defaultdict(int)
+        
+        # Buscar todas as vendas do produto no período
+        itens_vendidos = ItemVenda.objects.filter(
+            produto=produto,
+            venda__data__gte=data_inicio_analise,
+            venda__status='CONCLUIDA',
+            eh_brinde=False  # Não contar brindes
+        ).select_related('venda')
+        
+        # Preencher vendas diárias
+        for item in itens_vendidos:
+            data_venda = timezone.localtime(item.venda.data).date()
+            vendas_diarias[data_venda] += item.quantidade
+        
+        # Criar lista de vendas para todos os dias (incluindo dias sem vendas = 0)
+        vendas_lista = []
+        for i in range(dias_analise):
+            data = data_inicio_analise + timedelta(days=i)
+            vendas_lista.append(vendas_diarias.get(data, 0))
+        
+        # Se não houver vendas no período configurado, pular este produto
+        total_vendido_periodo = sum(vendas_lista)
+        if total_vendido_periodo == 0:
+            continue
+        
+        # Calcular médias móveis
+        media_movel_7_dias = mean(vendas_lista[-7:]) if len(vendas_lista) >= 7 else mean(vendas_lista)
+        media_movel_14_dias = mean(vendas_lista[-14:]) if len(vendas_lista) >= 14 else mean(vendas_lista)
+        media_movel_30_dias = mean(vendas_lista[-30:]) if len(vendas_lista) >= 30 else mean(vendas_lista)
+        
+        # Desvio padrão para entender volatilidade
+        try:
+            desvio_padrao = stdev(vendas_lista) if len(vendas_lista) > 1 else 0
+        except:
+            desvio_padrao = 0
+        
+        # Tendência: comparar segunda metade do período com primeira metade
+        # Requer pelo menos 14 dias de dados (7 dias em cada metade)
+        if len(vendas_lista) >= 14:
+            metade = len(vendas_lista) // 2
+            media_segunda_metade = mean(vendas_lista[metade:])
+            media_primeira_metade = mean(vendas_lista[:metade])
+            
+            if media_primeira_metade > 0:
+                variacao_percentual = ((media_segunda_metade - media_primeira_metade) / media_primeira_metade) * 100
+            else:
+                # Se não havia vendas na primeira metade mas há na segunda
+                if media_segunda_metade > 0:
+                    variacao_percentual = 100
+                else:
+                    variacao_percentual = 0
+            
+            if variacao_percentual > 15:
+                tendencia = 'crescente'
+                tendencia_icon = '📈'
+                tendencia_class = 'success'
+            elif variacao_percentual < -15:
+                tendencia = 'decrescente'
+                tendencia_icon = '📉'
+                tendencia_class = 'danger'
+            else:
+                tendencia = 'estável'
+                tendencia_icon = '➡️'
+                tendencia_class = 'info'
+        else:
+            variacao_percentual = 0
+            tendencia = 'dados insuficientes'
+            tendencia_icon = '❓'
+            tendencia_class = 'secondary'
+        
+        # Estoque atual
+        estoque_atual = produto.quantidade_total
+        
+        # Projeção de demanda futura (baseada na média móvel de 30 dias)
+        demanda_diaria_media = media_movel_30_dias
+        
+        # Dias de cobertura atual (quantos dias o estoque atual vai durar)
+        if demanda_diaria_media > 0:
+            dias_cobertura_atual = estoque_atual / demanda_diaria_media
+        else:
+            dias_cobertura_atual = float('inf')
+        
+        # Calcular ponto de reposição
+        # Ponto de reposição = (Demanda diária * Lead Time) + Estoque de Segurança
+        # Estoque de Segurança = Demanda diária * Dias de cobertura mínima
+        lead_time = produto.lead_time_dias
+        dias_cobertura_minima = produto.dias_cobertura_minima
+        
+        # Adicionar desvio padrão ao estoque de segurança para produtos com vendas voláteis
+        estoque_seguranca = (demanda_diaria_media * dias_cobertura_minima) + (desvio_padrao * 1.5)
+        ponto_reposicao = (demanda_diaria_media * lead_time) + estoque_seguranca
+        
+        # Quantidade sugerida para compra
+        # Queremos manter estoque para: Lead Time + Cobertura Mínima + 50% extra
+        estoque_ideal = demanda_diaria_media * (lead_time + dias_cobertura_minima) * 1.5
+        
+        # Considerar produtos chegando
+        quantidade_chegando = produto.quantidade_chegando
+        estoque_projetado = estoque_atual + quantidade_chegando
+        
+        if estoque_projetado < ponto_reposicao:
+            precisa_repor = True
+            quantidade_sugerida = max(0, estoque_ideal - estoque_projetado)
+            urgencia = 'alta' if dias_cobertura_atual < lead_time else 'média'
+            urgencia_class = 'danger' if urgencia == 'alta' else 'warning'
+        else:
+            precisa_repor = False
+            quantidade_sugerida = 0
+            urgencia = 'baixa'
+            urgencia_class = 'success'
+        
+        # Detecção de sazonalidade simples (comparar semanas)
+        # Agrupar por dia da semana
+        vendas_por_dia_semana = defaultdict(list)
+        for i, qtd in enumerate(vendas_lista):
+            data = data_inicio_analise + timedelta(days=i)
+            dia_semana = data.weekday()  # 0 = Segunda, 6 = Domingo
+            vendas_por_dia_semana[dia_semana].append(qtd)
+        
+        # Calcular média por dia da semana
+        medias_dia_semana = {}
+        dias_nomes = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+        for dia in range(7):
+            if vendas_por_dia_semana[dia]:
+                medias_dia_semana[dias_nomes[dia]] = mean(vendas_por_dia_semana[dia])
+        
+        # Dia da semana com mais vendas
+        if medias_dia_semana:
+            dia_mais_vendas = max(medias_dia_semana, key=medias_dia_semana.get)
+            media_dia_mais_vendas = medias_dia_semana[dia_mais_vendas]
+        else:
+            dia_mais_vendas = 'N/A'
+            media_dia_mais_vendas = 0
+        
+        # Custo estimado da reposição sugerida
+        custo_medio = produto.custo_medio_ponderado
+        
+        # Se o custo médio ponderado for 0 (sem estoque), usar o último preço de compra conhecido
+        if custo_medio == 0:
+            ultimo_lote = produto.lotes.order_by('-data_entrada').first()
+            if ultimo_lote:
+                custo_medio = ultimo_lote.preco_compra
+        
+        custo_estimado_reposicao = Decimal(str(quantidade_sugerida)) * custo_medio if quantidade_sugerida > 0 else Decimal('0.00')
+        
+        analises_produtos.append({
+            'produto': produto,
+            'estoque_atual': estoque_atual,
+            'quantidade_chegando': quantidade_chegando,
+            'estoque_projetado': estoque_projetado,
+            'total_vendido_periodo': total_vendido_periodo,
+            'media_movel_7_dias': round(media_movel_7_dias, 2),
+            'media_movel_14_dias': round(media_movel_14_dias, 2),
+            'media_movel_30_dias': round(media_movel_30_dias, 2),
+            'desvio_padrao': round(desvio_padrao, 2),
+            'dias_cobertura_atual': round(dias_cobertura_atual, 1) if dias_cobertura_atual != float('inf') else 999,
+            'ponto_reposicao': round(ponto_reposicao, 1),
+            'precisa_repor': precisa_repor,
+            'quantidade_sugerida': round(quantidade_sugerida),
+            'urgencia': urgencia,
+            'urgencia_class': urgencia_class,
+            'tendencia': tendencia,
+            'tendencia_icon': tendencia_icon,
+            'tendencia_class': tendencia_class,
+            'variacao_percentual': round(variacao_percentual, 1),
+            'dia_mais_vendas': dia_mais_vendas,
+            'media_dia_mais_vendas': round(media_dia_mais_vendas, 2),
+            'custo_estimado_reposicao': custo_estimado_reposicao,
+            'vendas_lista': vendas_lista[-30:],  # Últimos 30 dias para gráfico
+        })
+    
+    # Ordenar por urgência (alta primeiro) e depois por quantidade sugerida
+    def ordem_urgencia(item):
+        if item['urgencia'] == 'alta':
+            return (0, -item['quantidade_sugerida'])
+        elif item['urgencia'] == 'média':
+            return (1, -item['quantidade_sugerida'])
+        else:
+            return (2, -item['quantidade_sugerida'])
+    
+    analises_produtos.sort(key=ordem_urgencia)
+    
+    # Calcular totais e estatísticas gerais
+    total_produtos_analisados = len(analises_produtos)
+    produtos_precisam_reposicao = sum(1 for p in analises_produtos if p['precisa_repor'])
+    produtos_urgencia_alta = sum(1 for p in analises_produtos if p['urgencia'] == 'alta')
+    custo_total_reposicao = sum(p['custo_estimado_reposicao'] for p in analises_produtos)
+    
+    context = {
+        'analises_produtos': analises_produtos,
+        'total_produtos_analisados': total_produtos_analisados,
+        'produtos_precisam_reposicao': produtos_precisam_reposicao,
+        'produtos_urgencia_alta': produtos_urgencia_alta,
+        'custo_total_reposicao': custo_total_reposicao,
+        'data_inicio_analise': data_inicio_analise,
+        'data_fim_analise': hoje,
+        'dias_analise': dias_analise,
+    }
+    
+    return render(request, 'inventario/analise_tendencias.html', context)

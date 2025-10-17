@@ -2,6 +2,84 @@
 
 {% block title %}{{ titulo }} - Gestão de Estoque{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<style>
+#aviso-produto-existente {
+    border-left: 4px solid #f59e0b;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+[data-theme="dark"] #aviso-produto-existente {
+    background-color: rgba(217, 119, 6, 0.15);
+    border-color: #f59e0b;
+    color: #fbbf24;
+}
+
+[data-theme="dark"] #aviso-produto-existente strong {
+    color: #fbbf24;
+}
+
+[data-theme="dark"] #aviso-produto-existente p {
+    color: #c9d1d9;
+}
+
+/* Autocomplete styling */
+.ui-autocomplete {
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1050 !important;
+}
+
+[data-theme="dark"] .ui-autocomplete {
+    background-color: #161b22 !important;
+    border-color: #30363d !important;
+    color: #c9d1d9;
+}
+
+[data-theme="dark"] .ui-menu-item {
+    color: #c9d1d9 !important;
+}
+
+[data-theme="dark"] .ui-menu-item:hover,
+[data-theme="dark"] .ui-state-active,
+[data-theme="dark"] .ui-state-focus {
+    background-color: rgba(88, 166, 255, 0.15) !important;
+    border-color: #58a6ff !important;
+    color: #58a6ff !important;
+}
+
+[data-theme="dark"] .ui-widget-content {
+    background-color: #161b22;
+    border-color: #30363d;
+}
+
+/* Indicador visual de produto existente no autocomplete */
+.produto-existente-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    margin-left: 8px;
+    background-color: #fbbf24;
+    color: #000;
+    font-size: 0.75rem;
+    border-radius: 3px;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Cabeçalho Responsivo -->
 <div class="row align-items-center mb-3">
@@ -29,12 +107,36 @@
                     {% endfor %}
                 </div>
             {% endif %}
+            
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    <strong>Erros no formulário:</strong>
+                    <ul class="mb-0">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li><strong>{{ field }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
 
             <h5 class="mb-3">Dados do Produto</h5>
             
             <div class="mb-3">
                 <label for="{{ form.nome.id_for_label }}" class="form-label">{{ form.nome.label }}</label>
                 {{ form.nome }}
+                {% if form.nome.errors %}
+                    <div class="text-danger mt-1">{{ form.nome.errors.0 }}</div>
+                {% endif %}
+                <div id="aviso-produto-existente" class="alert alert-warning mt-2 d-none">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <strong>Produto já existe!</strong>
+                    <p class="mb-2">O produto "<span id="nome-produto-existente"></span>" já está cadastrado no estoque.</p>
+                    <a id="link-adicionar-lote" href="#" class="btn btn-sm btn-warning">
+                        <i class="bi bi-plus-circle"></i> Ir para Adicionar Lote
+                    </a>
+                </div>
             </div>
 
             <div class="form-check mb-3">
@@ -52,6 +154,9 @@
                 <div class="col-md-4 mb-3">
                     <label for="{{ form.quantidade_inicial.id_for_label }}" class="form-label">{{ form.quantidade_inicial.label }}</label>
                     {{ form.quantidade_inicial }}
+                    {% if form.quantidade_inicial.errors %}
+                        <div class="text-danger mt-1">{{ form.quantidade_inicial.errors.0 }}</div>
+                    {% endif %}
                 </div>
                 <div class="col-md-4 mb-3">
                     <label for="{{ form.preco_compra.id_for_label }}" class="form-label">{{ form.preco_compra.label }}</label>
@@ -59,6 +164,9 @@
                         <span class="input-group-text">R$</span>
                         {{ form.preco_compra }}
                     </div>
+                    {% if form.preco_compra.errors %}
+                        <div class="text-danger mt-1">{{ form.preco_compra.errors.0 }}</div>
+                    {% endif %}
                 </div>
                 <div class="col-md-4 mb-3">
                     <label for="{{ form.preco_venda.id_for_label }}" class="form-label">{{ form.preco_venda.label }}</label>
@@ -66,6 +174,9 @@
                         <span class="input-group-text">R$</span>
                         {{ form.preco_venda }}
                     </div>
+                    {% if form.preco_venda.errors %}
+                        <div class="text-danger mt-1">{{ form.preco_venda.errors.0 }}</div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -80,6 +191,9 @@
                     <i class="bi bi-plus-lg"></i> Novo
                 </button>
             </div>
+            {% if form.fornecedor.errors %}
+                <div class="text-danger mt-1">{{ form.fornecedor.errors.0 }}</div>
+            {% endif %}
 
             <hr>
             
@@ -116,8 +230,98 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // === Autocomplete com verificação de Produto Existente ===
+    const campoNome = document.getElementById('{{ form.nome.id_for_label }}');
+    const avisoDiv = document.getElementById('aviso-produto-existente');
+    const nomeProdutoSpan = document.getElementById('nome-produto-existente');
+    const linkAdicionarLote = document.getElementById('link-adicionar-lote');
+    let produtoExistenteId = null;
+    
+    // Debug: Verificar submit do formulário
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log('Formulário sendo submetido...');
+            console.log('Produto existente ID:', produtoExistenteId);
+        });
+    }
+    
+    // Configurar autocomplete apenas se o campo existir
+    if (!campoNome) {
+        console.error('Campo nome não encontrado');
+        return;
+    }
+    
+    // Configurar autocomplete
+    $(campoNome).autocomplete({
+        source: "{% url 'inventario:buscar_produtos_json' %}",
+        minLength: 2,
+        create: function() {
+            // Customizar renderização dos itens
+            $(this).data('ui-autocomplete')._renderItem = function(ul, item) {
+                const $li = $("<li>");
+                const itemHtml = `<div>
+                    ${item.value}
+                    <span class="produto-existente-tag">JÁ EXISTE</span>
+                </div>`;
+                $li.html(itemHtml).appendTo(ul);
+                return $li;
+            };
+        },
+        select: function(event, ui) {
+            // Quando selecionar um item do autocomplete
+            // Mostrar aviso de produto existente
+            nomeProdutoSpan.textContent = ui.item.value;
+            linkAdicionarLote.href = `/produtos/${ui.item.id}/adicionar-estoque/`;
+            avisoDiv.classList.remove('d-none');
+            produtoExistenteId = ui.item.id;
+        },
+        change: function(event, ui) {
+            // Quando o usuário sair do campo, verificar se é produto existente
+            if (!ui.item) {
+                // Usuário digitou manualmente, verificar se existe
+                const nome = $(this).val().trim();
+                if (nome.length >= 2) {
+                    verificarProdutoExistente(nome);
+                } else {
+                    avisoDiv.classList.add('d-none');
+                    produtoExistenteId = null;
+                }
+            }
+        }
+    });
+    
+    // Função auxiliar para verificação manual
+    function verificarProdutoExistente(nome) {
+        fetch(`{% url 'inventario:buscar_produtos_json' %}?term=${encodeURIComponent(nome)}`)
+            .then(response => response.json())
+            .then(produtos => {
+                // Procurar por produto com nome exato (case insensitive)
+                const produtoExato = produtos.find(p => 
+                    p.value && p.value.toLowerCase() === nome.toLowerCase()
+                );
+                
+                if (produtoExato) {
+                    // Mostrar aviso
+                    nomeProdutoSpan.textContent = produtoExato.value;
+                    linkAdicionarLote.href = `/produtos/${produtoExato.id}/adicionar-estoque/`;
+                    avisoDiv.classList.remove('d-none');
+                    produtoExistenteId = produtoExato.id;
+                } else {
+                    // Esconder aviso
+                    avisoDiv.classList.add('d-none');
+                    produtoExistenteId = null;
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao verificar produto:', error);
+            });
+    }
+    
+    // === Modal Novo Fornecedor ===
     const modalNovoFornecedor = new bootstrap.Modal(document.getElementById('modalNovoFornecedor'));
     const btnSalvarFornecedor = document.getElementById('btn-salvar-novo-fornecedor');
     const nomeFornecedorInput = document.getElementById('nome_novo_fornecedor');

@@ -1,6 +1,12 @@
 from django import forms
 from .models import Produto, Fornecedor, Lote, Configuracao
 
+def capitalizar_nome(nome):
+    """Capitaliza a primeira letra de cada palavra em um nome"""
+    if not nome:
+        return nome
+    return ' '.join(palavra.capitalize() for palavra in nome.strip().split())
+
 class ProdutoForm(forms.ModelForm):
     # Campos do Lote
     fornecedor = forms.ModelChoiceField(queryset=Fornecedor.objects.all(), required=True, label="Fornecedor", widget=forms.Select(attrs={'class': 'form-select'}))
@@ -15,6 +21,10 @@ class ProdutoForm(forms.ModelForm):
             'preco_venda': forms.NumberInput(attrs={'class': 'form-control'}),
             'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+    
+    def clean_nome(self):
+        nome = self.cleaned_data.get('nome')
+        return capitalizar_nome(nome)
 
 class ProdutoEditForm(forms.ModelForm):
     quantidade_estoque = forms.IntegerField(
@@ -27,12 +37,18 @@ class ProdutoEditForm(forms.ModelForm):
     
     class Meta:
         model = Produto
-        fields = ['nome', 'preco_venda', 'ativo']
+        fields = ['nome', 'preco_venda', 'ativo', 'lead_time_dias', 'dias_cobertura_minima']
         widgets = {
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
             'preco_venda': forms.NumberInput(attrs={'class': 'form-control'}),
             'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'lead_time_dias': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'dias_cobertura_minima': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
         }
+    
+    def clean_nome(self):
+        nome = self.cleaned_data.get('nome')
+        return capitalizar_nome(nome)
 
 class LoteForm(forms.ModelForm):
     class Meta:
@@ -46,16 +62,30 @@ class LoteForm(forms.ModelForm):
 class ConfiguracaoForm(forms.ModelForm):
     class Meta:
         model = Configuracao
-        fields = ['nome_empresa', 'limite_estoque_baixo', 'margem_lucro_ideal', 'dias_produto_parado']
+        fields = ['nome_empresa', 'limite_estoque_baixo', 'margem_lucro_ideal', 'dias_produto_parado', 'dias_analise_tendencias']
         widgets = {
             'nome_empresa': forms.TextInput(attrs={'class': 'form-control form-control-sm'}),
             'limite_estoque_baixo': forms.NumberInput(attrs={'class': 'form-control form-control-sm'}),
             'margem_lucro_ideal': forms.NumberInput(attrs={'class': 'form-control form-control-sm'}),
             'dias_produto_parado': forms.NumberInput(attrs={'class': 'form-control form-control-sm', 'min': '1'}),
+            'dias_analise_tendencias': forms.NumberInput(attrs={'class': 'form-control form-control-sm', 'min': '7', 'max': '365'}),
         }
         help_texts = {
             'nome_empresa': 'O nome que aparecerá no sistema.',
             'limite_estoque_baixo': 'Receba alertas quando o estoque atingir este número.',
             'margem_lucro_ideal': 'A margem de lucro que você considera ideal para seus produtos (em %).',
             'dias_produto_parado': 'Produtos sem vendas neste período serão listados como parados no dashboard.',
-        } 
+            'dias_analise_tendencias': 'Quantidade de dias de histórico usado para análise de tendências (mínimo: 7, máximo: 365).',
+        }
+
+class FornecedorForm(forms.ModelForm):
+    class Meta:
+        model = Fornecedor
+        fields = ['nome']
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'form-control form-control-sm', 'placeholder': 'Nome do fornecedor'}),
+        }
+    
+    def clean_nome(self):
+        nome = self.cleaned_data.get('nome')
+        return capitalizar_nome(nome) 

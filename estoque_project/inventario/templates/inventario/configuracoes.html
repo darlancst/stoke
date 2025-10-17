@@ -14,7 +14,21 @@
 {% block content %}
 <h1 class="mb-2">Configurações</h1>
 
-<div class="card">
+<!-- Mensagens -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Configurações Gerais -->
+<div class="card mb-3">
+    <div class="card-header py-2">
+        <h6 class="mb-0"><i class="bi bi-gear"></i> Configurações Gerais</h6>
+    </div>
     <div class="card-body py-3 px-3">
         <form method="post" enctype="multipart/form-data" style="max-width: 800px;">
             {% csrf_token %}
@@ -54,6 +68,22 @@
                     <div class="form-text small">{{ form.dias_produto_parado.help_text }}</div>
                 </div>
             </div>
+            
+            <!-- Período de Análise de Tendências -->
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label for="{{ form.dias_analise_tendencias.id_for_label }}" class="form-label mb-1">
+                        <small class="fw-bold">
+                            <i class="bi bi-graph-up-arrow"></i> {{ form.dias_analise_tendencias.label }}
+                        </small>
+                    </label>
+                    <div class="input-group">
+                        {{ form.dias_analise_tendencias }}
+                        <span class="input-group-text input-group-text-sm">dias</span>
+                    </div>
+                    <div class="form-text small">{{ form.dias_analise_tendencias.help_text }}</div>
+                </div>
+            </div>
 
             <!-- Logo -->
             <div class="mb-2">
@@ -70,6 +100,118 @@
                 <i class="bi bi-check-circle"></i> Salvar Configurações
             </button>
         </form>
+    </div>
+</div>
+
+<!-- Gerenciar Fornecedores -->
+<div class="card">
+    <div class="card-header py-2">
+        <h6 class="mb-0"><i class="bi bi-truck"></i> Gerenciar Fornecedores</h6>
+    </div>
+    <div class="card-body py-3 px-3">
+        <!-- Formulário para adicionar fornecedor -->
+        <form method="post" action="{% url 'inventario:adicionar_fornecedor' %}" class="mb-3" style="max-width: 600px;">
+            {% csrf_token %}
+            <div class="row g-2 align-items-end">
+                <div class="col">
+                    <label for="{{ fornecedor_form.nome.id_for_label }}" class="form-label mb-1">
+                        <small class="fw-bold">Adicionar Novo Fornecedor</small>
+                    </label>
+                    {{ fornecedor_form.nome }}
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-plus-circle"></i> Adicionar
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <hr class="my-3">
+
+        <!-- Lista de fornecedores -->
+        {% if fornecedores %}
+            <h6 class="mb-2"><small class="fw-bold">Fornecedores Cadastrados ({{ fornecedores.count }})</small></h6>
+            
+            <!-- Tabela para desktop -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nome</th>
+                            <th class="text-center">Produtos</th>
+                            <th class="text-center">Chegando</th>
+                            <th class="text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fornecedor in fornecedores %}
+                        <tr>
+                            <td class="fw-semibold">{{ fornecedor.nome }}</td>
+                            <td class="text-center">
+                                {% with qtd_produtos=fornecedor.produtos.count %}
+                                    {% if qtd_produtos > 0 %}
+                                        <span class="badge bg-primary">{{ qtd_produtos }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="text-center">
+                                {% with qtd_chegando=fornecedor.produtos_chegando.count %}
+                                    {% if qtd_chegando > 0 %}
+                                        <span class="badge bg-info">{{ qtd_chegando }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="text-center">
+                                <form method="post" action="{% url 'inventario:excluir_fornecedor' pk=fornecedor.pk %}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir o fornecedor {{ fornecedor.nome }}?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Cards para mobile -->
+            <div class="d-md-none">
+                {% for fornecedor in fornecedores %}
+                <div class="card mb-2">
+                    <div class="card-body p-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="flex-grow-1">
+                                <strong>{{ fornecedor.nome }}</strong>
+                                <div class="mt-1">
+                                    <small class="text-muted">Produtos: </small>
+                                    <span class="badge bg-primary">{{ fornecedor.produtos.count }}</span>
+                                    <small class="text-muted ms-2">Chegando: </small>
+                                    <span class="badge bg-info">{{ fornecedor.produtos_chegando.count }}</span>
+                                </div>
+                            </div>
+                            <form method="post" action="{% url 'inventario:excluir_fornecedor' pk=fornecedor.pk %}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir o fornecedor {{ fornecedor.nome }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm ms-2">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-3">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <p class="text-muted mt-2 mb-0">Nenhum fornecedor cadastrado</p>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %} 

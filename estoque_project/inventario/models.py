@@ -20,6 +20,18 @@ class Produto(models.Model):
     fornecedor = models.ForeignKey(Fornecedor, on_delete=models.PROTECT, related_name='produtos', null=True, blank=True)
     preco_venda = models.DecimalField('Preço de Venda', max_digits=10, decimal_places=2, null=True, blank=True)
     
+    # Campos para previsão de estoque
+    lead_time_dias = models.PositiveIntegerField(
+        'Lead Time (dias)', 
+        default=7,
+        help_text='Tempo de entrega do fornecedor em dias'
+    )
+    dias_cobertura_minima = models.PositiveIntegerField(
+        'Dias de Cobertura Mínima',
+        default=15,
+        help_text='Quantidade mínima de dias que o estoque deve cobrir'
+    )
+    
     def __str__(self):
         return self.nome
     
@@ -88,7 +100,9 @@ class Venda(models.Model):
     desconto = models.DecimalField('Desconto', max_digits=10, decimal_places=2, default=Decimal('0.00'))
 
     def __str__(self):
-        return f"Venda #{self.pk} - {self.data.strftime('%d/%m/%Y')}"
+        from django.utils import timezone as tz
+        data_local = tz.localtime(self.data)
+        return f"Venda #{self.pk} - {data_local.strftime('%d/%m/%Y')}"
 
     @property
     def teve_devolucao(self):
@@ -191,6 +205,7 @@ class Configuracao(models.Model):
     limite_estoque_baixo = models.PositiveIntegerField('Limite de Estoque Baixo', default=10)
     margem_lucro_ideal = models.DecimalField('Margem de Lucro Ideal (%)', max_digits=5, decimal_places=2, default=Decimal('30.00'))
     dias_produto_parado = models.PositiveIntegerField('Dias sem vender para considerar parado', default=60, help_text='Produtos sem vendas neste período serão listados como parados')
+    dias_analise_tendencias = models.PositiveIntegerField('Período de Análise de Tendências (dias)', default=90, help_text='Quantidade de dias de histórico usado para análise de tendências e previsão de estoque')
 
     class Meta:
         verbose_name = 'Configuração'

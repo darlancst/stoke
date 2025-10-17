@@ -108,6 +108,29 @@
             font-size: 1.1rem;
         }
         
+        /* Botão de Ajuda/Recursos */
+        #help-toggle {
+            background-color: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        #help-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
+        }
+        
+        #help-toggle:active {
+            transform: scale(0.95);
+        }
+        
+        #help-toggle .bi {
+            font-size: 1.1rem;
+        }
+        
         /* Transições suaves para mudança de tema */
         body, .card, .table, .sidebar, .form-control, .form-select, .btn, .badge, .alert {
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
@@ -290,6 +313,16 @@
             border-top-color: #30363d;
         }
         
+        [data-theme="dark"] .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+        
+        [data-theme="dark"] kbd {
+            background-color: #30363d;
+            color: #c9d1d9;
+            border-color: #484f58;
+        }
+        
         [data-theme="dark"] .dropdown-menu {
             background-color: #161b22;
             border-color: #30363d;
@@ -395,6 +428,78 @@
             border: 1px solid #30363d;
         }
         
+        /* ========== TRUNCAMENTO DE TEXTO EM MOBILE ========== */
+        @media (max-width: 767.98px) {
+            /* Trunca texto longo em tabelas mobile */
+            .table td:not(.text-center):not(.text-end) {
+                max-width: 150px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            
+            /* Permite quebra de linha em listas pequenas de itens */
+            .table td .small,
+            .table td .list-unstyled li {
+                white-space: normal;
+                overflow-wrap: break-word;
+                word-break: break-word;
+            }
+            
+            /* Trunca texto em cards mobile */
+            .card-body .text-truncate {
+                max-width: 100%;
+            }
+            
+            /* Inputs e selects ajustados */
+            .form-control,
+            .form-select {
+                font-size: 16px !important; /* Previne zoom no iOS */
+            }
+            
+            /* Trunca badges longos mas mantém visibilidade */
+            .badge {
+                max-width: fit-content;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: inline-block;
+            }
+            
+            /* Links longos em mobile */
+            .card a:not(.btn),
+            .table a:not(.btn) {
+                word-break: break-word;
+                overflow-wrap: break-word;
+            }
+            
+            /* Nomes de produtos e clientes em cards */
+            .card-body strong,
+            .card-body .fw-bold,
+            .card-body .fw-semibold {
+                word-break: break-word;
+                overflow-wrap: break-word;
+            }
+        }
+        
+        /* ========== RESPONSIVIDADE GERAL ========== */
+        /* Garantir que conteúdo não vaze do container */
+        .card-body,
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        /* Quebra de linha inteligente para textos longos */
+        .text-break-mobile {
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        @media (max-width: 767.98px) {
+            .text-break-mobile {
+                word-break: break-word !important;
+            }
+        }
+        
         /* Ajuste para small text dentro de badges/cards */
         [data-theme="dark"] .badge .text-muted,
         [data-theme="dark"] .card-body .text-muted {
@@ -462,14 +567,14 @@
         
         /* Botões info no dark mode */
         [data-theme="dark"] .btn-info {
-            background-color: #1f6feb;
-            border-color: #1f6feb;
-            color: #fff;
+            background-color: #30363d;
+            border-color: #30363d;
+            color: #58a6ff;
         }
         [data-theme="dark"] .btn-info:hover {
-            background-color: #58a6ff;
-            border-color: #58a6ff;
-            color: #fff;
+            background-color: #484f58;
+            border-color: #484f58;
+            color: #79c0ff;
         }
         /* Botões warning no dark mode */
         [data-theme="dark"] .btn-warning {
@@ -591,7 +696,7 @@
         
         /* Text-info no dark mode */
         [data-theme="dark"] .text-info {
-            color: #79c0ff !important;
+            color: #58a6ff !important;
         }
         
         /* Background badges no dark mode */
@@ -616,13 +721,15 @@
         }
         
         [data-theme="dark"] .badge.bg-primary {
-            background-color: #1f6feb !important;
-            color: #fff !important;
+            background-color: #30363d !important;
+            color: #58a6ff !important;
+            border: 1px solid #58a6ff !important;
         }
         
         [data-theme="dark"] .badge.bg-info {
-            background-color: #1f6feb !important;
-            color: #fff !important;
+            background-color: #30363d !important;
+            color: #58a6ff !important;
+            border: 1px solid #58a6ff !important;
         }
         
         [data-theme="dark"] .badge.bg-secondary {
@@ -810,6 +917,9 @@
             Stoke
         </a>
         <div class="d-flex align-items-center">
+            <button id="help-toggle" class="btn btn-sm me-2" title="Recursos e Ajuda" data-bs-toggle="modal" data-bs-target="#helpModal">
+                <i class="bi bi-question-circle-fill"></i>
+            </button>
             <button id="theme-toggle" class="btn btn-sm me-2" title="Alternar tema">
                 <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
             </button>
@@ -822,16 +932,226 @@
     <!-- Backdrop para menu mobile -->
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     
+    <!-- Modal de Recursos e Ajuda -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalLabel">
+                        <i class="bi bi-info-circle-fill text-primary"></i> Recursos e Funcionalidades
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="lead">
+                        Bem-vindo ao <strong>Stoke</strong>! Um sistema completo de gestão de estoque com controle FIFO, análise de tendências e previsão inteligente.
+                    </p>
+                    
+                    <hr class="my-3">
+                    
+                    <!-- 1. VISÃO GERAL -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-primary">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </h6>
+                        <p class="mb-2">Visão geral do seu negócio com métricas em tempo real:</p>
+                        <ul class="small mb-0">
+                            <li><strong>Cards de resumo:</strong> Vendas do período, lucro total, margem média e produtos críticos</li>
+                            <li><strong>Heatmap de lucros:</strong> Visualização de lucratividade diária nos últimos 365 dias com correção de timezone</li>
+                            <li><strong>Gráfico de evolução:</strong> Acompanhe receitas, custos e lucros ao longo do tempo</li>
+                            <li><strong>Produtos mais vendidos:</strong> Rankings com quantidade e links diretos</li>
+                            <li><strong>Produtos mais lucrativos:</strong> Análise de margem de lucro percentual e valor absoluto</li>
+                            <li><strong>Estoque baixo:</strong> Alertas automáticos com links rápidos</li>
+                            <li><strong>Produtos parados:</strong> Identifique itens sem movimentação (período configurável)</li>
+                            <li><strong>Filtros inteligentes:</strong> 7 dias, 30 dias, mês atual/anterior, ano atual ou período personalizado</li>
+                        </ul>
+                    </div>
+                    
+                    <hr class="my-2">
+                    <small class="text-muted fw-bold">GESTÃO DE ESTOQUE</small>
+                    <hr class="my-2">
+                    
+                    <!-- 2. PRODUTOS -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-success">
+                            <i class="bi bi-box-seam"></i> Produtos
+                        </h6>
+                        <p class="mb-2">Controle completo do seu inventário atual:</p>
+                        <ul class="small mb-0">
+                            <li><strong>Sistema FIFO:</strong> Controle automático de lotes com regra "Primeiro que Entra, Primeiro que Sai"</li>
+                            <li><strong>Cadastro inteligente:</strong> Detecção automática de produtos duplicados com sugestão de adicionar lote</li>
+                            <li><strong>Autocomplete:</strong> Sugestões em tempo real ao digitar nomes de produtos</li>
+                            <li><strong>Capitalização automática:</strong> Nomes de produtos sempre com primeira letra maiúscula</li>
+                            <li><strong>Rastreabilidade completa:</strong> Cada lote possui data de entrada, fornecedor e preço individual</li>
+                            <li><strong>Histórico detalhado:</strong> Veja todas as entradas, vendas e devoluções de cada produto</li>
+                            <li><strong>Ajuste de estoque:</strong> Edite quantidades diretamente respeitando FIFO</li>
+                            <li><strong>Status de produtos:</strong> Ative, pause ou exclua produtos permanentemente</li>
+                            <li><strong>Busca avançada:</strong> Filtros por nome, status, estoque e outros critérios</li>
+                            <li><strong>Cards compactos mobile:</strong> Layout otimizado com 40% mais produtos visíveis por tela</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 3. CHEGANDO -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-warning">
+                            <i class="bi bi-hourglass-split"></i> Chegando
+                        </h6>
+                        <p class="mb-2">Pré-cadastre produtos antes de receberem:</p>
+                        <ul class="small mb-0">
+                            <li><strong>Cadastro rápido:</strong> Apenas nome, quantidade e preço de compra obrigatórios</li>
+                            <li><strong>Autocomplete inteligente:</strong> Vincula automaticamente a produtos existentes</li>
+                            <li><strong>Fornecedor opcional:</strong> Cadastre o fornecedor antecipadamente</li>
+                            <li><strong>Previsão de chegada:</strong> Acompanhe datas esperadas de recebimento</li>
+                            <li><strong>Conversão automática:</strong> Transforma em estoque real com um clique</li>
+                            <li><strong>Detecção de duplicatas:</strong> Evita cadastros duplicados vinculando ao existente</li>
+                            <li><strong>Badge de quantidade:</strong> Veja produtos "Chegando" nas listagens de estoque</li>
+                            <li><strong>Cards compactos mobile:</strong> 45% mais produtos visíveis por tela</li>
+                        </ul>
+                    </div>
+                    
+                    <hr class="my-2">
+                    <small class="text-muted fw-bold">OPERAÇÕES DE VENDA</small>
+                    <hr class="my-2">
+                    
+                    <!-- 4. VENDAS -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-info">
+                            <i class="bi bi-cart4"></i> Vendas
+                        </h6>
+                        <p class="mb-2">Registre e acompanhe suas vendas com precisão:</p>
+                        <ul class="small mb-0">
+                            <li><strong>Interface otimizada:</strong> Cadastro rápido com busca de produtos em tempo real</li>
+                            <li><strong>Múltiplos itens:</strong> Adicione vários produtos em uma única venda</li>
+                            <li><strong>Tipos de venda:</strong> Diferencie vendas na "Loja" (50% lucro) e "Externa" (100% lucro)</li>
+                            <li><strong>Sistema de brindes:</strong> Marque itens como cortesia sem cobrar (rastreamento separado)</li>
+                            <li><strong>Descontos flexíveis:</strong> Aplique descontos gerais na venda</li>
+                            <li><strong>Capitalização automática:</strong> Nomes de clientes sempre formatados corretamente</li>
+                            <li><strong>Baixa FIFO automática:</strong> Sistema consome do lote mais antigo</li>
+                            <li><strong>Cálculo de lucro:</strong> Margem e lucro calculados automaticamente por item e total</li>
+                            <li><strong>Histórico completo:</strong> Filtre por ID, cliente, tipo, data ou produto</li>
+                            <li><strong>Badges informativos:</strong> Indicadores de devoluções totais, parciais e brindes</li>
+                            <li><strong>Cards mobile ultra-compactos:</strong> 50% mais vendas visíveis por tela</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 5. DEVOLUÇÕES -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-danger">
+                            <i class="bi bi-arrow-return-left"></i> Devoluções
+                        </h6>
+                        <p class="mb-2">Gerencie devoluções com rastreabilidade completa:</p>
+                        <ul class="small mb-0">
+                            <li><strong>Vinculação automática:</strong> Devoluções conectadas à venda original</li>
+                            <li><strong>Devolução parcial:</strong> Devolva apenas alguns itens ou quantidades de uma venda</li>
+                            <li><strong>Devolução total:</strong> Cancele vendas completas quando necessário</li>
+                            <li><strong>Reintegração ao estoque:</strong> Escolha se produtos voltam ao inventário</li>
+                            <li><strong>Rastreabilidade:</strong> Data de retorno ao estoque registrada automaticamente</li>
+                            <li><strong>Impacto no lucro:</strong> Ajustes automáticos nos cálculos de margem</li>
+                            <li><strong>Histórico completo:</strong> Consulte todas as devoluções com filtros</li>
+                            <li><strong>Cards compactos mobile:</strong> 55% mais devoluções visíveis por tela</li>
+                        </ul>
+                    </div>
+                    
+                    <hr class="my-2">
+                    <small class="text-muted fw-bold">INTELIGÊNCIA E PLANEJAMENTO</small>
+                    <hr class="my-2">
+                    
+                    <!-- 6. ANÁLISE DE TENDÊNCIAS -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-purple">
+                            <i class="bi bi-graph-up-arrow"></i> Análise de Tendências
+                        </h6>
+                        <p class="mb-2">Inteligência para reposição otimizada:</p>
+                        <ul class="small mb-0">
+                            <li><strong>Média móvel inteligente:</strong> Calcula consumo diário baseado em histórico configurável</li>
+                            <li><strong>Análise de tendências:</strong> Detecta se vendas estão crescendo, estáveis ou declinando</li>
+                            <li><strong>Ponto de reposição:</strong> Calcula automaticamente quando comprar baseado em lead time</li>
+                            <li><strong>Dias de cobertura:</strong> Mostra quantos dias o estoque atual durará</li>
+                            <li><strong>Urgência inteligente:</strong> Classifica produtos em ALTA, MÉDIA, BAIXA ou OK</li>
+                            <li><strong>Quantidade sugerida:</strong> Calcula exatamente quantas unidades comprar</li>
+                            <li><strong>Custo de reposição:</strong> Estima valor total necessário para reabastecimento</li>
+                            <li><strong>Filtros avançados:</strong> Por nome, urgência e tendência</li>
+                            <li><strong>Configurável:</strong> Ajuste dias de análise, lead time e cobertura mínima por produto</li>
+                        </ul>
+                    </div>
+                    
+                    <hr class="my-2">
+                    <small class="text-muted fw-bold">SISTEMA</small>
+                    <hr class="my-2">
+                    
+                    <!-- 7. CONFIGURAÇÕES -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-secondary">
+                            <i class="bi bi-gear"></i> Configurações
+                        </h6>
+                        <p class="mb-2">Personalize o sistema conforme suas necessidades:</p>
+                        <ul class="small mb-0">
+                            <li><strong>Fornecedores:</strong> Cadastro com modal rápido em qualquer tela</li>
+                            <li><strong>Capitalização automática:</strong> Nomes de fornecedores sempre formatados</li>
+                            <li><strong>Nome da empresa:</strong> Personalize identificação no sistema</li>
+                            <li><strong>Limite de estoque baixo:</strong> Configure threshold de alertas</li>
+                            <li><strong>Margem de lucro ideal:</strong> Defina meta de lucratividade</li>
+                            <li><strong>Dias de produto parado:</strong> Configure período de inatividade (padrão: 30 dias)</li>
+                            <li><strong>Dias de análise de tendências:</strong> Ajuste janela de histórico (7-365 dias)</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 8. DARK MODE -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold">
+                            <i class="bi bi-moon-stars-fill"></i> Modo Escuro
+                        </h6>
+                        <p class="mb-2">Proteja seus olhos em ambientes com pouca luz:</p>
+                        <ul class="small mb-0">
+                            <li><strong>Toggle rápido:</strong> Clique no botão <i class="bi bi-moon-stars-fill"></i> no canto superior direito</li>
+                            <li><strong>Atalho de teclado:</strong> Pressione <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd></li>
+                            <li><strong>Cores otimizadas:</strong> Paleta cuidadosamente ajustada para conforto visual</li>
+                            <li><strong>Persistente:</strong> Sua preferência é salva automaticamente no navegador</li>
+                            <li><strong>Consistência total:</strong> Todos os elementos respeitam o tema escolhido</li>
+                        </ul>
+                    </div>
+                    
+                    <hr class="my-3">
+                    
+                    <!-- DICAS IMPORTANTES -->
+                    <div class="alert alert-info mb-0">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-lightbulb-fill"></i> Dicas e Boas Práticas
+                        </h6>
+                        <ul class="small mb-0">
+                            <li><strong>FIFO Automático:</strong> O sistema sempre consome do lote mais antigo ao realizar vendas</li>
+                            <li><strong>Capitalização:</strong> Nomes de produtos, clientes e fornecedores são automaticamente formatados (primeira letra maiúscula)</li>
+                            <li><strong>Análise de Tendências:</strong> Requer no mínimo 14 dias de histórico de vendas para análise confiável</li>
+                            <li><strong>Timezone Correto:</strong> Todo o sistema usa timezone local (não UTC) para cálculos precisos</li>
+                            <li><strong>Cards Compactos:</strong> Em mobile, todas as listagens usam layout ultra-otimizado para máxima densidade de informação</li>
+                            <li><strong>Busca Inteligente:</strong> Use autocomplete para evitar duplicatas e acelerar cadastros</li>
+                            <li><strong>Mobile Friendly:</strong> Sistema 100% responsivo, otimizado para tablets e smartphones</li>
+                            <li><strong>Design Consistente:</strong> Todas as páginas seguem o mesmo padrão visual (Design System)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="container-fluid">
         <div class="row">
             <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
                 <div class="position-sticky">
                     <ul class="nav flex-column">
+                        <!-- Visão Geral -->
                         <li class="nav-item">
                             <a href="{% url 'inventario:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" aria-current="page">
                                 <i class="bi bi-speedometer2"></i> Dashboard
                             </a>
                         </li>
+                        
+                        <!-- Gestão de Estoque -->
                         <li class="nav-item">
                             <a href="{% url 'inventario:listar_produtos' %}" class="nav-link {% if 'produto' in request.resolver_match.url_name or 'adicionar_estoque' in request.resolver_match.url_name %}active{% endif %}">
                                 <i class="bi bi-box-seam"></i> Produtos
@@ -842,6 +1162,8 @@
                                 <i class="bi bi-hourglass-split"></i> Chegando
                             </a>
                         </li>
+                        
+                        <!-- Operações de Venda -->
                         <li class="nav-item">
                             <a class="nav-link {% if 'venda' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'inventario:listar_vendas' %}">
                                 <i class="bi bi-cart4"></i> Vendas
@@ -852,6 +1174,15 @@
                                 <i class="bi bi-arrow-return-left"></i> Devoluções
                             </a>
                         </li>
+                        
+                        <!-- Inteligência e Planejamento -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'analise_tendencias' %}active{% endif %}" href="{% url 'inventario:analise_tendencias' %}">
+                                <i class="bi bi-graph-up-arrow"></i> Análise de Tendências
+                            </a>
+                        </li>
+                        
+                        <!-- Sistema -->
                         <li class="nav-item">
                             <a href="{% url 'inventario:configuracoes' %}" class="nav-link {% if request.resolver_match.url_name == 'configuracoes' %}active{% endif %}">
                                 <i class="bi bi-gear"></i> Configurações

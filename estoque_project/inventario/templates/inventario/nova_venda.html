@@ -34,6 +34,32 @@
         z-index: 1050;
     }
     
+    /* Estilo para produtos sem estoque */
+    .ui-menu-item-sem-estoque {
+        opacity: 0.5;
+        background-color: #f8d7da !important;
+        cursor: not-allowed !important;
+        pointer-events: none;
+    }
+    
+    .ui-menu-item-sem-estoque a {
+        color: #721c24 !important;
+        cursor: not-allowed !important;
+    }
+    
+    [data-theme="dark"] .ui-menu-item-sem-estoque {
+        background-color: rgba(220, 38, 38, 0.15) !important;
+    }
+    
+    [data-theme="dark"] .ui-menu-item-sem-estoque a {
+        color: #f87171 !important;
+    }
+    
+    /* Tooltip para produtos sem estoque */
+    .ui-menu-item-sem-estoque::before {
+        content: "🚫 ";
+    }
+    
     @media (min-width: 992px) {
         .total-venda-fixed {
             justify-content: center !important;
@@ -322,9 +348,32 @@ $(document).ready(function() {
     $("#buscar_produto").autocomplete({
         source: "{% url 'inventario:buscar_produtos_json' %}",
         minLength: 2,
+        create: function() {
+            $(this).data('ui-autocomplete')._renderItem = function(ul, item) {
+                const $li = $("<li>")
+                    .append("<div>" + item.label + "</div>")
+                    .appendTo(ul);
+                
+                // Adicionar classe especial se sem estoque
+                if (item.sem_estoque) {
+                    $li.addClass("ui-menu-item-sem-estoque");
+                    $li.attr("title", "Produto sem estoque disponível");
+                }
+                
+                return $li;
+            };
+        },
         select: function(event, ui) {
             event.preventDefault();
             const produto = ui.item;
+            
+            // Impedir seleção de produtos sem estoque
+            if (produto.sem_estoque) {
+                alert('⚠️ Este produto não possui estoque disponível e não pode ser adicionado à venda.');
+                $('#buscar_produto').val('');
+                return false;
+            }
+            
             const ehBrinde = $('#adicionar_como_brinde').is(':checked');
             const chaveItem = produto.id + '_' + (ehBrinde ? 'brinde' : 'pago'); // Chave composta para permitir mesmo produto como pago e brinde
             

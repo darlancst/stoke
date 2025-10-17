@@ -121,6 +121,60 @@
         letter-spacing: 0.3px;
     }
 }
+
+/* Estilo para listas compactas */
+.compact-list .list-group-item {
+    border-left: none;
+    border-right: none;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.compact-list .list-group-item:first-child {
+    border-top: none;
+}
+
+.compact-list .list-group-item:last-child {
+    border-bottom: none;
+}
+
+.compact-list a {
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.9rem;
+}
+
+.compact-list a:hover {
+    color: #0d6efd;
+}
+
+[data-theme="dark"] .compact-list a {
+    color: #c9d1d9 !important;
+}
+
+[data-theme="dark"] .compact-list a:hover {
+    color: #58a6ff !important;
+}
+
+/* Links nas tabelas do dashboard */
+.link-dashboard {
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.9rem;
+}
+
+.link-dashboard:hover {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+[data-theme="dark"] .link-dashboard {
+    color: #c9d1d9 !important;
+}
+
+[data-theme="dark"] .link-dashboard:hover {
+    color: #58a6ff !important;
+}
 </style>
 
 <div class="row g-2 g-md-3">
@@ -211,7 +265,7 @@
                             <tbody>
                                 {% for produto in produtos_estoque_baixo %}
                                 <tr>
-                                    <td><a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}">{{ produto.nome }}</a></td>
+                                    <td><a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="link-dashboard">{{ produto.nome }}</a></td>
                                     <td class="text-end"><span class="badge bg-danger">{{ produto.qtd_total }}</span></td>
                                 </tr>
                                 {% endfor %}
@@ -228,18 +282,18 @@
                     <div class="card-header">
                         <i class="bi bi-trophy-fill"></i> Mais Vendidos
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-0">
                         {% if top_produtos_vendidos %}
-                            <ul class="list-group list-group-flush">
+                            <ul class="list-group list-group-flush compact-list">
                                 {% for produto in top_produtos_vendidos %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                        <a href="{% url 'inventario:detalhar_produto' pk=produto.produto__id %}">{{ produto.produto__nome }}</a>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
+                                        <a href="{% url 'inventario:detalhar_produto' pk=produto.produto__id %}" class="text-truncate me-2">{{ produto.produto__nome }}</a>
                                         <span class="badge bg-primary rounded-pill">{{ produto.quantidade_total_vendida }}</span>
                                     </li>
                                 {% endfor %}
                             </ul>
                         {% else %}
-                            <p class="text-center text-muted mb-0">Nenhuma venda no período.</p>
+                            <p class="text-center text-muted mb-0 py-3">Nenhuma venda no período.</p>
                         {% endif %}
                     </div>
                 </div>
@@ -251,21 +305,18 @@
                     <div class="card-header">
                         <i class="bi bi-currency-dollar"></i> Mais Lucrativos
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-0">
                         {% if produtos_mais_lucrativos %}
-                            <ul class="list-group list-group-flush">
+                            <ul class="list-group list-group-flush compact-list">
                                 {% for produto in produtos_mais_lucrativos %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                        <a href="{% url 'inventario:detalhar_produto' pk=produto.produto__id %}">{{ produto.produto__nome }}</a>
-                                        <div class="text-end">
-                                            <span class="badge bg-success">R$ {{ produto.lucro_total|floatformat:2 }}</span>
-                                            <small class="d-block text-muted mt-1">{{ produto.margem_lucro|floatformat:1 }}% margem</small>
-                                        </div>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
+                                        <a href="{% url 'inventario:detalhar_produto' pk=produto.produto__id %}" class="text-truncate me-2">{{ produto.produto__nome }}</a>
+                                        <span class="badge bg-success rounded-pill">R$ {{ produto.lucro_total|floatformat:2 }} <small style="opacity: 0.85;">({{ produto.margem_lucro|floatformat:1 }}%)</small></span>
                                     </li>
                                 {% endfor %}
                             </ul>
                         {% else %}
-                            <p class="text-center text-muted mb-0">Nenhuma venda no período.</p>
+                            <p class="text-center text-muted mb-0 py-3">Nenhuma venda no período.</p>
                         {% endif %}
                     </div>
                 </div>
@@ -291,7 +342,7 @@
                                 <tbody>
                                     {% for item in produtos_parados %}
                                     <tr>
-                                        <td><a href="{% url 'inventario:detalhar_produto' pk=item.produto.pk %}">{{ item.produto.nome }}</a></td>
+                                        <td><a href="{% url 'inventario:detalhar_produto' pk=item.produto.pk %}" class="link-dashboard">{{ item.produto.nome }}</a></td>
                                         <td class="text-center"><span class="badge bg-secondary">{{ item.quantidade }}</span></td>
                                         <td class="text-end">
                                             <span class="badge bg-warning text-dark">{{ item.dias_parado }} dias</span>
@@ -318,7 +369,6 @@
             </div>
             <div class="card-body">
                 <div class="heatmap-main-container">
-                    <div id="heatmap-weekdays-container"></div>
                     <div class="heatmap-wrapper">
                         <div class="heatmap-content">
                             <div class="heatmap-grid-wrapper">
@@ -360,34 +410,6 @@
 .heatmap-main-container {
     position: relative;
     display: flex;
-    gap: 5px;
-}
-
-#heatmap-weekdays-container {
-    display: grid;
-    grid-template-rows: repeat(7, 1fr);
-    gap: 3px;
-    padding-top: 20px; /* Alinha com o grid (altura do header de meses) */
-    font-size: 0.65rem;
-    color: #555;
-    width: 35px;
-    flex-shrink: 0;
-    background-color: #fff;
-    z-index: 10;
-    padding-right: 5px;
-}
-
-[data-theme="dark"] #heatmap-weekdays-container {
-    color: #8b949e;
-    background-color: #0d1117;
-}
-
-.heatmap-weekday-label {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    line-height: 1;
-    text-align: right;
 }
 
 .heatmap-wrapper {
@@ -407,15 +429,6 @@
 }
 
 @media (max-width: 767.98px) {
-    .heatmap-main-container {
-        gap: 3px; /* Gap menor em mobile */
-    }
-    
-    #heatmap-weekdays-container {
-        width: 30px; /* Menor em mobile */
-        font-size: 0.6rem;
-    }
-    
     .heatmap-wrapper {
         /* Em mobile, garantir que o scroll funcione bem */
         scroll-snap-type: x proximity;
@@ -558,6 +571,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                top: -5,
+                                bottom: 0,
+                                left: -1,
+                                right: -10
+                            }
+                        },
                         scales: { 
                             y: { 
                                 beginAtZero: true,
@@ -571,7 +592,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         plugins: {
                             legend: {
-                                labels: { color: chartColors.textColor }
+                                labels: { 
+                                    color: chartColors.textColor,
+                                    boxHeight: 12,
+                                    font: {
+                                        size: 12
+                                    }
+                                },
+                                position: 'top',
+                                align: 'center',
+                                padding: 5
                             }
                         }
                     }
@@ -590,6 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     lineChart.options.scales.x.grid.color = chartColors.gridColor;
                     lineChart.options.scales.x.ticks.color = chartColors.textColor;
                     lineChart.options.plugins.legend.labels.color = chartColors.textColor;
+                    lineChart.options.plugins.legend.padding = 5;
                     lineChart.update();
                 }
             };
@@ -602,23 +633,12 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
         const heatmapContainer = document.getElementById('heatmap-container');
         const heatmapMonthsContainer = document.getElementById('heatmap-months-container');
-        const heatmapWeekdaysContainer = document.getElementById('heatmap-weekdays-container');
-        if (heatmapContainer && heatmapMonthsContainer && heatmapWeekdaysContainer) {
+        if (heatmapContainer && heatmapMonthsContainer) {
             const heatmapData = JSON.parse(document.getElementById('heatmap-data-json').textContent);
             const cores = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
             
             heatmapContainer.innerHTML = '';
             heatmapContainer.classList.remove('heatmap-loading');
-            
-            // Adicionar labels dos dias da semana
-            // O heatmap começa no Domingo (índice 0) e vai até Sábado (índice 6)
-            const weekDayLabels = ['', 'Seg', '', 'Qua', '', 'Sex', ''];
-            weekDayLabels.forEach((day) => {
-                const dayEl = document.createElement('div');
-                dayEl.className = 'heatmap-weekday-label';
-                dayEl.textContent = day;
-                heatmapWeekdaysContainer.appendChild(dayEl);
-            });
             
             const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
             let lastMonth = -1;
