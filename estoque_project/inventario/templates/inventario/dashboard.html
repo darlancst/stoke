@@ -409,7 +409,7 @@
 /* Estilos para o Heatmap */
 .heatmap-main-container {
     position: relative;
-    display: flex;
+    width: 100%;
 }
 
 .heatmap-wrapper {
@@ -417,11 +417,12 @@
     padding-bottom: 10px;
     -webkit-overflow-scrolling: touch; /* Scroll suave em iOS */
     scroll-behavior: smooth; /* Scroll suave em outros browsers */
-    flex: 1;
+    text-align: center; /* Centraliza o conteúdo inline-block */
 }
 
 .heatmap-content {
     display: inline-block;
+    text-align: left; /* Reseta o alinhamento para o conteúdo interno */
 }
 
 .heatmap-grid-wrapper {

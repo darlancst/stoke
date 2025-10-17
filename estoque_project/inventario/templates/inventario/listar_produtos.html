@@ -56,23 +56,32 @@
 
 {% block content %}
 <!-- Cabeçalho Responsivo -->
-<div class="row align-items-center mb-3">
-    <div class="col-12 col-md-6">
-        <h1 class="mb-2 mb-md-0">{{ titulo }}</h1>
+<div class="row align-items-center mb-2">
+    <div class="col-12 col-md-6 mb-2 mb-md-0">
+        <h1 class="mb-1">{{ titulo }}</h1>
+        <!-- Estatísticas (abaixo do título) -->
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <small class="text-muted">
+                <i class="bi bi-boxes"></i> {{ total_produtos_diferentes }} produto{{ total_produtos_diferentes|pluralize }}
+            </small>
+            <small class="text-muted">
+                <i class="bi bi-stack"></i> {{ quantidade_total_geral }} unidade{{ quantidade_total_geral|pluralize }}
+            </small>
+        </div>
     </div>
     <div class="col-12 col-md-6">
         <div class="d-flex flex-wrap gap-2 justify-content-md-end">
             {% if status_atual == 'ativos' %}
                 <a href="{% url 'inventario:listar_produtos' %}?status=pausados&q={{ query_atual|urlencode }}" class="btn btn-secondary btn-sm">
-                    <i class="bi bi-pause-circle"></i> <span class="d-none d-sm-inline">Ver</span> Pausados
+                    <i class="bi bi-pause-circle"></i> Ver Pausados
                 </a>
             {% else %}
                 <a href="{% url 'inventario:listar_produtos' %}?q={{ query_atual|urlencode }}" class="btn btn-secondary btn-sm">
-                    <i class="bi bi-play-circle"></i> <span class="d-none d-sm-inline">Ver</span> Ativos
+                    <i class="bi bi-play-circle"></i> Ver Ativos
                 </a>
             {% endif %}
             <a href="{% url 'inventario:criar_produto' %}" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Novo</span> Produto
+                <i class="bi bi-plus-circle"></i> Novo Produto
             </a>
         </div>
     </div>

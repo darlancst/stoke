@@ -9,6 +9,7 @@ from django.db.models import Sum, F, OuterRef, Subquery, ExpressionWrapper, fiel
 from django.utils import timezone
 from datetime import timedelta, datetime
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.http import require_POST, require_http_methods
 from django.contrib import messages
 from django.urls import reverse
@@ -286,12 +287,31 @@ def listar_produtos(request):
         )
     ).order_by('nome')
     
+    # Calcular estatísticas gerais (antes da paginação)
+    total_produtos_diferentes = produtos.count()
+    quantidade_total_geral = produtos.aggregate(
+        total=Sum('quantidade_total_agg')
+    )['total'] or 0
+    
+    # Paginação (30 produtos por página)
+    paginator = Paginator(produtos, 30)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.get_page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.get_page(1)
+    except EmptyPage:
+        page_obj = paginator.get_page(paginator.num_pages)
+    
     context = {
-        'produtos': produtos,
+        'page_obj': page_obj,
+        'produtos': page_obj,  # Mantém compatibilidade com template
         'titulo': titulo,
         'config': config,
         'status_atual': status_atual,
-        'query_atual': query, # Passa a query para o template
+        'query_atual': query,
+        'total_produtos_diferentes': total_produtos_diferentes,
+        'quantidade_total_geral': quantidade_total_geral,
     }
     return render(request, 'inventario/listar_produtos.html', context)
 
@@ -658,8 +678,20 @@ def listar_vendas(request):
             filtros |= Q(tipo_venda='EXTERNA')
         vendas = vendas.filter(filtros)
     vendas = vendas.order_by('-data')
+    
+    # Paginação (20 vendas por página)
+    paginator = Paginator(vendas, 20)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.get_page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.get_page(1)
+    except EmptyPage:
+        page_obj = paginator.get_page(paginator.num_pages)
+    
     return render(request, 'inventario/listar_vendas.html', {
-        'vendas': vendas,
+        'page_obj': page_obj,
+        'vendas': page_obj,  # Mantém compatibilidade com template
         'query_atual': query,
     })
 
@@ -737,9 +769,20 @@ def listar_devolucoes(request):
             'itens_devolvidos__item_venda_original__produto'
         ).all().order_by('-data')
         mensagem_filtro = None
+    
+    # Paginação (15 devoluções por página)
+    paginator = Paginator(devolucoes, 15)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.get_page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.get_page(1)
+    except EmptyPage:
+        page_obj = paginator.get_page(paginator.num_pages)
 
     context = {
-        'devolucoes': devolucoes,
+        'page_obj': page_obj,
+        'devolucoes': page_obj,  # Mantém compatibilidade com template
         'venda_id_filtrada': venda_id,
         'mensagem_filtro': mensagem_filtro
     }
@@ -826,8 +869,20 @@ def listar_produtos_chegando(request):
     if query:
         produtos_chegando = produtos_chegando.filter(nome__icontains=query)
     produtos_chegando = produtos_chegando.order_by('-data_compra')
+    
+    # Paginação (20 produtos por página)
+    paginator = Paginator(produtos_chegando, 20)
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.get_page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.get_page(1)
+    except EmptyPage:
+        page_obj = paginator.get_page(paginator.num_pages)
+    
     return render(request, 'inventario/listar_produtos_chegando.html', {
-        'produtos_chegando': produtos_chegando,
+        'page_obj': page_obj,
+        'produtos_chegando': page_obj,  # Mantém compatibilidade com template
         'query_atual': query,
     })
 

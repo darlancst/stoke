@@ -107,6 +107,25 @@
     }
 }
 
+/* Links em cards mobile */
+[data-theme="dark"] .produto-mobile-card a.text-dark {
+    color: #c9d1d9 !important;
+}
+
+[data-theme="dark"] .produto-mobile-card a.text-dark:hover {
+    color: #58a6ff !important;
+}
+
+/* Legenda mobile dark mode */
+[data-theme="dark"] details summary {
+    color: #8b949e !important;
+}
+
+[data-theme="dark"] details .bg-light {
+    background-color: #161b22 !important;
+    border: 1px solid #30363d;
+}
+
 /* Tabela Responsiva para Mobile */
 @media (max-width: 767.98px) {
     .table-responsive-mobile {
@@ -265,7 +284,7 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3 mb-md-4">
-    <h1 class="h3 h1-md"><i class="bi bi-graph-up"></i> <span class="d-none d-md-inline">Análise de Tendências e Previsão de Estoque</span><span class="d-md-none">Análise de Tendências</span></h1>
+    <h1 class="h2 mb-0"><i class="bi bi-graph-up"></i> <span class="d-none d-md-inline">Análise de Tendências e Previsão de Estoque</span><span class="d-md-none">Análise de Tendências</span></h1>
 </div>
 
 <!-- Cards de Resumo -->
@@ -333,7 +352,7 @@
     <div class="card-header">
         <div class="row align-items-center g-2">
             <div class="col-12 col-md-4">
-                <h5 class="mb-0"><i class="bi bi-table"></i> Análise Detalhada por Produto</h5>
+                <h4 class="mb-0"><i class="bi bi-table"></i> Análise Detalhada por Produto</h4>
             </div>
             <div class="col-12 col-md-8">
                 <div class="row g-2">
@@ -490,52 +509,133 @@
             </table>
         </div>
         
-        <!-- Versão Mobile: Cards -->
-        <div class="mobile-card-list p-3" id="mobileCardList">
+        <!-- Versão Mobile: Cards Ultra-Minimalistas -->
+        
+        <!-- Legenda Mobile (compacta) -->
+        <div class="d-lg-none px-2 pt-2 pb-1">
+            <details>
+                <summary class="text-muted small" style="cursor: pointer; user-select: none;">
+                    <i class="bi bi-info-circle"></i> Legenda dos Badges
+                </summary>
+                <div class="mt-2 p-2 bg-light rounded" style="font-size: 0.75rem;">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <span class="badge bg-secondary" style="padding: 0.15rem 0.35rem;">
+                                <i class="bi bi-box"></i> #
+                            </span>
+                            <small class="ms-1">Estoque</small>
+                        </div>
+                        <div class="col-6">
+                            <span class="badge bg-success" style="padding: 0.15rem 0.35rem;">
+                                <i class="bi bi-calendar-check"></i> #d
+                            </span>
+                            <small class="ms-1">Cobertura</small>
+                        </div>
+                        <div class="col-6">
+                            <span class="badge bg-primary" style="padding: 0.15rem 0.35rem;">
+                                📈📉➡️
+                            </span>
+                            <small class="ms-1">Tendência</small>
+                        </div>
+                        <div class="col-6">
+                            <span class="badge bg-info" style="padding: 0.15rem 0.35rem;">
+                                <i class="bi bi-graph-up"></i> #/d
+                            </span>
+                            <small class="ms-1">Média Diária</small>
+                        </div>
+                        <div class="col-6">
+                            <span class="badge bg-warning text-dark" style="padding: 0.15rem 0.35rem;">
+                                <i class="bi bi-cart-plus"></i> #
+                            </span>
+                            <small class="ms-1">Repor</small>
+                        </div>
+                        <div class="col-6">
+                            <span class="badge bg-danger" style="padding: 0.15rem 0.35rem;">Urgência</span>
+                            <small class="ms-1">Alta/Média/Baixa</small>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+        
+        <div class="mobile-card-list p-2" id="mobileCardList">
             {% for analise in analises_produtos %}
-            <div class="card produto-mobile-card urgencia-{{ analise.urgencia }} produto-card-item mb-2" 
+            <div class="card produto-mobile-card urgencia-{{ analise.urgencia }} produto-card-item mb-1" 
                  data-nome="{{ analise.produto.nome|lower }}"
                  data-urgencia="{{ analise.urgencia }}"
-                 data-tendencia="{{ analise.tendencia }}">
-                <div class="card-body py-2 px-3">
-                    <!-- Linha 1: Nome e Urgência -->
-                    <div class="d-flex justify-content-between align-items-start mb-1 gap-2">
-                        <div class="flex-grow-1" style="min-width: 0;">
-                            <h6 class="mb-0 small">
-                                <a href="{% url 'inventario:detalhar_produto' pk=analise.produto.pk %}" class="text-decoration-none">
-                                    <span class="fw-bold">{{ analise.produto.nome }}</span>
-                                </a>
-                            </h6>
-                            <small class="text-muted">
-                                Estoque: <span class="badge {% if analise.estoque_atual < analise.ponto_reposicao %}bg-danger{% else %}bg-secondary{% endif %}">{{ analise.estoque_atual }}</span>
-                                · Cobertura: 
-                                {% if analise.dias_cobertura_atual < 999 %}
-                                    <span class="badge {% if analise.dias_cobertura_atual < analise.produto.lead_time_dias %}bg-danger{% elif analise.dias_cobertura_atual < analise.produto.dias_cobertura_minima %}bg-warning text-dark{% else %}bg-success{% endif %}">
-                                        {{ analise.dias_cobertura_atual }}d
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-secondary">∞</span>
-                                {% endif %}
-                                · <span class="badge bg-{{ analise.tendencia_class }}">{{ analise.tendencia_icon }}</span>
-                            </small>
-                        </div>
-                        <span class="badge bg-{{ analise.urgencia_class }} flex-shrink-0">
+                 data-tendencia="{{ analise.tendencia }}"
+                 style="border-radius: 6px;">
+                <div class="card-body p-2">
+                    <!-- Linha 1: Nome + Urgência -->
+                    <div class="d-flex justify-content-between align-items-center mb-1" style="gap: 0.5rem;">
+                        <a href="{% url 'inventario:detalhar_produto' pk=analise.produto.pk %}" 
+                           class="text-decoration-none text-dark fw-bold flex-grow-1" 
+                           style="font-size: 0.9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {{ analise.produto.nome }}
+                        </a>
+                        <span class="badge bg-{{ analise.urgencia_class }} flex-shrink-0" style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
                             {{ analise.urgencia|upper }}
                         </span>
                     </div>
                     
-                    <!-- Linha 2: Informações e Ação -->
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <div>
-                            <small class="text-muted">Média: </small><strong>{{ analise.media_movel_30_dias }} un/d</strong>
-                            {% if analise.precisa_repor %}
-                                <span class="text-muted mx-1">·</span>
-                                <small class="text-muted">Repor: </small><strong class="text-danger">{{ analise.quantidade_sugerida }}</strong>
+                    <!-- Linha 2: Badges Informativos (super compacta) -->
+                    <div class="d-flex flex-wrap gap-1 mb-1" style="font-size: 0.7rem;">
+                        <span class="badge {% if analise.estoque_atual < analise.ponto_reposicao %}bg-danger{% else %}bg-secondary{% endif %}" 
+                              style="padding: 0.15rem 0.35rem;"
+                              data-bs-toggle="tooltip"
+                              title="Estoque Atual">
+                            <i class="bi bi-box"></i> {{ analise.estoque_atual }}
+                        </span>
+                        {% if analise.dias_cobertura_atual < 999 %}
+                            <span class="badge {% if analise.dias_cobertura_atual < analise.produto.lead_time_dias %}bg-danger{% elif analise.dias_cobertura_atual < analise.produto.dias_cobertura_minima %}bg-warning text-dark{% else %}bg-success{% endif %}" 
+                                  style="padding: 0.15rem 0.35rem;"
+                                  data-bs-toggle="tooltip"
+                                  title="Dias de Cobertura">
+                                <i class="bi bi-calendar-check"></i> {{ analise.dias_cobertura_atual }}d
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary" 
+                                  style="padding: 0.15rem 0.35rem;"
+                                  data-bs-toggle="tooltip"
+                                  title="Cobertura Infinita (sem vendas)">
+                                <i class="bi bi-infinity"></i>
+                            </span>
+                        {% endif %}
+                        <span class="badge bg-{{ analise.tendencia_class }}" 
+                              style="padding: 0.15rem 0.35rem;"
+                              data-bs-toggle="tooltip"
+                              title="Tendência: {{ analise.tendencia }}">
+                            {{ analise.tendencia_icon }}
+                        </span>
+                        <span class="badge bg-info" 
+                              style="padding: 0.15rem 0.35rem;"
+                              data-bs-toggle="tooltip"
+                              title="Média de Vendas (30 dias)">
+                            <i class="bi bi-graph-up"></i> {{ analise.media_movel_30_dias }}/d
+                        </span>
+                        {% if analise.precisa_repor %}
+                            <span class="badge bg-warning text-dark" 
+                                  style="padding: 0.15rem 0.35rem;"
+                                  data-bs-toggle="tooltip"
+                                  title="Quantidade Sugerida para Reposição">
+                                <i class="bi bi-cart-plus"></i> {{ analise.quantidade_sugerida }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Linha 3: Informações extras + Ação (muito compacta) -->
+                    <div class="d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
+                        <span class="text-muted">
+                            Vendido: <strong>{{ analise.total_vendido_periodo }}</strong> ({{ dias_analise }}d)
+                            {% if analise.quantidade_chegando > 0 %}
+                                <span class="mx-1">·</span>
+                                <i class="bi bi-hourglass-split text-info"></i> <strong>+{{ analise.quantidade_chegando }}</strong>
                             {% endif %}
-                        </div>
-                        <button class="btn btn-info btn-sm py-0 px-2" 
+                        </span>
+                        <button class="btn btn-info btn-sm flex-shrink-0" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#modalDetalhes{{ analise.produto.pk }}"
+                                style="padding: 0.15rem 0.4rem; font-size: 0.75rem;"
                                 title="Ver detalhes">
                             <i class="bi bi-eye"></i>
                         </button>
@@ -916,6 +1016,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // ===== Inicializar Tooltips Bootstrap =====
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 });
 </script>
 {% endblock %}
