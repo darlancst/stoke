@@ -919,12 +919,19 @@
             Stoke
         </a>
         <div class="d-flex align-items-center">
+            <span class="text-light me-3 d-none d-md-inline" style="font-size: 0.85rem;">
+                <i class="bi bi-person-circle"></i> {{ user.username }}
+            </span>
             <button id="help-toggle" class="btn btn-sm me-2" title="Recursos e Ajuda" data-bs-toggle="modal" data-bs-target="#helpModal">
                 <i class="bi bi-question-circle-fill"></i>
             </button>
             <button id="theme-toggle" class="btn btn-sm me-2" title="Alternar tema">
                 <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
             </button>
+            <a href="{% url 'logout' %}" class="btn btn-sm btn-danger me-2" title="Sair do Sistema" onclick="return confirm('Deseja realmente sair do sistema?')">
+                <i class="bi bi-box-arrow-right"></i>
+                <span class="d-none d-md-inline ms-1">Sair</span>
+            </a>
             <button class="navbar-toggler d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
