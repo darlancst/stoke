@@ -16,7 +16,10 @@ echo "==> Running database migrations..."
 python manage.py migrate --no-input
 
 echo "==> Resetting and recreating superuser from environment variables..."
-python manage.py reset_superuser
+echo "Username: $DJANGO_SUPERUSER_USERNAME"
+echo "Email: $DJANGO_SUPERUSER_EMAIL"
+echo "Password configured: $(if [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then echo "YES"; else echo "NO"; fi)"
+python manage.py reset_superuser || echo "⚠️ WARNING: Failed to reset superuser"
 
 echo "==> Returning to root directory..."
 cd ..
