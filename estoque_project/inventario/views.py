@@ -17,9 +17,11 @@ from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 
+@csrf_exempt  # Desabilita CSRF apenas para esta view de setup
 def setup_admin(request):
     """
     View temporária para criar superusuário na primeira vez.
