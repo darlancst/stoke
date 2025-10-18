@@ -1526,6 +1526,24 @@ def analise_tendencias(request):
     """
     from collections import defaultdict
     from statistics import mean, stdev
+    import logging
+    import traceback
+    
+    logger = logging.getLogger('inventario')
+    
+    try:
+        return _analise_tendencias_impl(request)
+    except Exception as e:
+        logger.error(f"ERRO CRÍTICO em analise_tendencias: {e}")
+        logger.error(f"Traceback completo:\n{traceback.format_exc()}")
+        messages.error(request, f"Erro ao carregar análise de tendências. Por favor, contate o suporte. Erro: {str(e)}")
+        return redirect('inventario:dashboard')
+
+
+def _analise_tendencias_impl(request):
+    """Implementação interna da análise de tendências"""
+    from collections import defaultdict
+    from statistics import mean, stdev
     
     hoje = timezone.localtime(timezone.now()).date()
     
