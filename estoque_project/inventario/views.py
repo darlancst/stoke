@@ -1555,7 +1555,7 @@ def _analise_tendencias_impl(request):
     data_inicio_analise = hoje - timedelta(days=dias_analise - 1)
     
     # Otimização: Buscar todos os produtos ativos com quantidade_chegando anotada
-    from django.db.models import Coalesce
+    from django.db.models.functions import Coalesce
     produtos = Produto.objects.filter(ativo=True).annotate(
         qtd_chegando=Coalesce(
             Subquery(
