@@ -15,6 +15,9 @@ python manage.py collectstatic --no-input
 echo "==> Running database migrations..."
 python manage.py migrate --no-input
 
+echo "==> Creating superuser if none exists..."
+python manage.py create_superuser_if_none
+
 echo "==> Returning to root directory..."
 cd ..
 

@@ -2,7 +2,7 @@
 
 Sistema completo de gestão de estoque desenvolvido em Django com rastreamento FIFO, análise de tendências e previsão de reposição.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/seu-usuario/seu-repo)
+[![Deploy on Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com)
 
 ## ✨ Funcionalidades
 
@@ -56,22 +56,29 @@ Sistema completo de gestão de estoque desenvolvido em Django com rastreamento F
 - Período de análise de tendências
 - Upload de logo da empresa
 
-## 🚀 Deploy Rápido
+## 🚀 Deploy Grátis (100% Free Forever)
 
-### Vercel + Supabase (Recomendado)
+### Render.com + Neon.tech (Recomendado)
 
-1. **Criar projeto no Supabase**
-   - Acesse [supabase.com](https://supabase.com)
-   - Crie um novo projeto (plano gratuito)
-   - Copie a string de conexão do banco (Transaction Mode)
+**Stack 100% gratuita permanente:**
+- ✅ Hospedagem: Render.com (Free Tier)
+- ✅ PostgreSQL: Neon.tech (0.5GB gratuito)
+- ✅ PWA: Instalável como app no celular
+- ✅ Sincronização automática entre dispositivos
 
-2. **Deploy no Vercel**
+1. **Criar banco PostgreSQL no Neon.tech**
+   - Acesse [neon.tech](https://neon.tech)
+   - Crie um novo projeto (sem cartão de crédito)
+   - Copie a connection string PostgreSQL
+
+2. **Deploy no Render.com**
    - Fork este repositório
-   - Importe no [Vercel](https://vercel.com)
-   - Configure as variáveis de ambiente (veja `ENV_SETUP.md`)
-   - Deploy automático!
+   - Conecte no [Render](https://render.com)
+   - Configure as variáveis de ambiente
+   - Deploy automático via GitHub!
 
-📖 **Guia completo**: Veja [DEPLOY.md](DEPLOY.md)
+📖 **Guia passo a passo**: Veja [RENDER_NEON_DEPLOY.md](RENDER_NEON_DEPLOY.md)  
+📱 **Instalar como app**: Veja [INSTALAR_PWA.md](INSTALAR_PWA.md)
 
 ## 💻 Desenvolvimento Local
 
@@ -117,11 +124,12 @@ Acesse: http://127.0.0.1:8000
 ## 🏗️ Tecnologias
 
 - **Backend**: Django 5.2.4
-- **Banco de Dados**: PostgreSQL (Supabase) / SQLite (dev)
+- **Banco de Dados**: PostgreSQL (Neon.tech) / SQLite (dev)
 - **Frontend**: Bootstrap 5, Chart.js
-- **Deploy**: Vercel
+- **Deploy**: Render.com
 - **Armazenamento**: Whitenoise (estáticos)
 - **Rate Limiting**: django-ratelimit
+- **PWA**: Service Worker + Manifest
 
 ## 📂 Estrutura do Projeto
 
@@ -169,28 +177,59 @@ estoque_project/
 - Previsão de demanda com médias móveis
 - Detecção de sazonalidade por dia da semana
 
-## 💰 Custos
+## 💰 Custos (R$ 0,00 para sempre!)
 
-### Supabase (Banco de Dados)
-- **Plano Gratuito**: ✅ Suficiente para pequenas empresas
-  - 500 MB banco de dados
-  - 1 GB armazenamento
-  - Múltiplos projetos permitidos
+### Neon.tech (PostgreSQL)
+- **Plano Gratuito Permanente**: ✅ Sem expiração
+  - 0.5 GB storage por projeto
+  - 10 projetos gratuitos
+  - Backups automáticos (7 dias)
+  - Sem cartão de crédito necessário
 
-### Vercel (Hospedagem)
-- **Plano Gratuito**: ✅ Suficiente para uso normal
-  - 100 GB de transferência/mês
+### Render.com (Hospedagem)
+- **Plano Gratuito Permanente**: ✅ Sem expiração
+  - 750 horas/mês (suficiente para 1 app 24/7)
+  - SSL automático (HTTPS)
   - Builds ilimitados
-  - SSL automático
+  - Deploy automático via GitHub
 
-**Total**: R$ 0,00/mês para começar! 🎉
+**Total**: R$ 0,00/mês agora e sempre! 🎉
 
-## 📱 PWA Ready
+⚠️ **Limitação:** Cold start após 15min de inatividade (~30s para acordar)
 
-O sistema está preparado para funcionar como PWA (Progressive Web App):
-- Instalável em dispositivos móveis
-- Funciona offline (parcialmente)
-- Ícones e manifest configurados
+## 📱 PWA (Progressive Web App)
+
+O sistema é um **PWA completo** instalável como app nativo:
+
+### ✅ Recursos PWA
+- **Instalável** em Android, iOS e Desktop
+- **Ícone na tela inicial** (como apps nativos)
+- **Abre em tela cheia** (sem barra do navegador)
+- **Sincronização automática** entre todos os dispositivos
+- **Atualizações automáticas** (sem precisar reinstalar)
+- **Cache inteligente** de assets (Bootstrap, jQuery, Chart.js)
+- **Página offline** com reconexão automática
+
+### 📱 Como Instalar
+
+**Android (Chrome):**
+1. Acesse o app no navegador
+2. Toque em "Adicionar à tela inicial"
+3. Pronto! Ícone aparece na tela inicial
+
+**iOS (Safari):**
+1. Toque no botão compartilhar (⬆️)
+2. Selecione "Adicionar à Tela de Início"
+3. Pronto!
+
+📖 **Guia completo de instalação**: [INSTALAR_PWA.md](INSTALAR_PWA.md)
+
+### 🔄 Sincronização Entre Dispositivos
+
+Todos os dispositivos acessam o **mesmo banco PostgreSQL**:
+- Venda no celular → **aparece no computador instantaneamente**
+- Atualiza estoque no tablet → **todos veem a mudança**
+- Backup automático na nuvem
 
 ## 🤝 Contribuindo
 

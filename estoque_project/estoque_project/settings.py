@@ -39,7 +39,7 @@ SECRET_KEY = get_env('SECRET_KEY', 'django-insecure-m#z5#z=p+*o_j$*a&j$d8_z&z(i$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_env_bool('DEBUG', True)
 
-ALLOWED_HOSTS = get_env_list('ALLOWED_HOSTS', '127.0.0.1,localhost,.vercel.app')
+ALLOWED_HOSTS = get_env_list('ALLOWED_HOSTS', '127.0.0.1,localhost,.onrender.com')
 
 # Security Settings
 SECURE_SSL_REDIRECT = get_env_bool('SECURE_SSL_REDIRECT', not DEBUG)
@@ -48,6 +48,16 @@ CSRF_COOKIE_SECURE = get_env_bool('CSRF_COOKIE_SECURE', not DEBUG)
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+
+# CSRF Trusted Origins (for HTTPS on Render.com)
+CSRF_TRUSTED_ORIGINS = [
+    f'https://{host}' for host in ALLOWED_HOSTS 
+    if not host.startswith('127.0.0.1') and not host.startswith('localhost')
+]
+
+# Proxy SSL Header (Render uses proxy)
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition

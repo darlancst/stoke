@@ -4,7 +4,7 @@ services:
     env: python
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt && cd estoque_project && python manage.py collectstatic --no-input && python manage.py migrate --no-input
+    buildCommand: pip install -r requirements.txt && cd estoque_project && python manage.py collectstatic --no-input && python manage.py migrate --no-input && python manage.py create_superuser_if_none
     startCommand: cd estoque_project && gunicorn estoque_project.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /
     envVars:
@@ -17,5 +17,11 @@ services:
       - key: DEBUG
         value: false
       - key: ALLOWED_HOSTS
+        sync: false
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: admin
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: admin@stoke.com
+      - key: DJANGO_SUPERUSER_PASSWORD
         sync: false
 
