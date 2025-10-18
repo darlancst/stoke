@@ -230,14 +230,26 @@ DATABASES = {
 
 1. ✅ `estoque_project/inventario/views.py`
    - Função `dashboard()` - Otimizações em produtos_parados, meu_lucro, heatmap
-   - Função `analise_tendencias()` - Batch queries, cache quantidade_chegando
+   - Função `analise_tendencias()` - Batch queries com select_related (500-1000 queries → 1)
    - Função `listar_vendas()` - Adicionado .only()
 
 2. ✅ `estoque_project/estoque_project/settings.py`
-   - Configuração de connection pooling
+   - Connection pooling + sslmode=require para Neon
 
 3. ✅ `estoque_project/inventario/migrations/0014_add_performance_indexes.py`
    - 5 novos índices para otimizar queries frequentes
+
+## 🐛 Correções Aplicadas
+
+### Erro 1: Neon Pooler Incompatibility
+**Erro:** `unsupported startup parameter in options: statement_timeout`
+
+**Solução:** Removido `statement_timeout` das OPTIONS e adicionado `sslmode=require`
+
+### Erro 2: Análise de Tendências - Erro 500
+**Problema:** Uso de `.values()` perdendo timezone awareness e `.only()` com campos relacionados
+
+**Solução:** Simplificado para usar apenas `.select_related('venda')` que mantém a otimização
 
 ---
 
