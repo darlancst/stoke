@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: stoke
+    env: python
+    runtime: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: cd estoque_project && gunicorn estoque_project.wsgi:application --bind 0.0.0.0:$PORT
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.7
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false
+      - key: ALLOWED_HOSTS
+        sync: false
+
