@@ -520,7 +520,7 @@ def listar_produtos(request):
     ).annotate(
         margem_lucro_agg=Case(
             When(custo_medio_ponderado_agg__gt=0, then=ExpressionWrapper(
-                (F('preco_venda') - F('custo_medio_ponderado_agg')) * 100 / F('custo_medio_ponderado_agg'),
+                (F('preco_venda') - F('custo_medio_ponderado_agg')) * 100 / F('preco_venda'),
                 output_field=fields.DecimalField(max_digits=5, decimal_places=2)
             )),
             default=Value(None),
@@ -798,7 +798,7 @@ def buscar_produtos_listagem_json(request):
     ).annotate(
         margem_lucro_agg=Case(
             When(custo_medio_ponderado_agg__gt=0, then=ExpressionWrapper(
-                (F('preco_venda') - F('custo_medio_ponderado_agg')) * 100 / F('custo_medio_ponderado_agg'),
+                (F('preco_venda') - F('custo_medio_ponderado_agg')) * 100 / F('preco_venda'),
                 output_field=fields.DecimalField(max_digits=5, decimal_places=2)
             )),
             default=Value(None),
@@ -1515,59 +1515,6 @@ def offline(request):
 def service_worker(request):
     """Service Worker para PWA"""
     return render(request, 'inventario/sw.js', content_type='application/javascript')
-
-
-def criar_usuario_web(request):
-    """
-    View especial para criar o primeiro usuário via web (sem precisar de shell).
-    Acesse: /criar-usuario/
-    """
-    from django.contrib.auth.models import User
-    from django.contrib.auth import login
-    
-    # Se já existe usuário, redireciona
-    if User.objects.exists():
-        messages.warning(request, 'Já existe usuário cadastrado. Faça login.')
-        return redirect('login')
-    
-    if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
-        email = request.POST.get('email', '').strip()
-        password = request.POST.get('password', '')
-        password2 = request.POST.get('password2', '')
-        
-        # Validações
-        if not username or not password:
-            messages.error(request, 'Usuário e senha são obrigatórios.')
-            return render(request, 'inventario/criar_usuario_web.html')
-        
-        if password != password2:
-            messages.error(request, 'As senhas não coincidem.')
-            return render(request, 'inventario/criar_usuario_web.html')
-        
-        if len(password) < 4:
-            messages.error(request, 'A senha deve ter no mínimo 4 caracteres.')
-            return render(request, 'inventario/criar_usuario_web.html')
-        
-        try:
-            # Criar superusuário
-            user = User.objects.create_superuser(
-                username=username,
-                email=email,
-                password=password
-            )
-            
-            # Fazer login automaticamente
-            login(request, user)
-            
-            messages.success(request, f'✅ Usuário "{username}" criado com sucesso!')
-            return redirect('inventario:dashboard')
-            
-        except Exception as e:
-            messages.error(request, f'Erro ao criar usuário: {str(e)}')
-            return render(request, 'inventario/criar_usuario_web.html')
-    
-    return render(request, 'inventario/criar_usuario_web.html')
 
 
 # --- Análise de Tendências e Previsão de Estoque ---

@@ -151,14 +151,14 @@
             <h5 class="mb-3 mt-4">Estoque e Precificação</h5>
 
             <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-12 mb-3">
                     <label for="{{ form.quantidade_inicial.id_for_label }}" class="form-label">{{ form.quantidade_inicial.label }}</label>
                     {{ form.quantidade_inicial }}
                     {% if form.quantidade_inicial.errors %}
                         <div class="text-danger mt-1">{{ form.quantidade_inicial.errors.0 }}</div>
                     {% endif %}
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-6 col-md-6 mb-3">
                     <label for="{{ form.preco_compra.id_for_label }}" class="form-label">{{ form.preco_compra.label }}</label>
                      <div class="input-group">
                         <span class="input-group-text">R$</span>
@@ -168,7 +168,7 @@
                         <div class="text-danger mt-1">{{ form.preco_compra.errors.0 }}</div>
                     {% endif %}
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-6 col-md-6 mb-3">
                     <label for="{{ form.preco_venda.id_for_label }}" class="form-label">{{ form.preco_venda.label }}</label>
                      <div class="input-group">
                         <span class="input-group-text">R$</span>
