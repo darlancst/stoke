@@ -1553,20 +1553,24 @@ def analise_tendencias(request):
     ).prefetch_related('lotes')
     
     # Otimização: Buscar TODAS as vendas de uma vez em vez de query por produto
-    itens_vendidos_todos = ItemVenda.objects.filter(
+    # Usar apenas os campos necessários para evitar problemas
+    itens_vendidos_todos = list(ItemVenda.objects.filter(
         produto__in=produtos,
         venda__data__gte=data_inicio_analise,
         venda__status='CONCLUIDA',
         eh_brinde=False  # Não contar brindes
-    ).select_related('venda')
+    ).select_related('venda').values_list('produto_id', 'quantidade', 'venda__data'))
     
     # Agrupar vendas por produto em memória
     vendas_por_produto = defaultdict(list)
-    for item in itens_vendidos_todos:
-        vendas_por_produto[item.produto_id].append({
-            'quantidade': item.quantidade,
-            'data': timezone.localtime(item.venda.data).date()
-        })
+    for produto_id, quantidade, venda_data in itens_vendidos_todos:
+        if venda_data:  # Garantir que não é None
+            # venda_data já vem como datetime aware do banco
+            data_venda = venda_data.date() if hasattr(venda_data, 'date') else venda_data
+            vendas_por_produto[produto_id].append({
+                'quantidade': quantidade,
+                'data': data_venda
+            })
     
     analises_produtos = []
     
