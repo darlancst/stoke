@@ -110,8 +110,17 @@ WSGI_APPLICATION = 'estoque_project.wsgi.application'
 
 DATABASE_URL = get_env('DATABASE_URL', f'sqlite:///{BASE_DIR / "db.sqlite3"}')
 
+# Otimização: Connection pooling para reutilizar conexões e reduzir latência
 DATABASES = {
-    'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    'default': {
+        **dj_database_url.parse(DATABASE_URL),
+        'CONN_MAX_AGE': 600,  # Reutilizar conexões por 10 minutos
+        'CONN_HEALTH_CHECKS': True,  # Verificar saúde da conexão antes de reutilizar
+        'OPTIONS': {
+            'connect_timeout': 10,  # Timeout de conexão de 10s
+            'options': '-c statement_timeout=30000',  # Timeout de query de 30s
+        } if 'postgresql' in DATABASE_URL or 'postgres' in DATABASE_URL else {},
+    }
 }
 
 

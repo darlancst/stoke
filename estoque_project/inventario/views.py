@@ -270,7 +270,18 @@ def dashboard(request):
     data_fim_query = datetime.combine(data_fim, datetime.max.time())
 
     # --- 2. Recalcular Estatísticas com Base no Filtro ---
-    vendas_periodo = Venda.objects.filter(data__range=[data_inicio, data_fim_query])
+    # Otimização: Calcular meu_lucro diretamente no banco usando annotate
+    vendas_periodo = Venda.objects.filter(data__range=[data_inicio, data_fim_query]).annotate(
+        valor_bruto_agg=Sum(F('itens__quantidade') * F('itens__preco_venda_unitario')),
+        valor_liquido_agg=F('valor_bruto_agg') - F('desconto'),
+        custo_total_agg=Sum('itens__custo_compra_total_registrado'),
+        lucro_bruto_agg=F('valor_liquido_agg') - F('custo_total_agg'),
+        meu_lucro_agg=Case(
+            When(tipo_venda='LOJA', then=F('lucro_bruto_agg') / 2),
+            default=F('lucro_bruto_agg'),
+            output_field=fields.DecimalField(max_digits=10, decimal_places=2)
+        )
+    )
     
     # Cards
     valor_total_estoque = Lote.objects.filter(produto__ativo=True).aggregate(
@@ -278,8 +289,10 @@ def dashboard(request):
     )['total'] or Decimal('0')
     
     numero_vendas = vendas_periodo.count()
-    meu_lucro_total = sum(venda.meu_lucro for venda in vendas_periodo)
-    receita_total = sum(venda.valor_total for venda in vendas_periodo) # Nova métrica
+    # Otimização: Agregar meu_lucro calculado no banco
+    meu_lucro_total = vendas_periodo.aggregate(total=Sum('meu_lucro_agg'))['total'] or Decimal('0')
+    # Otimização: Agregar valor_total no banco
+    receita_total = vendas_periodo.aggregate(total=Sum('valor_liquido_agg'))['total'] or Decimal('0')
 
     # --- NOVO: Top 5 Produtos Mais Vendidos no Período ---
     top_produtos_vendidos = ItemVenda.objects.filter(
@@ -320,39 +333,42 @@ def dashboard(request):
     ).filter(qtd_total__lt=config.limite_estoque_baixo, ativo=True)
     
     # Produtos parados (há mais de X dias no estoque sem vender, conforme configuração)
+    # Otimização: Usar Subquery para pegar última venda em uma única query
     produtos_com_estoque = Produto.objects.annotate(
-        qtd_total=Sum('lotes__quantidade_atual')
-    ).filter(qtd_total__gt=0, ativo=True)
+        qtd_total=Sum('lotes__quantidade_atual'),
+        ultima_venda_data=Subquery(
+            ItemVenda.objects.filter(
+                produto=OuterRef('pk')
+            ).order_by('-venda__data').values('venda__data')[:1]
+        ),
+        lote_mais_antigo_data=Subquery(
+            Lote.objects.filter(
+                produto=OuterRef('pk'),
+                quantidade_atual__gt=0
+            ).order_by('data_entrada').values('data_entrada')[:1]
+        )
+    ).filter(qtd_total__gt=0, ativo=True).prefetch_related('lotes')
     
     produtos_parados = []
     for produto in produtos_com_estoque:
-        # Busca a última venda deste produto
-        ultima_venda_item = ItemVenda.objects.filter(
-            produto=produto
-        ).order_by('-venda__data').first()
-        
-        # Calcula há quantos dias está parado
-        if ultima_venda_item:
+        # Calcula há quantos dias está parado usando dados já carregados
+        if produto.ultima_venda_data:
             # Produto já foi vendido - calcula dias desde a última venda
-            # Converter para timezone local antes de extrair a data
-            data_ultima_venda = timezone.localtime(ultima_venda_item.venda.data).date()
+            data_ultima_venda = timezone.localtime(produto.ultima_venda_data).date()
             dias_parado = (hoje - data_ultima_venda).days
-        else:
+        elif produto.lote_mais_antigo_data:
             # Produto nunca foi vendido - calcula dias desde o lote mais antigo
-            lote_mais_antigo = produto.lotes.filter(quantidade_atual__gt=0).order_by('data_entrada').first()
-            if lote_mais_antigo:
-                # data_entrada também precisa de conversão se for DateTimeField
-                data_entrada = timezone.localtime(lote_mais_antigo.data_entrada).date()
-                dias_parado = (hoje - data_entrada).days
-            else:
-                continue  # Pula se não houver lote
+            data_entrada = timezone.localtime(produto.lote_mais_antigo_data).date()
+            dias_parado = (hoje - data_entrada).days
+        else:
+            continue  # Pula se não houver lote
         
         # Só adiciona se o produto está parado há X dias ou mais (conforme configuração)
         if dias_parado >= config.dias_produto_parado:
             produtos_parados.append({
                 'produto': produto,
                 'dias_parado': dias_parado,
-                'quantidade': produto.quantidade_total
+                'quantidade': produto.qtd_total
             })
     
     # Ordena por dias parado (maior tempo primeiro) e limita a 5
@@ -371,8 +387,9 @@ def dashboard(request):
             data_local = timezone.localtime(venda.data)
             dia_str = data_local.strftime('%d/%m')
             if dia_str in vendas_por_unidade:
-                vendas_por_unidade[dia_str]['receita'] += venda.valor_total
-                vendas_por_unidade[dia_str]['meu_lucro'] += venda.meu_lucro
+                # Otimização: Usar valores já calculados no banco
+                vendas_por_unidade[dia_str]['receita'] += venda.valor_liquido_agg or Decimal('0')
+                vendas_por_unidade[dia_str]['meu_lucro'] += venda.meu_lucro_agg or Decimal('0')
     else: # Agrupar por mês para períodos longos
         # Criar dicionário de meses primeiro (baseado no período)
         meses = set()
@@ -389,8 +406,9 @@ def dashboard(request):
             data_local = timezone.localtime(venda.data)
             mes_str = data_local.strftime('%b/%y')
             if mes_str in vendas_por_unidade:
-                vendas_por_unidade[mes_str]['receita'] += venda.valor_total
-                vendas_por_unidade[mes_str]['meu_lucro'] += venda.meu_lucro
+                # Otimização: Usar valores já calculados no banco
+                vendas_por_unidade[mes_str]['receita'] += venda.valor_liquido_agg or Decimal('0')
+                vendas_por_unidade[mes_str]['meu_lucro'] += venda.meu_lucro_agg or Decimal('0')
     
     labels_grafico = list(vendas_por_unidade.keys())
     receita_grafico = [v['receita'] for v in vendas_por_unidade.values()]
@@ -398,9 +416,20 @@ def dashboard(request):
 
     # --- 4. Dados do Gráfico Heatmap (últimos 365 dias) ---
     heatmap_inicio = hoje - timedelta(days=364)
+    # Otimização: Calcular meu_lucro no banco para o heatmap também
     vendas_heatmap = Venda.objects.filter(
         data__range=[heatmap_inicio, data_fim_query],
         status='CONCLUIDA'  # Apenas vendas concluídas
+    ).annotate(
+        valor_bruto_hm=Sum(F('itens__quantidade') * F('itens__preco_venda_unitario')),
+        valor_liquido_hm=F('valor_bruto_hm') - F('desconto'),
+        custo_total_hm=Sum('itens__custo_compra_total_registrado'),
+        lucro_bruto_hm=F('valor_liquido_hm') - F('custo_total_hm'),
+        meu_lucro_hm=Case(
+            When(tipo_venda='LOJA', then=F('lucro_bruto_hm') / 2),
+            default=F('lucro_bruto_hm'),
+            output_field=fields.DecimalField(max_digits=10, decimal_places=2)
+        )
     ).prefetch_related('itens', 'devolucoes__itens_devolvidos')
     
     lucro_por_dia = {}
@@ -409,7 +438,8 @@ def dashboard(request):
         data_local = timezone.localtime(venda.data)
         dia = data_local.date()
         lucro_por_dia.setdefault(dia, Decimal('0'))
-        lucro_venda = venda.meu_lucro
+        # Otimização: Usar valor já calculado no banco
+        lucro_venda = venda.meu_lucro_hm or Decimal('0')
         lucro_por_dia[dia] += lucro_venda
 
     heatmap_data = []
@@ -887,12 +917,13 @@ def criar_venda(request):
 
 def listar_vendas(request):
     query = request.GET.get('q', '').strip()
-    # Otimização: usa prefetch_related para evitar N+1 queries
+    # Otimização: usa prefetch_related para evitar N+1 queries + only() para reduzir dados
     vendas = Venda.objects.prefetch_related(
-        'itens',
         'itens__produto',
-        'devolucoes',
         'devolucoes__itens_devolvidos'
+    ).only(
+        'id', 'cliente_nome', 'data', 'tipo_venda', 
+        'status', 'desconto'
     )
     if query:
         filtros = Q(cliente_nome__icontains=query)
@@ -1505,27 +1536,50 @@ def analise_tendencias(request):
     # Período de análise
     data_inicio_analise = hoje - timedelta(days=dias_analise - 1)
     
-    # Buscar todos os produtos ativos
-    produtos = Produto.objects.filter(ativo=True).prefetch_related('lotes')
+    # Otimização: Buscar todos os produtos ativos com quantidade_chegando anotada
+    from django.db.models import Coalesce
+    produtos = Produto.objects.filter(ativo=True).annotate(
+        qtd_chegando=Coalesce(
+            Subquery(
+                ProdutoChegando.objects.filter(
+                    produto_existente=OuterRef('pk'),
+                    incluido_estoque=False
+                ).values('produto_existente').annotate(
+                    total=Sum('quantidade')
+                ).values('total')
+            ),
+            0
+        )
+    ).prefetch_related('lotes')
+    
+    # Otimização: Buscar TODAS as vendas de uma vez em vez de query por produto
+    itens_vendidos_todos = ItemVenda.objects.filter(
+        produto__in=produtos,
+        venda__data__gte=data_inicio_analise,
+        venda__status='CONCLUIDA',
+        eh_brinde=False  # Não contar brindes
+    ).select_related('venda').values('produto_id', 'quantidade', 'venda__data')
+    
+    # Agrupar vendas por produto em memória
+    vendas_por_produto = defaultdict(list)
+    for item in itens_vendidos_todos:
+        vendas_por_produto[item['produto_id']].append({
+            'quantidade': item['quantidade'],
+            'data': timezone.localtime(item['venda__data']).date()
+        })
     
     analises_produtos = []
     
     for produto in produtos:
-        # Histórico de vendas diárias dos últimos 90 dias
+        # Histórico de vendas diárias dos últimos dias configurados
         vendas_diarias = defaultdict(int)
         
-        # Buscar todas as vendas do produto no período
-        itens_vendidos = ItemVenda.objects.filter(
-            produto=produto,
-            venda__data__gte=data_inicio_analise,
-            venda__status='CONCLUIDA',
-            eh_brinde=False  # Não contar brindes
-        ).select_related('venda')
+        # Otimização: Usar vendas já carregadas em memória
+        itens_produto = vendas_por_produto.get(produto.id, [])
         
         # Preencher vendas diárias
-        for item in itens_vendidos:
-            data_venda = timezone.localtime(item.venda.data).date()
-            vendas_diarias[data_venda] += item.quantidade
+        for item in itens_produto:
+            vendas_diarias[item['data']] += item['quantidade']
         
         # Criar lista de vendas para todos os dias (incluindo dias sem vendas = 0)
         vendas_lista = []
@@ -1609,8 +1663,8 @@ def analise_tendencias(request):
         # Queremos manter estoque para: Lead Time + Cobertura Mínima + 50% extra
         estoque_ideal = demanda_diaria_media * (lead_time + dias_cobertura_minima) * 1.5
         
-        # Considerar produtos chegando
-        quantidade_chegando = produto.quantidade_chegando
+        # Otimização: Usar quantidade_chegando já anotada no queryset
+        quantidade_chegando = produto.qtd_chegando
         estoque_projetado = estoque_atual + quantidade_chegando
         
         if estoque_projetado < ponto_reposicao:
