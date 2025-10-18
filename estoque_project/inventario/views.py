@@ -1187,6 +1187,58 @@ def criar_produto_chegando(request):
     fornecedores = Fornecedor.objects.all()
     return render(request, 'inventario/criar_produto_chegando.html', {'fornecedores': fornecedores})
 
+def editar_produto_chegando(request, pk):
+    produto_chegando = get_object_or_404(ProdutoChegando, pk=pk, incluido_estoque=False)
+    
+    if request.method == 'POST':
+        try:
+            dados = json.loads(request.body)
+            nome = capitalizar_nome(dados.get('nome'))
+            quantidade = int(dados.get('quantidade'))
+            preco_compra = Decimal(str(dados.get('preco_compra')))
+            fornecedor_id = dados.get('fornecedor_id')
+            data_prevista_chegada = dados.get('data_prevista_chegada')
+            observacoes = dados.get('observacoes', '')
+            produto_id = dados.get('produto_id')
+
+            # Verifica fornecedor
+            fornecedor = None
+            if fornecedor_id:
+                try:
+                    fornecedor = Fornecedor.objects.get(pk=fornecedor_id)
+                except Fornecedor.DoesNotExist:
+                    pass
+
+            # Verifica se foi selecionado um produto existente
+            produto_existente = None
+            if produto_id:
+                try:
+                    produto_existente = Produto.objects.get(pk=produto_id, ativo=True)
+                except Produto.DoesNotExist:
+                    pass
+
+            # Atualiza o produto chegando
+            produto_chegando.nome = nome
+            produto_chegando.quantidade = quantidade
+            produto_chegando.preco_compra = preco_compra
+            produto_chegando.fornecedor = fornecedor
+            produto_chegando.data_prevista_chegada = data_prevista_chegada or None
+            produto_chegando.observacoes = observacoes
+            produto_chegando.produto_existente = produto_existente
+            produto_chegando.save()
+
+            return JsonResponse({'sucesso': True, 'id': produto_chegando.id})
+        except Exception as e:
+            return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
+
+    fornecedores = Fornecedor.objects.all()
+    context = {
+        'fornecedores': fornecedores,
+        'produto_chegando': produto_chegando,
+        'editando': True
+    }
+    return render(request, 'inventario/editar_produto_chegando.html', context)
+
 def excluir_produto_chegando(request, pk):
     produto_chegando = get_object_or_404(ProdutoChegando, pk=pk)
     if request.method == 'POST':

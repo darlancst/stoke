@@ -33,6 +33,7 @@ urlpatterns = [
     # URLs Produtos Chegando
     path('chegando/', views.listar_produtos_chegando, name='listar_produtos_chegando'),
     path('chegando/novo/', views.criar_produto_chegando, name='criar_produto_chegando'),
+    path('chegando/<int:pk>/editar/', views.editar_produto_chegando, name='editar_produto_chegando'),
     path('chegando/<int:pk>/excluir/', views.excluir_produto_chegando, name='excluir_produto_chegando'),
     path('chegando/<int:pk>/incluir/', views.incluir_no_estoque, name='incluir_no_estoque'),
 

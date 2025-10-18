@@ -1,0 +1,249 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Editar Produto Chegando{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.3/themes/base/jquery-ui.css">
+<style>
+.ui-autocomplete {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1050;
+}
+.produto-existente-badge {
+    {% if produto_chegando.produto_existente %}display: block;{% else %}display: none;{% endif %}
+    margin-top: 5px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Editar Produto Chegando</h1>
+<p class="text-muted">Atualize as informações do produto que está a caminho.</p>
+
+<div class="card">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label">Nome do Produto *</label>
+        <input type="text" id="nome" class="form-control" placeholder="Digite para buscar produtos existentes..." value="{{ produto_chegando.nome }}" required autocomplete="off">
+        <input type="hidden" id="produto_id" value="{% if produto_chegando.produto_existente %}{{ produto_chegando.produto_existente.id }}{% endif %}">
+        <div class="produto-existente-badge">
+          <span class="badge bg-success">
+            <i class="bi bi-check-circle"></i> Produto existente no estoque - Ao incluir, será adicionado como novo lote
+          </span>
+        </div>
+      </div>
+      
+      <div class="col-12 col-md-4">
+        <label class="form-label">Quantidade *</label>
+        <input type="number" id="quantidade" class="form-control" min="1" value="{{ produto_chegando.quantidade }}" required>
+      </div>
+      
+      <div class="col-12 col-md-4">
+        <label class="form-label">Preço de Compra (R$) *</label>
+        <input type="number" id="preco_compra" class="form-control" min="0" step="0.01" value="{{ produto_chegando.preco_compra }}" required>
+        <small class="text-muted">Quanto você pagou</small>
+      </div>
+      
+      <div class="col-12 col-md-4">
+        <label class="form-label">Fornecedor</label>
+        <div class="input-group">
+          <select id="fornecedor" class="form-select">
+            <option value="">Selecione (opcional)</option>
+            {% for fornecedor in fornecedores %}
+              <option value="{{ fornecedor.id }}" {% if produto_chegando.fornecedor and fornecedor.id == produto_chegando.fornecedor.id %}selected{% endif %}>{{ fornecedor.nome }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-outline-success" type="button" data-bs-toggle="modal" data-bs-target="#modalNovoFornecedor">
+            <i class="bi bi-plus-lg"></i> Novo
+          </button>
+        </div>
+      </div>
+      
+      <div class="col-12 col-md-4">
+        <label class="form-label">Previsão de Chegada</label>
+        <input type="date" id="data_prevista_chegada" class="form-control" value="{% if produto_chegando.data_prevista_chegada %}{{ produto_chegando.data_prevista_chegada|date:'Y-m-d' }}{% endif %}">
+      </div>
+      
+      <div class="col-12">
+        <label class="form-label">Observações</label>
+        <textarea id="observacoes" class="form-control" rows="2" placeholder="Ex: Fornecedor: Maria, Nota fiscal: 123...">{{ produto_chegando.observacoes }}</textarea>
+      </div>
+    </div>
+    
+    <div class="text-end mt-3">
+      <a href="{% url 'inventario:listar_produtos_chegando' %}" class="btn btn-secondary">Cancelar</a>
+      <button class="btn btn-primary" id="btn-salvar">
+        <i class="bi bi-check-circle"></i> Atualizar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Novo Fornecedor -->
+<div class="modal fade" id="modalNovoFornecedor" tabindex="-1" aria-labelledby="modalNovoFornecedorLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalNovoFornecedorLabel">Cadastrar Novo Fornecedor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="form-novo-fornecedor" onsubmit="return false;">
+            <div class="mb-3">
+                <label for="nome_novo_fornecedor" class="form-label">Nome do Fornecedor</label>
+                <input type="text" class="form-control" id="nome_novo_fornecedor" required>
+            </div>
+            <div id="modal-fornecedor-erro" class="alert alert-danger d-none"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        <button type="button" class="btn btn-primary" id="btn-salvar-novo-fornecedor">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.3/jquery-ui.min.js"></script>
+<script>
+// Funcionalidade para criar novo fornecedor
+document.addEventListener('DOMContentLoaded', function() {
+    const modalNovoFornecedor = new bootstrap.Modal(document.getElementById('modalNovoFornecedor'));
+    const btnSalvarFornecedor = document.getElementById('btn-salvar-novo-fornecedor');
+    const nomeFornecedorInput = document.getElementById('nome_novo_fornecedor');
+    const selectFornecedor = document.getElementById('fornecedor');
+    const erroModal = document.getElementById('modal-fornecedor-erro');
+    
+    btnSalvarFornecedor.addEventListener('click', function() {
+        const nomeFornecedor = nomeFornecedorInput.value.trim();
+        if (!nomeFornecedor) {
+            erroModal.textContent = 'Por favor, insira um nome para o fornecedor.';
+            erroModal.classList.remove('d-none');
+            return;
+        }
+
+        fetch("{% url 'inventario:criar_fornecedor_rapido' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ nome: nomeFornecedor })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                // Adiciona a nova opção ao select
+                const novaOpcao = new Option(data.nome, data.id, true, true);
+                selectFornecedor.add(novaOpcao);
+                
+                // Limpa o formulário e fecha o modal
+                nomeFornecedorInput.value = '';
+                erroModal.classList.add('d-none');
+                modalNovoFornecedor.hide();
+            } else {
+                erroModal.textContent = 'Erro: ' + data.erro;
+                erroModal.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            console.error('Erro no fetch:', error);
+            erroModal.textContent = 'Ocorreu um erro de comunicação. Tente novamente.';
+            erroModal.classList.remove('d-none');
+        });
+    });
+});
+
+$(document).ready(function() {
+    // Autocomplete para buscar produtos existentes
+    $("#nome").autocomplete({
+        source: "{% url 'inventario:buscar_produtos_json' %}",
+        minLength: 2,
+        select: function(event, ui) {
+            event.preventDefault();
+            // Preenche o nome do produto
+            $('#nome').val(ui.item.value);
+            // Armazena o ID do produto
+            $('#produto_id').val(ui.item.id);
+            // Mostra badge de produto existente
+            $('.produto-existente-badge').fadeIn();
+            return false;
+        },
+        change: function(event, ui) {
+            // Se o usuário limpar ou mudar o texto, limpa o ID
+            if (!ui.item) {
+                $('#produto_id').val('');
+                $('.produto-existente-badge').fadeOut();
+            }
+        }
+    });
+    
+    // Quando digitar manualmente, remove badge se não for um produto selecionado
+    $('#nome').on('input', function() {
+        if (!$('#produto_id').val()) {
+            $('.produto-existente-badge').fadeOut();
+        }
+    });
+});
+
+document.getElementById('btn-salvar').addEventListener('click', function() {
+    const nome = document.getElementById('nome').value.trim();
+    const quantidade = parseInt(document.getElementById('quantidade').value);
+    const preco_compra = parseFloat(document.getElementById('preco_compra').value);
+    const fornecedor_id = document.getElementById('fornecedor').value;
+    const data_prevista_chegada = document.getElementById('data_prevista_chegada').value;
+    const observacoes = document.getElementById('observacoes').value.trim();
+    const produto_id = document.getElementById('produto_id').value; // ID do produto existente
+    
+    if (!nome || quantidade <= 0 || preco_compra < 0) {
+        alert('Preencha os campos obrigatórios corretamente.');
+        return;
+    }
+    
+    const payload = {
+        nome: nome,
+        quantidade: quantidade,
+        preco_compra: preco_compra,
+        fornecedor_id: fornecedor_id || null,
+        data_prevista_chegada: data_prevista_chegada || null,
+        observacoes: observacoes,
+        produto_id: produto_id || null  // Envia ID se foi selecionado um produto existente
+    };
+    
+    this.disabled = true;
+    this.innerHTML = '<i class="bi bi-hourglass-split"></i> Atualizando...';
+    
+    fetch('{% url "inventario:editar_produto_chegando" produto_chegando.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.sucesso) {
+            window.location.href = '{% url "inventario:listar_produtos_chegando" %}';
+        } else {
+            alert('Erro: ' + data.erro);
+            this.disabled = false;
+            this.innerHTML = '<i class="bi bi-check-circle"></i> Atualizar';
+        }
+    })
+    .catch(() => {
+        alert('Erro inesperado.');
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-check-circle"></i> Atualizar';
+    });
+});
+</script>
+{% endblock %}
+

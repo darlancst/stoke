@@ -60,6 +60,9 @@
                                 <a href="{% url 'inventario:incluir_no_estoque' pk=produto.pk %}" class="btn btn-sm btn-success" title="Incluir no Estoque">
                                     <i class="bi bi-box-arrow-in-down"></i>
                                 </a>
+                                <a href="{% url 'inventario:editar_produto_chegando' pk=produto.pk %}" class="btn btn-sm btn-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
                                 <form action="{% url 'inventario:excluir_produto_chegando' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Excluir este produto chegando?');">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
@@ -116,6 +119,9 @@
                     <div class="d-flex gap-1">
                         <a href="{% url 'inventario:incluir_no_estoque' pk=produto.pk %}" class="btn btn-success btn-sm py-0 px-2" title="Incluir no estoque">
                             <i class="bi bi-box-arrow-in-down"></i>
+                        </a>
+                        <a href="{% url 'inventario:editar_produto_chegando' pk=produto.pk %}" class="btn btn-primary btn-sm py-0 px-2" title="Editar">
+                            <i class="bi bi-pencil"></i>
                         </a>
                         <form action="{% url 'inventario:excluir_produto_chegando' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Excluir este produto?');">
                             {% csrf_token %}
