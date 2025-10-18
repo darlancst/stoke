@@ -4,7 +4,7 @@ services:
     env: python
     runtime: python
     plan: free
-    buildCommand: ./build.sh
+    buildCommand: pip install -r requirements.txt && cd estoque_project && python manage.py collectstatic --no-input && python manage.py migrate --no-input
     startCommand: cd estoque_project && gunicorn estoque_project.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /
     envVars:
