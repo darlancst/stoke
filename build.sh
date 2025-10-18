@@ -15,8 +15,6 @@ python manage.py collectstatic --no-input
 echo "==> Running database migrations..."
 python manage.py migrate --no-input
 
-echo "==> Build completed! Access /criar-usuario/ to create your first user"
-
 echo "==> Returning to root directory..."
 cd ..
 

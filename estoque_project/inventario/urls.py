@@ -52,7 +52,4 @@ urlpatterns = [
     
     # URLs Análise de Tendências
     path('analise-tendencias/', views.analise_tendencias, name='analise_tendencias'),
-    
-    # Setup inicial (criar primeiro usuário)
-    path('criar-usuario/', views.criar_usuario_web, name='criar_usuario_web'),
 ] 
