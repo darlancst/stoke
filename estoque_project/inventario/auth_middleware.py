@@ -21,6 +21,7 @@ class LoginRequiredMiddleware:
             reverse('login'),
             '/logout/',
             '/admin/login/',  # Permitir login do admin
+            '/criar-usuario/',  # Permitir criar primeiro usuário
             '/static/',
             '/media/',
             '/favicon.ico',
