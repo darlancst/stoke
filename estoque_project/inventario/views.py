@@ -23,9 +23,41 @@ from django.http import HttpResponse
 def setup_admin(request):
     """
     View temporária para criar superusuário na primeira vez.
-    Acesse: /setup-admin/
+    Acesse: /setup-admin/?key=SUA_CHAVE_SECRETA
+    
+    SEGURANÇA: Adicione SETUP_KEY nas variáveis de ambiente do Render
     """
     User = get_user_model()
+    
+    # Proteção: Requer chave secreta em produção
+    import os
+    setup_key = os.environ.get('SETUP_KEY', 'dev-key-123')  # Chave padrão para dev local
+    provided_key = request.GET.get('key', '')
+    
+    if not os.environ.get('DEBUG', 'True').lower() in ('false', '0', 'no'):
+        # Em produção, exige a chave
+        if provided_key != setup_key:
+            return HttpResponse("""
+                <html>
+                <head>
+                    <title>Acesso Negado - Stoke</title>
+                    <style>
+                        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; text-align: center; }
+                        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                        h1 { color: #dc3545; }
+                        .lock { font-size: 64px; margin: 20px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <div class="lock">🔒</div>
+                        <h1>Acesso Negado</h1>
+                        <p>Esta página requer uma chave de setup válida.</p>
+                        <p><small>Configure a variável SETUP_KEY no Render.</small></p>
+                    </div>
+                </body>
+                </html>
+            """, status=403)
     
     # Verifica se já existe superusuário
     if User.objects.filter(is_superuser=True).exists():
@@ -179,8 +211,8 @@ def setup_admin(request):
                     
                     <div class="form-group">
                         <label for="password">🔑 Senha:</label>
-                        <input type="password" id="password" name="password" value="admin123" required>
-                        <small style="color: #666; display: block; margin-top: 5px;">Mínimo 8 caracteres (você poderá mudar depois)</small>
+                        <input type="password" id="password" name="password" placeholder="Mínimo 8 caracteres" required minlength="8">
+                        <small style="color: #666; display: block; margin-top: 5px;">Escolha uma senha forte (você poderá mudar depois)</small>
                     </div>
                     
                     <button type="submit">✅ Criar Superusuário</button>

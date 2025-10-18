@@ -24,4 +24,6 @@ services:
         value: admin@stoke.com
       - key: DJANGO_SUPERUSER_PASSWORD
         sync: false
+      - key: SETUP_KEY
+        generateValue: true
 
