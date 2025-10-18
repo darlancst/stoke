@@ -1552,38 +1552,24 @@ def analise_tendencias(request):
         )
     ).prefetch_related('lotes')
     
-    # Otimização: Buscar TODAS as vendas de uma vez em vez de query por produto
-    # Usar apenas os campos necessários para evitar problemas
-    itens_vendidos_todos = list(ItemVenda.objects.filter(
-        produto__in=produtos,
-        venda__data__gte=data_inicio_analise,
-        venda__status='CONCLUIDA',
-        eh_brinde=False  # Não contar brindes
-    ).select_related('venda').values_list('produto_id', 'quantidade', 'venda__data'))
-    
-    # Agrupar vendas por produto em memória
-    vendas_por_produto = defaultdict(list)
-    for produto_id, quantidade, venda_data in itens_vendidos_todos:
-        if venda_data:  # Garantir que não é None
-            # venda_data já vem como datetime aware do banco
-            data_venda = venda_data.date() if hasattr(venda_data, 'date') else venda_data
-            vendas_por_produto[produto_id].append({
-                'quantidade': quantidade,
-                'data': data_venda
-            })
-    
     analises_produtos = []
     
     for produto in produtos:
         # Histórico de vendas diárias dos últimos dias configurados
         vendas_diarias = defaultdict(int)
         
-        # Otimização: Usar vendas já carregadas em memória
-        itens_produto = vendas_por_produto.get(produto.id, [])
+        # Buscar todas as vendas do produto no período (com select_related para otimizar)
+        itens_vendidos = ItemVenda.objects.filter(
+            produto=produto,
+            venda__data__gte=data_inicio_analise,
+            venda__status='CONCLUIDA',
+            eh_brinde=False  # Não contar brindes
+        ).select_related('venda')
         
         # Preencher vendas diárias
-        for item in itens_produto:
-            vendas_diarias[item['data']] += item['quantidade']
+        for item in itens_vendidos:
+            data_venda = timezone.localtime(item.venda.data).date()
+            vendas_diarias[data_venda] += item.quantidade
         
         # Criar lista de vendas para todos os dias (incluindo dias sem vendas = 0)
         vendas_lista = []
