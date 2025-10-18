@@ -159,7 +159,10 @@
                     {% endif %}
                 </div>
                 <div class="col-6 col-md-6 mb-3">
-                    <label for="{{ form.preco_compra.id_for_label }}" class="form-label">{{ form.preco_compra.label }}</label>
+                    <label for="{{ form.preco_compra.id_for_label }}" class="form-label">
+                        <span class="d-none d-sm-inline">{{ form.preco_compra.label }}</span>
+                        <span class="d-inline d-sm-none">Compra (Unit.)</span>
+                    </label>
                      <div class="input-group">
                         <span class="input-group-text">R$</span>
                         {{ form.preco_compra }}
@@ -169,7 +172,10 @@
                     {% endif %}
                 </div>
                 <div class="col-6 col-md-6 mb-3">
-                    <label for="{{ form.preco_venda.id_for_label }}" class="form-label">{{ form.preco_venda.label }}</label>
+                    <label for="{{ form.preco_venda.id_for_label }}" class="form-label">
+                        <span class="d-none d-sm-inline">{{ form.preco_venda.label }}</span>
+                        <span class="d-inline d-sm-none">Venda</span>
+                    </label>
                      <div class="input-group">
                         <span class="input-group-text">R$</span>
                         {{ form.preco_venda }}
