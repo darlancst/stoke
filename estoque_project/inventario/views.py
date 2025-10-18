@@ -1558,14 +1558,14 @@ def analise_tendencias(request):
         venda__data__gte=data_inicio_analise,
         venda__status='CONCLUIDA',
         eh_brinde=False  # Não contar brindes
-    ).select_related('venda').values('produto_id', 'quantidade', 'venda__data')
+    ).select_related('venda').only('produto_id', 'quantidade', 'venda__data')
     
     # Agrupar vendas por produto em memória
     vendas_por_produto = defaultdict(list)
     for item in itens_vendidos_todos:
-        vendas_por_produto[item['produto_id']].append({
-            'quantidade': item['quantidade'],
-            'data': timezone.localtime(item['venda__data']).date()
+        vendas_por_produto[item.produto_id].append({
+            'quantidade': item.quantidade,
+            'data': timezone.localtime(item.venda.data).date()
         })
     
     analises_produtos = []
