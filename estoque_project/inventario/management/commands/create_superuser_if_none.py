@@ -13,17 +13,41 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         User = get_user_model()
         
-        # Verifica se já existe algum superusuário
-        if User.objects.filter(is_superuser=True).exists():
-            self.stdout.write(
-                self.style.WARNING('Superusuário já existe. Nenhuma ação necessária.')
-            )
-            return
-        
         # Pega credenciais das variáveis de ambiente ou usa padrões
         username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
         email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@stoke.com')
         password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', 'admin123')
+        
+        # Verifica se já existe um superusuário com esse username
+        existing_user = User.objects.filter(username=username).first()
+        
+        if existing_user:
+            if existing_user.is_superuser:
+                # Atualiza a senha do usuário existente (caso tenha mudado)
+                existing_user.set_password(password)
+                existing_user.email = email
+                existing_user.save()
+                self.stdout.write(
+                    self.style.SUCCESS(f'Superusuário "{username}" atualizado com nova senha!')
+                )
+            else:
+                # Torna o usuário existente um superusuário
+                existing_user.is_superuser = True
+                existing_user.is_staff = True
+                existing_user.set_password(password)
+                existing_user.email = email
+                existing_user.save()
+                self.stdout.write(
+                    self.style.SUCCESS(f'Usuário "{username}" promovido a superusuário!')
+                )
+            return
+        
+        # Verifica se já existe outro superusuário
+        if User.objects.filter(is_superuser=True).exists():
+            self.stdout.write(
+                self.style.WARNING('Já existe outro superusuário. Nenhuma ação necessária.')
+            )
+            return
         
         # Cria o superusuário
         User.objects.create_superuser(
@@ -36,6 +60,6 @@ class Command(BaseCommand):
             self.style.SUCCESS(f'Superusuário "{username}" criado com sucesso!')
         )
         self.stdout.write(
-            self.style.WARNING('⚠️ IMPORTANTE: Altere a senha após o primeiro login!')
+            self.style.SUCCESS(f'Credenciais: {username} / {password}')
         )
 
