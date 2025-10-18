@@ -4,6 +4,8 @@ from . import views
 app_name = 'inventario'
 
 urlpatterns = [
+    # Setup inicial - criar superusuário (apenas uma vez)
+    path('setup-admin/', views.setup_admin, name='setup_admin'),
     path('', views.dashboard, name='dashboard'),
     # PWA
     path('offline/', views.offline, name='offline'),

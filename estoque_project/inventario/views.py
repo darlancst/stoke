@@ -15,8 +15,185 @@ from django.contrib import messages
 from django.urls import reverse
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
+from django.contrib.auth import get_user_model
+from django.http import HttpResponse
 
 # Create your views here.
+
+def setup_admin(request):
+    """
+    View temporária para criar superusuário na primeira vez.
+    Acesse: /setup-admin/
+    """
+    User = get_user_model()
+    
+    # Verifica se já existe superusuário
+    if User.objects.filter(is_superuser=True).exists():
+        return HttpResponse("""
+            <html>
+            <head>
+                <title>Setup Admin - Stoke</title>
+                <style>
+                    body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+                    .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                    h1 { color: #28a745; }
+                    a { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }
+                    a:hover { background: #0056b3; }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <h1>✅ Superusuário já existe!</h1>
+                    <p><strong>O admin já foi criado anteriormente.</strong></p>
+                    <p>Para acessar o painel administrativo:</p>
+                    <ol>
+                        <li>Vá para: <a href="/admin">/admin</a></li>
+                        <li>Faça login com suas credenciais</li>
+                    </ol>
+                    <p><em>Se esqueceu a senha, use o link "Esqueci minha senha" na tela de login.</em></p>
+                    <a href="/">← Voltar para o Dashboard</a>
+                </div>
+            </body>
+            </html>
+        """)
+    
+    # Se for POST, cria o superusuário
+    if request.method == 'POST':
+        username = request.POST.get('username', 'admin')
+        email = request.POST.get('email', 'admin@stoke.com')
+        password = request.POST.get('password', 'admin123')
+        
+        try:
+            User.objects.create_superuser(
+                username=username,
+                email=email,
+                password=password
+            )
+            return HttpResponse(f"""
+                <html>
+                <head>
+                    <title>Setup Admin - Stoke</title>
+                    <style>
+                        body {{ font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }}
+                        .card {{ background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+                        h1 {{ color: #28a745; }}
+                        .credentials {{ background: #e7f3ff; padding: 15px; border-radius: 4px; margin: 20px 0; }}
+                        .credentials strong {{ color: #0056b3; }}
+                        .warning {{ background: #fff3cd; padding: 15px; border-radius: 4px; margin: 20px 0; border-left: 4px solid #ffc107; }}
+                        a {{ display: inline-block; margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }}
+                        a:hover {{ background: #0056b3; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <h1>✅ Superusuário criado com sucesso!</h1>
+                        
+                        <div class="credentials">
+                            <p><strong>Credenciais de acesso:</strong></p>
+                            <p>📧 <strong>Username:</strong> {username}</p>
+                            <p>📧 <strong>Email:</strong> {email}</p>
+                            <p>🔑 <strong>Senha:</strong> {password}</p>
+                        </div>
+                        
+                        <div class="warning">
+                            <p><strong>⚠️ IMPORTANTE:</strong></p>
+                            <p>Anote essas credenciais e <strong>mude a senha</strong> após o primeiro login!</p>
+                        </div>
+                        
+                        <p><strong>Próximos passos:</strong></p>
+                        <ol>
+                            <li>Clique no botão abaixo para acessar o admin</li>
+                            <li>Faça login com as credenciais acima</li>
+                            <li>Vá em "Usuários" → "{username}" → "Alterar senha"</li>
+                        </ol>
+                        
+                        <a href="/admin">🔐 Acessar Painel Admin</a>
+                        <a href="/" style="background: #6c757d; margin-left: 10px;">← Voltar para Dashboard</a>
+                    </div>
+                </body>
+                </html>
+            """)
+        except Exception as e:
+            return HttpResponse(f"""
+                <html>
+                <head>
+                    <title>Erro - Setup Admin</title>
+                    <style>
+                        body {{ font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }}
+                        .card {{ background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+                        h1 {{ color: #dc3545; }}
+                        .error {{ background: #f8d7da; padding: 15px; border-radius: 4px; margin: 20px 0; border-left: 4px solid #dc3545; }}
+                        a {{ display: inline-block; margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <h1>❌ Erro ao criar superusuário</h1>
+                        <div class="error">
+                            <p><strong>Erro:</strong> {str(e)}</p>
+                        </div>
+                        <a href="/setup-admin/">← Tentar Novamente</a>
+                    </div>
+                </body>
+                </html>
+            """)
+    
+    # Formulário HTML para criar superusuário
+    return HttpResponse("""
+        <html>
+        <head>
+            <title>Setup Admin - Stoke</title>
+            <style>
+                body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+                .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                h1 { color: #333; }
+                .form-group { margin-bottom: 20px; }
+                label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+                input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+                input:focus { outline: none; border-color: #007bff; }
+                button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; }
+                button:hover { background: #218838; }
+                .info { background: #e7f3ff; padding: 15px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #007bff; }
+                .warning { background: #fff3cd; padding: 15px; border-radius: 4px; margin-top: 20px; border-left: 4px solid #ffc107; }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h1>🔐 Criar Superusuário - Setup Inicial</h1>
+                
+                <div class="info">
+                    <p><strong>ℹ️ Primeira configuração:</strong></p>
+                    <p>Crie um usuário administrador para acessar o painel de controle do Django.</p>
+                </div>
+                
+                <form method="post">
+                    <div class="form-group">
+                        <label for="username">👤 Nome de usuário:</label>
+                        <input type="text" id="username" name="username" value="admin" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">📧 Email:</label>
+                        <input type="email" id="email" name="email" value="admin@stoke.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">🔑 Senha:</label>
+                        <input type="password" id="password" name="password" value="admin123" required>
+                        <small style="color: #666; display: block; margin-top: 5px;">Mínimo 8 caracteres (você poderá mudar depois)</small>
+                    </div>
+                    
+                    <button type="submit">✅ Criar Superusuário</button>
+                </form>
+                
+                <div class="warning">
+                    <p><strong>⚠️ Esta página é temporária!</strong></p>
+                    <p>Após criar o superusuário, você pode deletar esta rota ou ela ficará desabilitada automaticamente.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+    """)
 
 def capitalizar_nome(nome):
     """Capitaliza a primeira letra de cada palavra em um nome"""
