@@ -492,9 +492,8 @@ def dashboard(request):
 def listar_produtos(request):
     status = request.GET.get('status', 'ativos')
     query = request.GET.get('q', '')
-    filtro_estoque = request.GET.get('estoque', '')
-    filtro_margem = request.GET.get('margem', '')
-    filtro_fornecedor = request.GET.get('fornecedor', '')
+    ordenar_por = request.GET.get('ordenar', 'nome')  # campo de ordenação
+    ordem = request.GET.get('ordem', 'asc')  # asc ou desc
     config = Configuracao.objects.first()
 
     if status == 'pausados':
@@ -530,28 +529,21 @@ def listar_produtos(request):
         )
     )
     
-    # Aplicar filtros após as anotações
-    if filtro_estoque:
-        if filtro_estoque == 'baixo':
-            produtos = produtos.filter(quantidade_total_agg__lt=config.limite_estoque_baixo, quantidade_total_agg__gt=0)
-        elif filtro_estoque == 'zerado':
-            produtos = produtos.filter(Q(quantidade_total_agg=0) | Q(quantidade_total_agg__isnull=True))
-        elif filtro_estoque == 'disponivel':
-            produtos = produtos.filter(quantidade_total_agg__gt=0)
+    # Aplicar ordenação
+    campos_ordenacao = {
+        'nome': 'nome',
+        'estoque': 'quantidade_total_agg',
+        'chegando': 'quantidade_total_agg',  # não temos campo agregado para chegando ainda
+        'preco': 'preco_venda',
+        'custo': 'custo_medio_ponderado_agg',
+        'margem': 'margem_lucro_agg',
+    }
     
-    if filtro_margem and config:
-        if filtro_margem == 'ideal':
-            produtos = produtos.filter(margem_lucro_agg__gte=config.margem_lucro_ideal)
-        elif filtro_margem == 'baixa':
-            produtos = produtos.filter(margem_lucro_agg__lt=config.margem_lucro_ideal, margem_lucro_agg__isnull=False)
+    campo = campos_ordenacao.get(ordenar_por, 'nome')
+    if ordem == 'desc':
+        campo = f'-{campo}'
     
-    if filtro_fornecedor:
-        if filtro_fornecedor == 'sem_fornecedor':
-            produtos = produtos.filter(fornecedor__isnull=True)
-        else:
-            produtos = produtos.filter(fornecedor_id=filtro_fornecedor)
-    
-    produtos = produtos.order_by('nome')
+    produtos = produtos.order_by(campo)
     
     # Calcular estatísticas gerais (antes da paginação)
     total_produtos_diferentes = produtos.count()
@@ -559,8 +551,8 @@ def listar_produtos(request):
         total=Sum('quantidade_total_agg')
     )['total'] or 0
     
-    # Paginação (15 produtos por página)
-    paginator = Paginator(produtos, 15)
+    # Paginação (20 produtos por página)
+    paginator = Paginator(produtos, 20)
     page_number = request.GET.get('page')
     try:
         page_obj = paginator.get_page(page_number)
@@ -568,9 +560,6 @@ def listar_produtos(request):
         page_obj = paginator.get_page(1)
     except EmptyPage:
         page_obj = paginator.get_page(paginator.num_pages)
-    
-    # Buscar todos os fornecedores para o dropdown
-    fornecedores = Fornecedor.objects.all().order_by('nome')
     
     context = {
         'page_obj': page_obj,
@@ -581,10 +570,8 @@ def listar_produtos(request):
         'query_atual': query,
         'total_produtos_diferentes': total_produtos_diferentes,
         'quantidade_total_geral': quantidade_total_geral,
-        'filtro_estoque': filtro_estoque,
-        'filtro_margem': filtro_margem,
-        'filtro_fornecedor': filtro_fornecedor,
-        'fornecedores': fornecedores,
+        'ordenar_por': ordenar_por,
+        'ordem_atual': ordem,
     }
     return render(request, 'inventario/listar_produtos.html', context)
 

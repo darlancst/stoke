@@ -4,6 +4,43 @@
 
 {% block extra_head %}
 <style>
+    /* Estilos para colunas ordenáveis */
+    .sortable-header {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        padding-right: 1.5rem;
+    }
+    
+    .sortable-header:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    [data-theme="dark"] .sortable-header:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .sort-icon {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.3;
+        font-size: 0.75rem;
+    }
+    
+    .sortable-header:hover .sort-icon {
+        opacity: 0.6;
+    }
+    
+    .sort-icon.active {
+        opacity: 1;
+        color: #0d6efd;
+    }
+    
+    [data-theme="dark"] .sort-icon.active {
+        color: #58a6ff;
+    }
     /* Destaque extra para nome dos produtos */
     .produto-nome-link {
         font-weight: 700;
@@ -87,58 +124,19 @@
     </div>
 </div>
 
-<!-- Busca e Filtros -->
+<!-- Busca -->
 <div class="card mb-3">
     <div class="card-body py-3">
-        <form method="get" id="form-filtros">
+        <form method="get">
             <input type="hidden" name="status" value="{{ status_atual }}">
-            
-            <!-- Busca por nome -->
-            <div class="row g-2 mb-2">
-                <div class="col-12">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control" placeholder="Buscar produto por nome..." name="q" value="{{ query_atual }}" id="search-input">
-                        {% if query_atual or filtro_estoque or filtro_margem or filtro_fornecedor %}
-                            <a href="{% url 'inventario:listar_produtos' %}?status={{ status_atual }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x"></i> Limpar
-                            </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Filtros por coluna -->
-            <div class="row g-2">
-                <div class="col-12 col-md-4">
-                    <label class="form-label small mb-1">Filtrar por Estoque</label>
-                    <select name="estoque" class="form-select form-select-sm" onchange="this.form.submit()">
-                        <option value="">Todos</option>
-                        <option value="baixo" {% if filtro_estoque == 'baixo' %}selected{% endif %}>Estoque Baixo (< {{ config.limite_estoque_baixo }})</option>
-                        <option value="zerado" {% if filtro_estoque == 'zerado' %}selected{% endif %}>Estoque Zerado (0)</option>
-                        <option value="disponivel" {% if filtro_estoque == 'disponivel' %}selected{% endif %}>Com Estoque (> 0)</option>
-                    </select>
-                </div>
-                
-                <div class="col-12 col-md-4">
-                    <label class="form-label small mb-1">Filtrar por Margem</label>
-                    <select name="margem" class="form-select form-select-sm" onchange="this.form.submit()">
-                        <option value="">Todas</option>
-                        <option value="ideal" {% if filtro_margem == 'ideal' %}selected{% endif %}>≥ {{ config.margem_lucro_ideal }}% (Ideal)</option>
-                        <option value="baixa" {% if filtro_margem == 'baixa' %}selected{% endif %}>< {{ config.margem_lucro_ideal }}% (Baixa)</option>
-                    </select>
-                </div>
-                
-                <div class="col-12 col-md-4">
-                    <label class="form-label small mb-1">Filtrar por Fornecedor</label>
-                    <select name="fornecedor" class="form-select form-select-sm" onchange="this.form.submit()">
-                        <option value="">Todos</option>
-                        {% for fornecedor in fornecedores %}
-                        <option value="{{ fornecedor.id }}" {% if filtro_fornecedor == fornecedor.id|stringformat:"s" %}selected{% endif %}>{{ fornecedor.nome }}</option>
-                        {% endfor %}
-                        <option value="sem_fornecedor" {% if filtro_fornecedor == 'sem_fornecedor' %}selected{% endif %}>Sem fornecedor</option>
-                    </select>
-                </div>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" placeholder="Buscar produto por nome..." name="q" value="{{ query_atual }}" id="search-input">
+                {% if query_atual %}
+                    <a href="{% url 'inventario:listar_produtos' %}?status={{ status_atual }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x"></i>
+                    </a>
+                {% endif %}
             </div>
         </form>
     </div>
@@ -161,12 +159,27 @@
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Nome do Produto</th>
-                        <th class="text-center">Estoque</th>
+                        <th class="sortable-header" onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=nome&ordem={% if ordenar_por == 'nome' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
+                            Nome do Produto
+                            <i class="bi bi-arrow-{% if ordenar_por == 'nome' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'nome' %}active{% endif %}"></i>
+                        </th>
+                        <th class="text-center sortable-header" onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=estoque&ordem={% if ordenar_por == 'estoque' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
+                            Estoque
+                            <i class="bi bi-arrow-{% if ordenar_por == 'estoque' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'estoque' %}active{% endif %}"></i>
+                        </th>
                         <th class="text-center">Chegando</th>
-                        <th class="text-end">Preço Venda</th>
-                        <th class="text-end">Custo Médio</th>
-                        <th class="text-center">Margem</th>
+                        <th class="text-end sortable-header" onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=preco&ordem={% if ordenar_por == 'preco' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
+                            Preço Venda
+                            <i class="bi bi-arrow-{% if ordenar_por == 'preco' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'preco' %}active{% endif %}"></i>
+                        </th>
+                        <th class="text-end sortable-header" onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=custo&ordem={% if ordenar_por == 'custo' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
+                            Custo Médio
+                            <i class="bi bi-arrow-{% if ordenar_por == 'custo' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'custo' %}active{% endif %}"></i>
+                        </th>
+                        <th class="text-center sortable-header" onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=margem&ordem={% if ordenar_por == 'margem' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
+                            Margem
+                            <i class="bi bi-arrow-{% if ordenar_por == 'margem' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'margem' %}active{% endif %}"></i>
+                        </th>
                         <th class="text-center">Ações</th>
                     </tr>
                 </thead>
