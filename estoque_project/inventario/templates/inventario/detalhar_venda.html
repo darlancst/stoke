@@ -10,6 +10,11 @@
     </div>
     <div class="col-12 col-md-6">
         <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+            {% if not venda.teve_devolucao %}
+            <a href="{% url 'inventario:editar_venda' pk=venda.pk %}" class="btn btn-warning btn-sm">
+                <i class="bi bi-pencil"></i> <span class="d-none d-sm-inline">Editar Venda</span>
+            </a>
+            {% endif %}
             <a href="{% url 'inventario:registrar_devolucao' venda_pk=venda.pk %}" class="btn btn-info btn-sm">
                 <i class="bi bi-arrow-return-left"></i> <span class="d-none d-sm-inline">Registrar Devolução</span>
             </a>

@@ -1,0 +1,653 @@
+{% extends 'inventario/base.html' %}
+
+{% block title %}Editar Venda #{{ venda.id }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.3/themes/base/jquery-ui.css">
+<style>
+    .total-venda-fixed {
+        position: sticky;
+        bottom: 0;
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-top: 1px solid #dee2e6;
+        z-index: 1020;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .desconto-mobile {
+        flex-shrink: 0;
+    }
+    
+    .desconto-mobile input {
+        width: 140px;
+    }
+    
+    .totais-mobile {
+        flex-shrink: 0;
+    }
+    
+    .ui-autocomplete {
+        max-height: 200px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 1050;
+    }
+    
+    /* Estilo para produtos sem estoque */
+    .ui-menu-item-sem-estoque {
+        opacity: 0.5;
+        background-color: #f8d7da !important;
+        cursor: not-allowed !important;
+        pointer-events: none;
+    }
+    
+    .ui-menu-item-sem-estoque a {
+        color: #721c24 !important;
+        cursor: not-allowed !important;
+    }
+    
+    [data-theme="dark"] .ui-menu-item-sem-estoque {
+        background-color: rgba(220, 38, 38, 0.15) !important;
+    }
+    
+    [data-theme="dark"] .ui-menu-item-sem-estoque a {
+        color: #f87171 !important;
+    }
+    
+    /* Tooltip para produtos sem estoque */
+    .ui-menu-item-sem-estoque::before {
+        content: "🚫 ";
+    }
+    
+    @media (min-width: 992px) {
+        .total-venda-fixed {
+            justify-content: center !important;
+            gap: 2rem;
+        }
+    }
+    
+    @media (max-width: 991.98px) {
+        .total-venda-fixed {
+            position: static;
+            border-radius: 0.375rem;
+            border: 1px solid #dee2e6;
+            margin-top: 1rem;
+        }
+        
+        .total-mobile-flex {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch !important;
+        }
+        
+        .desconto-mobile {
+            order: 1;
+            width: 100% !important;
+            margin: 0 !important;
+        }
+        
+        .desconto-mobile input {
+            width: 100%;
+        }
+        
+        .totais-mobile {
+            order: 2;
+            text-align: center;
+        }
+        
+        .btn-finalizar-mobile {
+            order: 3;
+            width: 100%;
+        }
+    }
+    
+    .item-card-mobile {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Dark mode overrides */
+    [data-theme="dark"] .total-venda-fixed {
+        background-color: #0d1117;
+        border-top: 1px solid #30363d;
+    }
+    @media (max-width: 991.98px) {
+        [data-theme="dark"] .total-venda-fixed {
+            border: 1px solid #30363d;
+        }
+    }
+    [data-theme="dark"] .item-card-mobile {
+        border-color: #30363d;
+        background-color: #0d1117;
+    }
+    [data-theme="dark"] .form-control-plaintext {
+        color: #c9d1d9;
+    }
+    
+    .preco-editavel {
+        max-width: 150px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho Responsivo -->
+<div class="row align-items-center mb-3">
+    <div class="col-12 col-md-6">
+        <h1 class="mb-2 mb-md-0">Editar Venda #{{ venda.id }}</h1>
+        <small class="text-muted">
+            <i class="bi bi-calendar"></i> Original: {{ venda.data|date:"d/m/Y H:i" }}
+        </small>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="d-flex justify-content-md-end gap-2">
+            <a href="{% url 'inventario:detalhar_venda' pk=venda.id %}" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Cancelar</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info" role="alert">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    <strong>Atenção:</strong> Ao editar esta venda, os itens antigos serão removidos do histórico e o estoque será recalculado automaticamente.
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form id="form-venda" onsubmit="return false;">
+            {% csrf_token %}
+            <div class="row g-3">
+                <!-- Nome do Cliente -->
+                <div class="col-md-6">
+                    <label for="cliente_nome" class="form-label">Nome do Cliente</label>
+                    <input type="text" id="cliente_nome" name="cliente_nome" class="form-control" placeholder="Nome do Cliente" value="{{ venda.cliente_nome|default:'' }}">
+                </div>
+                
+                <!-- Tipo de Venda -->
+                <div class="col-md-6">
+                    <label class="form-label">Local da Venda</label>
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="tipo_venda" id="venda_loja" value="LOJA" {% if venda.tipo_venda == 'LOJA' %}checked{% endif %}>
+                            <label class="form-check-label" for="venda_loja">
+                                <span class="d-block">Na Loja</span>
+                                <small class="text-muted">Lucro 50%</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="tipo_venda" id="venda_externa" value="EXTERNA" {% if venda.tipo_venda == 'EXTERNA' %}checked{% endif %}>
+                            <label class="form-check-label" for="venda_externa">
+                                <span class="d-block">Externa</span>
+                                <small class="text-muted">Lucro 100%</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Buscar Produto -->
+                <div class="col-12">
+                    <label for="buscar_produto" class="form-label">Buscar Produto</label>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="buscar_produto" class="form-control" placeholder="Digite o nome do produto para adicionar à venda...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="form-check d-flex align-items-center h-100 ps-3">
+                                <input class="form-check-input me-2" type="checkbox" id="adicionar_como_brinde">
+                                <label class="form-check-label text-success fw-bold" for="adicionar_como_brinde">
+                                    <i class="bi bi-gift-fill me-1"></i>Adicionar como Brinde
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Itens da Venda -->
+        <div class="mt-4">
+            <h5><i class="bi bi-cart3"></i> Itens da Venda</h5>
+            
+            <!-- Tabela para Desktop -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover" id="tabela-itens-venda">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Produto</th>
+                            <th style="width: 120px;">Quantidade</th>
+                            <th style="width: 150px;">Preço Unit.</th>
+                            <th style="width: 150px;">Subtotal</th>
+                            <th style="width: 80px;">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Linhas de itens serão adicionadas aqui via JS -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Cards para Mobile -->
+            <div class="d-md-none" id="itens-mobile-container">
+                <!-- Cards serão adicionados aqui via JS -->
+            </div>
+            
+            <!-- Aviso quando vazio -->
+            <div id="sem-itens-aviso" class="text-center text-muted py-4" style="display: none;">
+                <i class="bi bi-cart-x display-1 text-muted"></i>
+                <h6 class="text-muted mt-2">Nenhum item adicionado à venda</h6>
+                <p class="text-muted">Use a busca acima para adicionar produtos</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Área de Total e Finalização -->
+<div class="total-venda-fixed d-flex justify-content-end align-items-center total-mobile-flex">
+    <div class="desconto-mobile">
+        <label for="desconto-venda" class="form-label mb-2">Desconto (R$)</label>
+        <input type="number" id="desconto-venda" class="form-control form-control-lg" placeholder="0,00" min="0" step="0.01" value="{{ venda.desconto|floatformat:2 }}">
+    </div>
+    
+    <div class="totais-mobile">
+        <h6 class="text-muted mb-1">Subtotal: <span id="subtotal-venda">R$ 0,00</span></h6>
+        <h6 class="text-success mb-1">Lucro: <span id="lucro-venda">R$ 0,00</span></h6>
+        <h4 class="mb-0 fw-bold">Total Final: <span id="total-final-venda">R$ 0,00</span></h4>
+    </div>
+    
+    <button type="button" id="btn-finalizar-venda" class="btn btn-lg btn-warning btn-finalizar-mobile">
+        <i class="bi bi-check-circle"></i> Salvar Alterações
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.3/jquery-ui.min.js"></script>
+<script>
+$(document).ready(function() {
+    let itensVenda = {};
+    let subtotal = 0;
+    let lucroTotal = 0;
+
+    // Carregar itens existentes da venda
+    {% for item in venda.itens.all %}
+    {
+        const ehBrinde = {{ item.eh_brinde|yesno:"true,false" }};
+        const chaveItem = '{{ item.produto.id }}_' + (ehBrinde ? 'brinde' : 'pago');
+        const precoNumerico = parseFloat('{{ item.preco_venda_unitario }}');
+        const custoUnitario = parseFloat('{{ item.custo_compra_total_registrado }}') / {{ item.quantidade }};
+        const quantidade = {{ item.quantidade }};
+        
+        itensVenda[chaveItem] = {
+            id: {{ item.produto.id }},
+            nome: '{{ item.produto.nome|escapejs }}',
+            quantidade: quantidade,
+            preco: precoNumerico,
+            custo: custoUnitario,
+            preco_original: parseFloat('{{ item.produto.preco_venda }}'),
+            subtotal: precoNumerico * quantidade,
+            estoque: {{ item.produto.quantidade_total }} + quantidade, // Estoque atual + o que foi vendido
+            eh_brinde: ehBrinde,
+            chave: chaveItem
+        };
+        
+        // Adicionar na tabela desktop
+        const brindeTag = ehBrinde ? '<span class="badge bg-success ms-2"><i class="bi bi-gift-fill"></i> BRINDE</span>' : '';
+        const precoExibido = precoNumerico.toFixed(2).replace('.', ',');
+        const subtotal = (precoNumerico * quantidade).toFixed(2).replace('.', ',');
+        
+        const newRow = `
+            <tr id="item-${chaveItem}" ${ehBrinde ? 'class="table-success"' : ''}>
+                <td>
+                    {{ item.produto.nome|escapejs }}${brindeTag}
+                    <br>
+                    <small class="text-muted">Estoque disponível: ${itensVenda[chaveItem].estoque}</small>
+                </td>
+                <td><input type="number" class="form-control quantidade-item" value="${quantidade}" min="1" max="${itensVenda[chaveItem].estoque}" data-chave="${chaveItem}"></td>
+                <td><input type="number" class="form-control preco-editavel preco-item" value="${precoNumerico.toFixed(2)}" min="0" step="0.01" data-chave="${chaveItem}" ${ehBrinde ? 'disabled' : ''}></td>
+                <td>R$ <span class="subtotal-item">${subtotal}</span></td>
+                <td><button class="btn btn-sm btn-danger remover-item" data-chave="${chaveItem}"><i class="bi bi-trash"></i></button></td>
+            </tr>
+        `;
+        $('#tabela-itens-venda tbody').append(newRow);
+        
+        // Adicionar card mobile
+        adicionarItemMobile(itensVenda[chaveItem]);
+    }
+    {% endfor %}
+    
+    recalcularTudo();
+
+    function recalcularTudo() {
+        subtotal = 0;
+        lucroTotal = 0;
+        
+        for (const id in itensVenda) {
+            subtotal += parseFloat(itensVenda[id].subtotal);
+            const lucroItem = (itensVenda[id].preco - itensVenda[id].custo) * itensVenda[id].quantidade;
+            lucroTotal += lucroItem;
+        }
+        
+        let desconto = parseFloat($('#desconto-venda').val()) || 0;
+        if (desconto > subtotal) {
+            desconto = subtotal;
+            $('#desconto-venda').val(desconto.toFixed(2));
+        }
+
+        const totalFinal = subtotal - desconto;
+        
+        const tipoVenda = $('input[name="tipo_venda"]:checked').val();
+        let lucroFinal;
+        
+        if (tipoVenda === 'EXTERNA') {
+            lucroFinal = lucroTotal - desconto;
+        } else {
+            lucroFinal = (lucroTotal / 2) - (desconto / 2);
+        }
+
+        $('#subtotal-venda').text('R$ ' + subtotal.toFixed(2).replace('.', ','));
+        $('#lucro-venda').text('R$ ' + lucroFinal.toFixed(2).replace('.', ','));
+        $('#total-final-venda').text('R$ ' + totalFinal.toFixed(2).replace('.', ','));
+        $('#sem-itens-aviso').toggle(Object.keys(itensVenda).length === 0);
+        
+        if (lucroFinal < 0) {
+            $('#lucro-venda').parent().removeClass('text-success').addClass('text-danger');
+        } else {
+            $('#lucro-venda').parent().removeClass('text-danger').addClass('text-success');
+        }
+    }
+
+    function adicionarItemMobile(produto) {
+        const precoFormatado = produto.preco.toFixed(2).replace('.', ',');
+        const brindeTag = produto.eh_brinde ? '<span class="badge bg-success ms-2"><i class="bi bi-gift-fill"></i> BRINDE</span>' : '';
+        const cardClass = produto.eh_brinde ? 'border-success bg-success bg-opacity-10' : '';
+        
+        const cardHtml = `
+            <div class="item-card-mobile ${cardClass}" id="item-mobile-${produto.chave}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0">${produto.nome}${brindeTag}</h6>
+                    <button class="btn btn-sm btn-outline-danger remover-item-mobile" data-chave="${produto.chave}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <small class="text-muted d-block mb-3">Estoque disponível: ${produto.estoque}</small>
+                
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label">Quantidade</label>
+                        <input type="number" class="form-control quantidade-item-mobile" value="${produto.quantidade}" min="1" max="${produto.estoque}" data-chave="${produto.chave}">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Preço Unit.</label>
+                        <input type="number" class="form-control preco-item-mobile" value="${produto.preco.toFixed(2)}" min="0" step="0.01" data-chave="${produto.chave}" ${produto.eh_brinde ? 'disabled' : ''}>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Subtotal</label>
+                        <div class="form-control-plaintext fw-bold ${produto.eh_brinde ? 'text-success' : 'text-primary'}">
+                            R$ <span class="subtotal-item-mobile">${(produto.preco * produto.quantidade).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        $('#itens-mobile-container').append(cardHtml);
+    }
+
+    $("#buscar_produto").autocomplete({
+        source: "{% url 'inventario:buscar_produtos_json' %}",
+        minLength: 2,
+        create: function() {
+            $(this).data('ui-autocomplete')._renderItem = function(ul, item) {
+                const $li = $("<li>")
+                    .append("<div>" + item.label + "</div>")
+                    .appendTo(ul);
+                
+                if (item.sem_estoque) {
+                    $li.addClass("ui-menu-item-sem-estoque");
+                    $li.attr("title", "Produto sem estoque disponível");
+                }
+                
+                return $li;
+            };
+        },
+        select: function(event, ui) {
+            event.preventDefault();
+            const produto = ui.item;
+            
+            if (produto.sem_estoque) {
+                alert('⚠️ Este produto não possui estoque disponível e não pode ser adicionado à venda.');
+                $('#buscar_produto').val('');
+                return false;
+            }
+            
+            const ehBrinde = $('#adicionar_como_brinde').is(':checked');
+            const chaveItem = produto.id + '_' + (ehBrinde ? 'brinde' : 'pago');
+            
+            if (!itensVenda[chaveItem]) {
+                const precoNumerico = parseFloat(produto.preco);
+                const custoNumerico = parseFloat(produto.custo) || 0;
+                const precoFinal = ehBrinde ? 0 : precoNumerico;
+                
+                if (isNaN(precoNumerico)) {
+                    console.error("Preço inválido recebido para o produto:", produto);
+                    return;
+                }
+
+                itensVenda[chaveItem] = {
+                    id: produto.id,
+                    nome: produto.value,
+                    quantidade: 1,
+                    preco: precoFinal,
+                    custo: custoNumerico,
+                    preco_original: precoNumerico,
+                    subtotal: precoFinal,
+                    estoque: produto.estoque,
+                    eh_brinde: ehBrinde,
+                    chave: chaveItem
+                };
+
+                const brindeTag = ehBrinde ? '<span class="badge bg-success ms-2"><i class="bi bi-gift-fill"></i> BRINDE</span>' : '';
+                const precoExibido = ehBrinde ? '0,00' : precoNumerico.toFixed(2).replace('.', ',');
+                
+                const newRow = `
+                    <tr id="item-${chaveItem}" ${ehBrinde ? 'class="table-success"' : ''}>
+                        <td>
+                            ${produto.value}${brindeTag}
+                            <br>
+                            <small class="text-muted">Estoque disponível: ${produto.estoque}</small>
+                        </td>
+                        <td><input type="number" class="form-control quantidade-item" value="1" min="1" max="${produto.estoque}" data-chave="${chaveItem}"></td>
+                        <td><input type="number" class="form-control preco-editavel preco-item" value="${precoNumerico.toFixed(2)}" min="0" step="0.01" data-chave="${chaveItem}" ${ehBrinde ? 'disabled' : ''}></td>
+                        <td>R$ <span class="subtotal-item">${precoFinal.toFixed(2).replace('.', ',')}</span></td>
+                        <td><button class="btn btn-sm btn-danger remover-item" data-chave="${chaveItem}"><i class="bi bi-trash"></i></button></td>
+                    </tr>
+                `;
+                $('#tabela-itens-venda tbody').append(newRow);
+
+                adicionarItemMobile({
+                    id: produto.id,
+                    nome: produto.value,
+                    preco: precoFinal,
+                    custo: custoNumerico,
+                    preco_original: precoNumerico,
+                    estoque: produto.estoque,
+                    eh_brinde: ehBrinde,
+                    chave: chaveItem,
+                    quantidade: 1
+                });
+
+                recalcularTudo();
+                $('#adicionar_como_brinde').prop('checked', false);
+            }
+            $(this).val('');
+        }
+    });
+
+    // Event handlers para desktop - quantidade
+    $('#tabela-itens-venda').on('input', '.quantidade-item', function() {
+        const chave = $(this).data('chave');
+        let quantidade = parseInt($(this).val());
+        const estoqueDisponivel = parseInt($(this).attr('max'));
+
+        if (quantidade > estoqueDisponivel) {
+            alert(`A quantidade não pode exceder o estoque disponível (${estoqueDisponivel}).`);
+            $(this).val(estoqueDisponivel);
+            quantidade = estoqueDisponivel;
+        }
+        
+        if (quantidade > 0 && itensVenda[chave]) {
+            const preco = parseFloat(itensVenda[chave].preco);
+            const subtotal = quantidade * preco;
+            itensVenda[chave].quantidade = quantidade;
+            itensVenda[chave].subtotal = subtotal;
+            
+            $('#item-' + chave).find('.subtotal-item').text(subtotal.toFixed(2).replace('.', ','));
+            $('#item-mobile-' + chave).find('.quantidade-item-mobile').val(quantidade);
+            $('#item-mobile-' + chave).find('.subtotal-item-mobile').text(subtotal.toFixed(2).replace('.', ','));
+            
+            recalcularTudo();
+        }
+    });
+    
+    // Event handlers para desktop - preço
+    $('#tabela-itens-venda').on('input', '.preco-item', function() {
+        const chave = $(this).data('chave');
+        let preco = parseFloat($(this).val()) || 0;
+        
+        if (itensVenda[chave]) {
+            itensVenda[chave].preco = preco;
+            const subtotal = itensVenda[chave].quantidade * preco;
+            itensVenda[chave].subtotal = subtotal;
+            
+            $('#item-' + chave).find('.subtotal-item').text(subtotal.toFixed(2).replace('.', ','));
+            $('#item-mobile-' + chave).find('.preco-item-mobile').val(preco.toFixed(2));
+            $('#item-mobile-' + chave).find('.subtotal-item-mobile').text(subtotal.toFixed(2).replace('.', ','));
+            
+            recalcularTudo();
+        }
+    });
+
+    $('#tabela-itens-venda').on('click', '.remover-item', function() {
+        const chave = $(this).data('chave');
+        delete itensVenda[chave];
+        $('#item-' + chave).remove();
+        $('#item-mobile-' + chave).remove();
+        recalcularTudo();
+    });
+
+    // Event handlers para mobile
+    $('#itens-mobile-container').on('input', '.quantidade-item-mobile', function() {
+        const chave = $(this).data('chave');
+        let quantidade = parseInt($(this).val());
+        const estoqueDisponivel = parseInt($(this).attr('max'));
+
+        if (quantidade > estoqueDisponivel) {
+            alert(`A quantidade não pode exceder o estoque disponível (${estoqueDisponivel}).`);
+            $(this).val(estoqueDisponivel);
+            quantidade = estoqueDisponivel;
+        }
+        
+        if (quantidade > 0 && itensVenda[chave]) {
+            const preco = parseFloat(itensVenda[chave].preco);
+            const subtotal = quantidade * preco;
+            itensVenda[chave].quantidade = quantidade;
+            itensVenda[chave].subtotal = subtotal;
+            
+            $('#item-mobile-' + chave).find('.subtotal-item-mobile').text(subtotal.toFixed(2).replace('.', ','));
+            $('#item-' + chave).find('.quantidade-item').val(quantidade);
+            $('#item-' + chave).find('.subtotal-item').text(subtotal.toFixed(2).replace('.', ','));
+            
+            recalcularTudo();
+        }
+    });
+    
+    $('#itens-mobile-container').on('input', '.preco-item-mobile', function() {
+        const chave = $(this).data('chave');
+        let preco = parseFloat($(this).val()) || 0;
+        
+        if (itensVenda[chave]) {
+            itensVenda[chave].preco = preco;
+            const subtotal = itensVenda[chave].quantidade * preco;
+            itensVenda[chave].subtotal = subtotal;
+            
+            $('#item-mobile-' + chave).find('.subtotal-item-mobile').text(subtotal.toFixed(2).replace('.', ','));
+            $('#item-' + chave).find('.preco-item').val(preco.toFixed(2));
+            $('#item-' + chave).find('.subtotal-item').text(subtotal.toFixed(2).replace('.', ','));
+            
+            recalcularTudo();
+        }
+    });
+
+    $('#itens-mobile-container').on('click', '.remover-item-mobile', function() {
+        const chave = $(this).data('chave');
+        delete itensVenda[chave];
+        $('#item-' + chave).remove();
+        $('#item-mobile-' + chave).remove();
+        recalcularTudo();
+    });
+
+    $('#desconto-venda').on('input', function() {
+        recalcularTudo();
+    });
+
+    $('input[name="tipo_venda"]').on('change', function() {
+        recalcularTudo();
+    });
+
+    $('#btn-finalizar-venda').on('click', function() {
+        if (Object.keys(itensVenda).length === 0) {
+            alert('Adicione pelo menos um item para salvar a venda.');
+            return;
+        }
+
+        const dadosVenda = {
+            cliente_nome: $('#cliente_nome').val() || '',
+            tipo_venda: $('input[name="tipo_venda"]:checked').val(),
+            desconto: parseFloat($('#desconto-venda').val()) || 0,
+            itens: Object.values(itensVenda).map(item => ({
+                id: item.id,
+                quantidade: item.quantidade,
+                eh_brinde: item.eh_brinde || false,
+                preco_personalizado: item.preco !== item.preco_original ? item.preco : null
+            }))
+        };
+        
+        const csrfToken = $('input[name=csrfmiddlewaretoken]').val();
+
+        $(this).prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Processando...');
+
+        fetch("{% url 'inventario:editar_venda' pk=venda.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(dadosVenda)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                alert('Venda atualizada com sucesso!');
+                window.location.href = "{% url 'inventario:detalhar_venda' pk=venda.id %}";
+            } else {
+                alert('Erro ao atualizar a venda: ' + data.erro);
+                $('#btn-finalizar-venda').prop('disabled', false).html('<i class="bi bi-check-circle"></i> Salvar Alterações');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Ocorreu um erro inesperado. Verifique o console para mais detalhes.');
+            $('#btn-finalizar-venda').prop('disabled', false).html('<i class="bi bi-check-circle"></i> Salvar Alterações');
+        });
+    });
+});
+</script>
+{% endblock %}
+

@@ -95,9 +95,16 @@
                         <td class="text-end fw-bold">R$ {{ venda.valor_total|floatformat:2 }}</td>
                         <td class="text-end text-success fw-bold">R$ {{ venda.meu_lucro|floatformat:2 }}</td>
                         <td class="text-center">
-                            <a href="{% url 'inventario:detalhar_venda' pk=venda.pk %}" class="btn btn-sm btn-info" title="Detalhes">
-                                <i class="bi bi-eye"></i>
-                            </a>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'inventario:detalhar_venda' pk=venda.pk %}" class="btn btn-sm btn-info" title="Detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if not venda.teve_devolucao %}
+                                <a href="{% url 'inventario:editar_venda' pk=venda.pk %}" class="btn btn-sm btn-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
@@ -166,9 +173,16 @@
                         <small class="text-muted">Lucro:</small>
                         <strong class="text-success">R$ {{ venda.meu_lucro|floatformat:2 }}</strong>
                     </div>
-                    <a href="{% url 'inventario:detalhar_venda' pk=venda.pk %}" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes">
-                        <i class="bi bi-eye"></i>
-                    </a>
+                    <div class="d-flex gap-1">
+                        <a href="{% url 'inventario:detalhar_venda' pk=venda.pk %}" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        {% if not venda.teve_devolucao %}
+                        <a href="{% url 'inventario:editar_venda' pk=venda.pk %}" class="btn btn-warning btn-sm py-0 px-2" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -347,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 + `<td>${itensHtml}</td>`
                 + `<td class="text-end fw-bold">R$ ${v.valor_total.toFixed(2)}</td>`
                 + `<td class="text-end text-success fw-bold">R$ ${v.meu_lucro.toFixed(2)}</td>`
-                + `<td class="text-center"><a href="${v.url_detalhes}" class="btn btn-sm btn-info" title="Detalhes"><i class="bi bi-eye"></i></a></td>`
+                + `<td class="text-center"><div class="btn-group" role="group"><a href="${v.url_detalhes}" class="btn btn-sm btn-info" title="Detalhes"><i class="bi bi-eye"></i></a>${v.teve_devolucao ? '' : `<a href="/vendas/${v.id}/editar/" class="btn btn-sm btn-warning" title="Editar"><i class="bi bi-pencil"></i></a>`}</div></td>`
                 + `</tr>`;
         });
         tbodyDesktop.innerHTML = html;
@@ -371,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 + `</div>`
                 + `<div class="d-flex justify-content-between align-items-center mt-2">`
                 + `<div><strong class="text-primary fs-6">R$ ${v.valor_total.toFixed(2)}</strong> <span class="text-muted mx-1">·</span> <small class="text-muted">Lucro:</small> <strong class="text-success">R$ ${v.meu_lucro.toFixed(2)}</strong></div>`
-                + `<a href="${v.url_detalhes}" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes"><i class="bi bi-eye"></i></a>`
+                + `<div class="d-flex gap-1"><a href="${v.url_detalhes}" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes"><i class="bi bi-eye"></i></a>${v.teve_devolucao ? '' : `<a href="/vendas/${v.id}/editar/" class="btn btn-warning btn-sm py-0 px-2" title="Editar"><i class="bi bi-pencil"></i></a>`}</div>`
                 + `</div>`
                 + `</div></div>`;
         });

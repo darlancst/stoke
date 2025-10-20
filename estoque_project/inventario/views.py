@@ -1008,6 +1008,132 @@ def detalhar_venda(request, pk):
     ), pk=pk)
     return render(request, 'inventario/detalhar_venda.html', {'venda': venda})
 
+@transaction.atomic
+def editar_venda(request, pk):
+    """
+    Edita uma venda existente.
+    Permite alterar cliente, tipo de venda, desconto e itens (produtos, quantidades, preços, brindes).
+    Recalcula estoque usando FIFO ao modificar itens.
+    """
+    venda = get_object_or_404(Venda.objects.prefetch_related(
+        'itens__produto',
+        'itens__lotes_utilizados__lote'
+    ), pk=pk)
+    
+    # Não permitir editar vendas que já têm devolução
+    if venda.teve_devolucao:
+        messages.error(request, 'Não é possível editar vendas que já possuem devoluções registradas.')
+        return redirect('inventario:detalhar_venda', pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            dados = json.loads(request.body)
+            cliente_nome = dados.get('cliente_nome', '').strip()
+            cliente_nome = capitalizar_nome(cliente_nome) if cliente_nome else None
+            tipo_venda = dados.get('tipo_venda', 'LOJA')
+            desconto = Decimal(dados.get('desconto', '0.00'))
+            itens_novos = dados.get('itens', [])
+
+            if not itens_novos:
+                return JsonResponse({'sucesso': False, 'erro': 'A venda deve ter pelo menos um item.'}, status=400)
+            
+            # Valida desconto
+            valor_bruto_temp = sum(
+                Produto.objects.get(id=item['id']).preco_venda * int(item['quantidade'])
+                for item in itens_novos
+                if not item.get('eh_brinde', False)
+            )
+            
+            if desconto > valor_bruto_temp:
+                return JsonResponse({'sucesso': False, 'erro': 'O desconto não pode ser maior que o valor total da venda.'}, status=400)
+
+            with transaction.atomic():
+                # 1. Restaurar estoque dos itens antigos
+                for item_antigo in venda.itens.all():
+                    # Restaurar lotes FIFO utilizados
+                    for lote_usado in item_antigo.lotes_utilizados.all():
+                        lote_usado.lote.quantidade_atual += lote_usado.quantidade_retirada
+                        lote_usado.lote.save()
+                
+                # 2. Deletar itens antigos (em cascata deleta os lotes_utilizados)
+                venda.itens.all().delete()
+                
+                # 3. Atualizar dados da venda
+                venda.cliente_nome = cliente_nome
+                venda.tipo_venda = tipo_venda
+                venda.desconto = desconto
+                venda.save()
+                
+                # 4. Adicionar novos itens
+                for item_data in itens_novos:
+                    produto_id = item_data['id']
+                    quantidade_vendida = int(item_data['quantidade'])
+                    eh_brinde = item_data.get('eh_brinde', False)
+                    preco_personalizado = item_data.get('preco_personalizado')
+                    
+                    produto = Produto.objects.get(id=produto_id)
+
+                    if produto.quantidade_total < quantidade_vendida:
+                        raise ValueError(f'Estoque insuficiente para o produto: {produto.nome}')
+                    
+                    # Usar preço personalizado se fornecido, senão usar o preço do produto
+                    if preco_personalizado is not None:
+                        preco_no_ato_da_venda = Decimal(str(preco_personalizado)) if not eh_brinde else Decimal('0.00')
+                    else:
+                        preco_no_ato_da_venda = Decimal('0.00') if eh_brinde else produto.preco_venda
+                    
+                    if not eh_brinde and preco_no_ato_da_venda is None:
+                        raise ValueError(f'O produto {produto.nome} está sem preço de venda definido.')
+
+                    quantidade_a_baixar = quantidade_vendida
+                    custo_total_item = Decimal('0')
+                    lotes_disponiveis = produto.lotes.filter(quantidade_atual__gt=0).order_by('data_entrada')
+                    lotes_utilizados_info = []
+
+                    for lote in lotes_disponiveis:
+                        if quantidade_a_baixar == 0:
+                            break
+                        quantidade_retirada_lote = min(lote.quantidade_atual, quantidade_a_baixar)
+                        custo_total_item += quantidade_retirada_lote * lote.preco_compra
+                        lote.quantidade_atual -= quantidade_retirada_lote
+                        lote.save()
+                        quantidade_a_baixar -= quantidade_retirada_lote
+                        
+                        lotes_utilizados_info.append({
+                            'lote': lote,
+                            'quantidade_retirada': quantidade_retirada_lote,
+                            'preco_compra': lote.preco_compra
+                        })
+                    
+                    item_venda = ItemVenda.objects.create(
+                        venda=venda,
+                        produto=produto,
+                        quantidade=quantidade_vendida,
+                        preco_venda_unitario=preco_no_ato_da_venda,
+                        custo_compra_total_registrado=custo_total_item,
+                        eh_brinde=eh_brinde
+                    )
+                    
+                    # Registrar os lotes utilizados
+                    for lote_info in lotes_utilizados_info:
+                        ItemVendaLote.objects.create(
+                            item_venda=item_venda,
+                            lote=lote_info['lote'],
+                            quantidade_retirada=lote_info['quantidade_retirada'],
+                            preco_compra_lote=lote_info['preco_compra']
+                        )
+
+            return JsonResponse({'sucesso': True, 'venda_id': venda.id})
+        except Exception as e:
+            return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
+    
+    # GET: exibir formulário com dados atuais
+    context = {
+        'venda': venda,
+        'editando': True
+    }
+    return render(request, 'inventario/editar_venda.html', context)
+
 # --- Devoluções ---
 
 def listar_devolucoes(request):
