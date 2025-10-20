@@ -14,6 +14,12 @@
             <a href="{% url 'inventario:editar_venda' pk=venda.pk %}" class="btn btn-warning btn-sm">
                 <i class="bi bi-pencil"></i> <span class="d-none d-sm-inline">Editar Venda</span>
             </a>
+            <form action="{% url 'inventario:excluir_venda' pk=venda.pk %}" method="post" class="d-inline" onsubmit="return confirm('ATENÇÃO!\n\nDeseja realmente excluir a Venda #{{ venda.id }}?\n\nO estoque será restaurado automaticamente.\nEsta ação não pode ser desfeita.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">
+                    <i class="bi bi-trash"></i> <span class="d-none d-sm-inline">Excluir Venda</span>
+                </button>
+            </form>
             {% endif %}
             <a href="{% url 'inventario:registrar_devolucao' venda_pk=venda.pk %}" class="btn btn-info btn-sm">
                 <i class="bi bi-arrow-return-left"></i> <span class="d-none d-sm-inline">Registrar Devolução</span>

@@ -25,6 +25,7 @@ urlpatterns = [
     path('vendas/nova/', views.criar_venda, name='criar_venda'),
     path('vendas/<int:pk>/', views.detalhar_venda, name='detalhar_venda'),
     path('vendas/<int:pk>/editar/', views.editar_venda, name='editar_venda'),
+    path('vendas/<int:pk>/excluir/', views.excluir_venda, name='excluir_venda'),
     
     # URLs Devoluções
     path('devolucoes/', views.listar_devolucoes, name='listar_devolucoes'),

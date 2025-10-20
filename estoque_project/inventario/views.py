@@ -1134,6 +1134,47 @@ def editar_venda(request, pk):
     }
     return render(request, 'inventario/editar_venda.html', context)
 
+@require_POST
+@transaction.atomic
+def excluir_venda(request, pk):
+    """
+    Exclui uma venda e restaura o estoque aos lotes FIFO originais.
+    Não permite excluir vendas que possuem devoluções.
+    """
+    venda = get_object_or_404(Venda.objects.prefetch_related(
+        'itens__produto',
+        'itens__lotes_utilizados__lote',
+        'devolucoes'
+    ), pk=pk)
+    
+    # Não permitir excluir vendas que já têm devolução
+    if venda.teve_devolucao:
+        messages.error(request, 'Não é possível excluir vendas que já possuem devoluções registradas. Exclua as devoluções primeiro.')
+        return redirect('inventario:detalhar_venda', pk=pk)
+    
+    try:
+        with transaction.atomic():
+            # Restaurar estoque aos lotes FIFO originais
+            for item in venda.itens.all():
+                # Restaurar lotes FIFO utilizados
+                for lote_usado in item.lotes_utilizados.all():
+                    lote_usado.lote.quantidade_atual += lote_usado.quantidade_retirada
+                    lote_usado.lote.save()
+            
+            # Guardar informações antes de excluir
+            venda_id = venda.id
+            cliente_nome = venda.cliente_nome or 'Cliente não informado'
+            
+            # Excluir a venda (em cascata exclui itens e lotes_utilizados)
+            venda.delete()
+            
+            messages.success(request, f'Venda #{venda_id} ({cliente_nome}) foi excluída com sucesso e o estoque foi restaurado.')
+    except Exception as e:
+        messages.error(request, f'Erro ao excluir a venda: {str(e)}')
+        return redirect('inventario:detalhar_venda', pk=pk)
+    
+    return redirect('inventario:listar_vendas')
+
 # --- Devoluções ---
 
 def listar_devolucoes(request):
