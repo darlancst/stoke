@@ -491,20 +491,22 @@ def dashboard(request):
 
 def listar_produtos(request):
     status = request.GET.get('status', 'ativos')
-    query = request.GET.get('q', '') # Adiciona a busca
+    query = request.GET.get('q', '')
+    filtro_estoque = request.GET.get('estoque', '')
+    filtro_margem = request.GET.get('margem', '')
+    filtro_fornecedor = request.GET.get('fornecedor', '')
     config = Configuracao.objects.first()
 
     if status == 'pausados':
-        # Otimização: carrega fornecedor junto
         produtos_list = Produto.objects.select_related('fornecedor').filter(ativo=False)
         titulo = "Produtos Pausados"
         status_atual = 'pausados'
     else:
-        # Otimização: carrega fornecedor junto
         produtos_list = Produto.objects.select_related('fornecedor').filter(ativo=True)
         titulo = "Produtos em Estoque"
         status_atual = 'ativos'
 
+    # Filtro por nome
     if query:
         produtos_list = produtos_list.filter(nome__icontains=query)
 
@@ -526,7 +528,30 @@ def listar_produtos(request):
             default=Value(None),
             output_field=fields.DecimalField(max_digits=5, decimal_places=2, null=True)
         )
-    ).order_by('nome')
+    )
+    
+    # Aplicar filtros após as anotações
+    if filtro_estoque:
+        if filtro_estoque == 'baixo':
+            produtos = produtos.filter(quantidade_total_agg__lt=config.limite_estoque_baixo, quantidade_total_agg__gt=0)
+        elif filtro_estoque == 'zerado':
+            produtos = produtos.filter(Q(quantidade_total_agg=0) | Q(quantidade_total_agg__isnull=True))
+        elif filtro_estoque == 'disponivel':
+            produtos = produtos.filter(quantidade_total_agg__gt=0)
+    
+    if filtro_margem and config:
+        if filtro_margem == 'ideal':
+            produtos = produtos.filter(margem_lucro_agg__gte=config.margem_lucro_ideal)
+        elif filtro_margem == 'baixa':
+            produtos = produtos.filter(margem_lucro_agg__lt=config.margem_lucro_ideal, margem_lucro_agg__isnull=False)
+    
+    if filtro_fornecedor:
+        if filtro_fornecedor == 'sem_fornecedor':
+            produtos = produtos.filter(fornecedor__isnull=True)
+        else:
+            produtos = produtos.filter(fornecedor_id=filtro_fornecedor)
+    
+    produtos = produtos.order_by('nome')
     
     # Calcular estatísticas gerais (antes da paginação)
     total_produtos_diferentes = produtos.count()
@@ -534,8 +559,8 @@ def listar_produtos(request):
         total=Sum('quantidade_total_agg')
     )['total'] or 0
     
-    # Paginação (30 produtos por página)
-    paginator = Paginator(produtos, 30)
+    # Paginação (15 produtos por página)
+    paginator = Paginator(produtos, 15)
     page_number = request.GET.get('page')
     try:
         page_obj = paginator.get_page(page_number)
@@ -543,6 +568,9 @@ def listar_produtos(request):
         page_obj = paginator.get_page(1)
     except EmptyPage:
         page_obj = paginator.get_page(paginator.num_pages)
+    
+    # Buscar todos os fornecedores para o dropdown
+    fornecedores = Fornecedor.objects.all().order_by('nome')
     
     context = {
         'page_obj': page_obj,
@@ -553,6 +581,10 @@ def listar_produtos(request):
         'query_atual': query,
         'total_produtos_diferentes': total_produtos_diferentes,
         'quantidade_total_geral': quantidade_total_geral,
+        'filtro_estoque': filtro_estoque,
+        'filtro_margem': filtro_margem,
+        'filtro_fornecedor': filtro_fornecedor,
+        'fornecedores': fornecedores,
     }
     return render(request, 'inventario/listar_produtos.html', context)
 

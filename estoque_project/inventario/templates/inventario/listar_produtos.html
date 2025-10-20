@@ -87,19 +87,58 @@
     </div>
 </div>
 
-<!-- Busca -->
+<!-- Busca e Filtros -->
 <div class="card mb-3">
     <div class="card-body py-3">
-        <form method="get">
+        <form method="get" id="form-filtros">
             <input type="hidden" name="status" value="{{ status_atual }}">
-            <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" placeholder="Buscar produto por nome..." name="q" value="{{ query_atual }}" id="search-input">
-                {% if query_atual %}
-                    <a href="{% url 'inventario:listar_produtos' %}?status={{ status_atual }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x"></i>
-                    </a>
-                {% endif %}
+            
+            <!-- Busca por nome -->
+            <div class="row g-2 mb-2">
+                <div class="col-12">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" placeholder="Buscar produto por nome..." name="q" value="{{ query_atual }}" id="search-input">
+                        {% if query_atual or filtro_estoque or filtro_margem or filtro_fornecedor %}
+                            <a href="{% url 'inventario:listar_produtos' %}?status={{ status_atual }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x"></i> Limpar
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filtros por coluna -->
+            <div class="row g-2">
+                <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1">Filtrar por Estoque</label>
+                    <select name="estoque" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Todos</option>
+                        <option value="baixo" {% if filtro_estoque == 'baixo' %}selected{% endif %}>Estoque Baixo (< {{ config.limite_estoque_baixo }})</option>
+                        <option value="zerado" {% if filtro_estoque == 'zerado' %}selected{% endif %}>Estoque Zerado (0)</option>
+                        <option value="disponivel" {% if filtro_estoque == 'disponivel' %}selected{% endif %}>Com Estoque (> 0)</option>
+                    </select>
+                </div>
+                
+                <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1">Filtrar por Margem</label>
+                    <select name="margem" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Todas</option>
+                        <option value="ideal" {% if filtro_margem == 'ideal' %}selected{% endif %}>≥ {{ config.margem_lucro_ideal }}% (Ideal)</option>
+                        <option value="baixa" {% if filtro_margem == 'baixa' %}selected{% endif %}>< {{ config.margem_lucro_ideal }}% (Baixa)</option>
+                    </select>
+                </div>
+                
+                <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1">Filtrar por Fornecedor</label>
+                    <select name="fornecedor" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Todos</option>
+                        {% for fornecedor in fornecedores %}
+                        <option value="{{ fornecedor.id }}" {% if filtro_fornecedor == fornecedor.id|stringformat:"s" %}selected{% endif %}>{{ fornecedor.nome }}</option>
+                        {% endfor %}
+                        <option value="sem_fornecedor" {% if filtro_fornecedor == 'sem_fornecedor' %}selected{% endif %}>Sem fornecedor</option>
+                    </select>
+                </div>
             </div>
         </form>
     </div>

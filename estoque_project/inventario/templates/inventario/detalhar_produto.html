@@ -115,6 +115,21 @@
             <a href="{% url 'inventario:editar_produto' pk=produto.pk %}" class="btn btn-warning btn-sm">
                 <i class="bi bi-pencil-square"></i> <span class="d-none d-sm-inline">Editar</span>
             </a>
+            {% if produto.ativo %}
+            <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja pausar este produto?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-pause-fill"></i> <span class="d-none d-sm-inline">Pausar</span>
+                </button>
+            </form>
+            {% else %}
+            <form action="{% url 'inventario:reativar_produto' pk=produto.pk %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i class="bi bi-play-fill"></i> <span class="d-none d-sm-inline">Reativar</span>
+                </button>
+            </form>
+            {% endif %}
             <button onclick="window.history.back()" class="btn btn-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
             </button>
