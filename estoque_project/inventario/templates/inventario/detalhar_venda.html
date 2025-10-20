@@ -18,9 +18,9 @@
             <a href="{% url 'inventario:registrar_devolucao' venda_pk=venda.pk %}" class="btn btn-info btn-sm">
                 <i class="bi bi-arrow-return-left"></i> <span class="d-none d-sm-inline">Registrar Devolução</span>
             </a>
-            <button onclick="window.history.back()" class="btn btn-secondary btn-sm">
+            <a href="{% url 'inventario:listar_vendas' %}" class="btn btn-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
-            </button>
+            </a>
         </div>
     </div>
 </div>
