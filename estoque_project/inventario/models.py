@@ -193,15 +193,16 @@ class Venda(models.Model):
 
         lucro_liquido = lucro_bruto_venda - lucro_revertido_devolucoes
 
-        # Aplica divisão por tipo de venda
-        if self.tipo_venda == 'LOJA':
-            lucro_liquido = lucro_liquido / 2
-        
-        # Desconta as taxas de pagamento do lucro
+        # Desconta as taxas de pagamento do lucro ANTES de dividir por tipo de venda
         # Taxa é aplicada sobre o valor total da venda
         if self.taxa_aplicada > 0:
             valor_taxa = (self.valor_total * self.taxa_aplicada) / 100
             lucro_liquido = lucro_liquido - valor_taxa
+        
+        # Aplica divisão por tipo de venda APÓS descontar a taxa
+        # (na loja, tanto o lucro quanto as taxas são divididos com o sócio)
+        if self.tipo_venda == 'LOJA':
+            lucro_liquido = lucro_liquido / 2
         
         return lucro_liquido
 

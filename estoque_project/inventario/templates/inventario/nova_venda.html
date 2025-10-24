@@ -373,22 +373,21 @@ $(document).ready(function() {
 
         const totalFinal = subtotal - desconto;
         
-        // Verifica o tipo de venda
-        const tipoVenda = $('input[name="tipo_venda"]:checked').val();
-        let lucroFinal;
+        // Calcular lucro bruto (antes de dividir por tipo de venda)
+        let lucroFinal = lucroTotal - desconto;
         
-        if (tipoVenda === 'EXTERNA') {
-            // Venda Externa: 100% do lucro - 100% do desconto
-            lucroFinal = lucroTotal - desconto;
-        } else {
-            // Venda na Loja: 50% do lucro - 50% do desconto
-            lucroFinal = (lucroTotal / 2) - (desconto / 2);
-        }
-        
-        // Calcular e descontar a taxa de pagamento
+        // Calcular e descontar a taxa de pagamento ANTES de dividir por tipo
         const taxaPorcentagem = getTaxaAtual();
         const valorTaxa = (totalFinal * taxaPorcentagem) / 100;
         lucroFinal = lucroFinal - valorTaxa;
+        
+        // Verifica o tipo de venda e aplica divisão DEPOIS de descontar a taxa
+        const tipoVenda = $('input[name="tipo_venda"]:checked').val();
+        if (tipoVenda === 'LOJA') {
+            // Venda na Loja: divide o lucro (já com taxa descontada) com o sócio 50/50
+            lucroFinal = lucroFinal / 2;
+        }
+        // Se EXTERNA, mantém 100% do lucro (já com taxa descontada)
 
         $('#subtotal-venda').text('R$ ' + subtotal.toFixed(2).replace('.', ','));
         $('#lucro-venda').text('R$ ' + lucroFinal.toFixed(2).replace('.', ','));
