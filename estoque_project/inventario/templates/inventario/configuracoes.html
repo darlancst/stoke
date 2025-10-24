@@ -33,6 +33,19 @@
         <form method="post" enctype="multipart/form-data" style="max-width: 800px;">
             {% csrf_token %}
             
+            <!-- Exibir erros do formulário (debug) -->
+            {% if form.errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Erros no formulário:</strong>
+                    <ul class="mb-0">
+                    {% for field, errors in form.errors.items %}
+                        <li>{{ field }}: {{ errors|join:", " }}</li>
+                    {% endfor %}
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+            
             <!-- Nome da Empresa -->
             <div class="mb-2">
                 <label for="{{ form.nome_empresa.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.nome_empresa.label }}</small></label>
@@ -66,6 +79,18 @@
                         <span class="input-group-text input-group-text-sm">dias</span>
                     </div>
                     <div class="form-text small">{{ form.dias_produto_parado.help_text }}</div>
+                </div>
+            </div>
+
+            <!-- Dias de Análise de Tendências -->
+            <div class="row g-2 mb-2">
+                <div class="col-md-12">
+                    <label for="{{ form.dias_analise_tendencias.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.dias_analise_tendencias.label }}</small></label>
+                    <div class="input-group" style="max-width: 300px;">
+                        {{ form.dias_analise_tendencias }}
+                        <span class="input-group-text input-group-text-sm">dias</span>
+                    </div>
+                    <div class="form-text small">{{ form.dias_analise_tendencias.help_text }}</div>
                 </div>
             </div>
 

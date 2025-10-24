@@ -61,7 +61,7 @@ class ConfiguracaoForm(forms.ModelForm):
     class Meta:
         model = Configuracao
         fields = [
-            'nome_empresa', 'limite_estoque_baixo', 'margem_lucro_ideal', 
+            'nome_empresa', 'logo', 'limite_estoque_baixo', 'margem_lucro_ideal', 
             'dias_produto_parado', 'dias_analise_tendencias',
             'taxa_debito', 'taxa_credito_avista',
             'juros_2x', 'juros_3x', 'juros_4x', 'juros_5x', 'juros_6x',
