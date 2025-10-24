@@ -294,9 +294,6 @@ $(document).ready(function() {
     let itensVenda = {};
     let subtotal = 0;
     let lucroTotal = 0;
-    
-    // Configuração de taxas (carregadas do servidor via JSON inline abaixo)
-    const taxasConfig = {{ config|default:"{}" }};
 
     // Mostrar/ocultar campo de parcelas conforme tipo de pagamento
     $('#tipo_pagamento').on('change', function() {
