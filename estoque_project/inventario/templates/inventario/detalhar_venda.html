@@ -78,6 +78,7 @@
             <div class="col-4 col-sm-4 col-md-2">
                 <small class="text-muted d-block mb-0">Taxa</small>
                 <span class="text-danger">{{ venda.taxa_aplicada|floatformat:2 }}%</span>
+                <small class="d-block text-danger">(-R$ {{ venda.valor_taxa_reais|floatformat:2 }})</small>
             </div>
             {% endif %}
             <div class="col-4 col-md-2">
@@ -108,6 +109,11 @@
             <div class="col-6 col-md-3">
                 <small class="text-muted d-block mb-0">Seu Lucro</small>
                 <strong class="text-success fs-5">R$ {{ venda.meu_lucro|floatformat:2 }}</strong>
+                {% if venda.taxa_aplicada > 0 %}
+                <small class="text-muted d-block" style="font-size: 0.7rem;">
+                    <i class="bi bi-info-circle"></i> Taxa de R$ {{ venda.valor_taxa_reais|floatformat:2 }} já descontada
+                </small>
+                {% endif %}
             </div>
             {% if venda.tem_brindes %}
             <div class="col-12 col-md-6">

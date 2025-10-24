@@ -177,6 +177,13 @@ class Venda(models.Model):
         return self.valor_total - self.custo_total
     
     @property
+    def valor_taxa_reais(self):
+        """Retorna o valor da taxa em reais (calculada sobre o valor total da venda)"""
+        if self.taxa_aplicada > 0:
+            return (self.valor_total * self.taxa_aplicada) / 100
+        return Decimal('0.00')
+    
+    @property
     def meu_lucro(self):
         lucro_bruto_venda = self.lucro_bruto
         
