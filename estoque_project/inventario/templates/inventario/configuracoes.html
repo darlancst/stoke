@@ -68,20 +68,116 @@
                     <div class="form-text small">{{ form.dias_produto_parado.help_text }}</div>
                 </div>
             </div>
+
+            <!-- Seção de Taxas de Pagamento -->
+            <hr class="my-3">
+            <h6 class="mb-3"><i class="bi bi-credit-card"></i> Taxas de Pagamento</h6>
             
-            <!-- Período de Análise de Tendências -->
+            <!-- Taxas Débito e Crédito à Vista -->
             <div class="row g-2 mb-2">
                 <div class="col-md-6">
-                    <label for="{{ form.dias_analise_tendencias.id_for_label }}" class="form-label mb-1">
-                        <small class="fw-bold">
-                            <i class="bi bi-graph-up-arrow"></i> {{ form.dias_analise_tendencias.label }}
-                        </small>
-                    </label>
+                    <label for="{{ form.taxa_debito.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.taxa_debito.label }}</small></label>
                     <div class="input-group">
-                        {{ form.dias_analise_tendencias }}
-                        <span class="input-group-text input-group-text-sm">dias</span>
+                        {{ form.taxa_debito }}
+                        <span class="input-group-text input-group-text-sm">%</span>
                     </div>
-                    <div class="form-text small">{{ form.dias_analise_tendencias.help_text }}</div>
+                    <div class="form-text small">{{ form.taxa_debito.help_text }}</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.taxa_credito_avista.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.taxa_credito_avista.label }}</small></label>
+                    <div class="input-group">
+                        {{ form.taxa_credito_avista }}
+                        <span class="input-group-text input-group-text-sm">%</span>
+                    </div>
+                    <div class="form-text small">{{ form.taxa_credito_avista.help_text }}</div>
+                </div>
+            </div>
+
+            <!-- Juros de Parcelamento (2x a 12x) -->
+            <h6 class="mb-2 mt-3"><small>Juros de Parcelamento no Crédito</small></h6>
+            <div class="row g-2 mb-2">
+                <div class="col-6 col-md-3">
+                    <label for="{{ form.juros_2x.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.juros_2x.label }}</small></label>
+                    <div class="input-group input-group-sm">
+                        {{ form.juros_2x }}
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="{{ form.juros_3x.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.juros_3x.label }}</small></label>
+                    <div class="input-group input-group-sm">
+                        {{ form.juros_3x }}
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="{{ form.juros_4x.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.juros_4x.label }}</small></label>
+                    <div class="input-group input-group-sm">
+                        {{ form.juros_4x }}
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="{{ form.juros_5x.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.juros_5x.label }}</small></label>
+                    <div class="input-group input-group-sm">
+                        {{ form.juros_5x }}
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-6 col-md-3">
+                    <label for="{{ form.juros_6x.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.juros_6x.label }}</small></label>
+                    <div class="input-group input-group-sm">
+                        {{ form.juros_6x }}
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="{{ form.juros_7x.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.juros_7x.label }}</small></label>
+                    <div class="input-group input-group-sm">
+                        {{ form.juros_7x }}
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="{{ form.juros_8x.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.juros_8x.label }}</small></label>
+                    <div class="input-group input-group-sm">
+                        {{ form.juros_8x }}
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="{{ form.juros_9x.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.juros_9x.label }}</small></label>
+                    <div class="input-group input-group-sm">
+                        {{ form.juros_9x }}
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-6 col-md-3">
+                    <label for="{{ form.juros_10x.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.juros_10x.label }}</small></label>
+                    <div class="input-group input-group-sm">
+                        {{ form.juros_10x }}
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="{{ form.juros_11x.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.juros_11x.label }}</small></label>
+                    <div class="input-group input-group-sm">
+                        {{ form.juros_11x }}
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label for="{{ form.juros_12x.id_for_label }}" class="form-label mb-1"><small class="fw-bold">{{ form.juros_12x.label }}</small></label>
+                    <div class="input-group input-group-sm">
+                        {{ form.juros_12x }}
+                        <span class="input-group-text">%</span>
+                    </div>
                 </div>
             </div>
 

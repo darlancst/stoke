@@ -855,6 +855,8 @@ def criar_venda(request):
             cliente_nome = capitalizar_nome(cliente_nome) if cliente_nome else None
             tipo_venda = dados.get('tipo_venda', 'LOJA')
             desconto = Decimal(dados.get('desconto', '0.00'))
+            tipo_pagamento = dados.get('tipo_pagamento', 'DINHEIRO')
+            parcelas = int(dados.get('parcelas', 1))
             itens_venda = dados.get('itens', [])
 
             if not itens_venda:
@@ -871,10 +873,17 @@ def criar_venda(request):
 
 
             with transaction.atomic():
+                # Calcular taxa de pagamento
+                config, _ = Configuracao.objects.get_or_create()
+                taxa_aplicada = config.get_taxa_pagamento(tipo_pagamento, parcelas)
+                
                 venda = Venda.objects.create(
                     cliente_nome=cliente_nome,
                     tipo_venda=tipo_venda,
-                    desconto=desconto
+                    desconto=desconto,
+                    tipo_pagamento=tipo_pagamento,
+                    parcelas=parcelas,
+                    taxa_aplicada=taxa_aplicada
                 )
 
                 for item_data in itens_venda:
@@ -932,7 +941,10 @@ def criar_venda(request):
             return JsonResponse({'sucesso': True, 'venda_id': venda.id})
         except Exception as e:
             return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
-    return render(request, 'inventario/nova_venda.html')
+    
+    # GET: renderizar template com configurações
+    config, _ = Configuracao.objects.get_or_create()
+    return render(request, 'inventario/nova_venda.html', {'config': config})
 
 def listar_vendas(request):
     query = request.GET.get('q', '').strip()
@@ -1051,6 +1063,8 @@ def editar_venda(request, pk):
             cliente_nome = capitalizar_nome(cliente_nome) if cliente_nome else None
             tipo_venda = dados.get('tipo_venda', 'LOJA')
             desconto = Decimal(dados.get('desconto', '0.00'))
+            tipo_pagamento = dados.get('tipo_pagamento', 'DINHEIRO')
+            parcelas = int(dados.get('parcelas', 1))
             itens_novos = dados.get('itens', [])
 
             if not itens_novos:
@@ -1078,9 +1092,15 @@ def editar_venda(request, pk):
                 venda.itens.all().delete()
                 
                 # 3. Atualizar dados da venda
+                config, _ = Configuracao.objects.get_or_create()
+                taxa_aplicada = config.get_taxa_pagamento(tipo_pagamento, parcelas)
+                
                 venda.cliente_nome = cliente_nome
                 venda.tipo_venda = tipo_venda
                 venda.desconto = desconto
+                venda.tipo_pagamento = tipo_pagamento
+                venda.parcelas = parcelas
+                venda.taxa_aplicada = taxa_aplicada
                 venda.save()
                 
                 # 4. Adicionar novos itens
@@ -1147,8 +1167,10 @@ def editar_venda(request, pk):
             return JsonResponse({'sucesso': False, 'erro': str(e)}, status=400)
     
     # GET: exibir formulário com dados atuais
+    config, _ = Configuracao.objects.get_or_create()
     context = {
         'venda': venda,
+        'config': config,
         'editando': True
     }
     return render(request, 'inventario/editar_venda.html', context)

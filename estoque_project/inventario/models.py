@@ -93,11 +93,22 @@ class Venda(models.Model):
         ('CONCLUIDA', 'Concluída'),
         ('CANCELADA', 'Cancelada'),
     ]
+    TIPO_PAGAMENTO_CHOICES = [
+        ('DINHEIRO', 'Dinheiro'),
+        ('PIX', 'Pix'),
+        ('DEBITO', 'Débito'),
+        ('CREDITO', 'Crédito'),
+    ]
     cliente_nome = models.CharField('Nome do Cliente', max_length=255, blank=True, null=True)
     data = models.DateTimeField(default=timezone.now)
     tipo_venda = models.CharField(max_length=10, choices=TIPO_VENDA_CHOICES, default='LOJA')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='CONCLUIDA')
     desconto = models.DecimalField('Desconto', max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    
+    # Campos de pagamento
+    tipo_pagamento = models.CharField('Tipo de Pagamento', max_length=10, choices=TIPO_PAGAMENTO_CHOICES, default='DINHEIRO')
+    parcelas = models.PositiveIntegerField('Número de Parcelas', default=1)
+    taxa_aplicada = models.DecimalField('Taxa Aplicada (%)', max_digits=5, decimal_places=2, default=Decimal('0.00'))
 
     def __str__(self):
         from django.utils import timezone as tz
@@ -175,8 +186,16 @@ class Venda(models.Model):
 
         lucro_liquido = lucro_bruto_venda - lucro_revertido_devolucoes
 
+        # Aplica divisão por tipo de venda
         if self.tipo_venda == 'LOJA':
-            return lucro_liquido / 2
+            lucro_liquido = lucro_liquido / 2
+        
+        # Desconta as taxas de pagamento do lucro
+        # Taxa é aplicada sobre o valor total da venda
+        if self.taxa_aplicada > 0:
+            valor_taxa = (self.valor_total * self.taxa_aplicada) / 100
+            lucro_liquido = lucro_liquido - valor_taxa
+        
         return lucro_liquido
 
 class ItemVenda(models.Model):
@@ -220,6 +239,23 @@ class Configuracao(models.Model):
     margem_lucro_ideal = models.DecimalField('Margem de Lucro Ideal (%)', max_digits=5, decimal_places=2, default=Decimal('30.00'))
     dias_produto_parado = models.PositiveIntegerField('Dias sem vender para considerar parado', default=60, help_text='Produtos sem vendas neste período serão listados como parados')
     dias_analise_tendencias = models.PositiveIntegerField('Período de Análise de Tendências (dias)', default=90, help_text='Quantidade de dias de histórico usado para análise de tendências e previsão de estoque')
+    
+    # Taxas de pagamento
+    taxa_debito = models.DecimalField('Taxa de Débito (%)', max_digits=5, decimal_places=2, default=Decimal('2.00'), help_text='Taxa cobrada em pagamentos no débito')
+    taxa_credito_avista = models.DecimalField('Taxa de Crédito à Vista (%)', max_digits=5, decimal_places=2, default=Decimal('3.00'), help_text='Taxa cobrada em pagamentos no crédito em 1x')
+    
+    # Juros de parcelamento (crédito)
+    juros_2x = models.DecimalField('Juros 2x (%)', max_digits=5, decimal_places=2, default=Decimal('3.50'))
+    juros_3x = models.DecimalField('Juros 3x (%)', max_digits=5, decimal_places=2, default=Decimal('4.00'))
+    juros_4x = models.DecimalField('Juros 4x (%)', max_digits=5, decimal_places=2, default=Decimal('4.50'))
+    juros_5x = models.DecimalField('Juros 5x (%)', max_digits=5, decimal_places=2, default=Decimal('5.00'))
+    juros_6x = models.DecimalField('Juros 6x (%)', max_digits=5, decimal_places=2, default=Decimal('5.50'))
+    juros_7x = models.DecimalField('Juros 7x (%)', max_digits=5, decimal_places=2, default=Decimal('6.00'))
+    juros_8x = models.DecimalField('Juros 8x (%)', max_digits=5, decimal_places=2, default=Decimal('6.50'))
+    juros_9x = models.DecimalField('Juros 9x (%)', max_digits=5, decimal_places=2, default=Decimal('7.00'))
+    juros_10x = models.DecimalField('Juros 10x (%)', max_digits=5, decimal_places=2, default=Decimal('7.50'))
+    juros_11x = models.DecimalField('Juros 11x (%)', max_digits=5, decimal_places=2, default=Decimal('8.00'))
+    juros_12x = models.DecimalField('Juros 12x (%)', max_digits=5, decimal_places=2, default=Decimal('8.50'))
 
     class Meta:
         verbose_name = 'Configuração'
@@ -227,6 +263,39 @@ class Configuracao(models.Model):
 
     def __str__(self):
         return f"Configurações de {self.nome_empresa}"
+    
+    def get_taxa_pagamento(self, tipo_pagamento, parcelas=1):
+        """Retorna a taxa aplicável com base no tipo de pagamento e número de parcelas"""
+        if tipo_pagamento == 'DINHEIRO' or tipo_pagamento == 'PIX':
+            return Decimal('0.00')
+        elif tipo_pagamento == 'DEBITO':
+            return self.taxa_debito
+        elif tipo_pagamento == 'CREDITO':
+            if parcelas == 1:
+                return self.taxa_credito_avista
+            elif parcelas == 2:
+                return self.juros_2x
+            elif parcelas == 3:
+                return self.juros_3x
+            elif parcelas == 4:
+                return self.juros_4x
+            elif parcelas == 5:
+                return self.juros_5x
+            elif parcelas == 6:
+                return self.juros_6x
+            elif parcelas == 7:
+                return self.juros_7x
+            elif parcelas == 8:
+                return self.juros_8x
+            elif parcelas == 9:
+                return self.juros_9x
+            elif parcelas == 10:
+                return self.juros_10x
+            elif parcelas == 11:
+                return self.juros_11x
+            elif parcelas == 12:
+                return self.juros_12x
+        return Decimal('0.00')
 
 class Devolucao(models.Model):
     venda_original = models.ForeignKey(Venda, on_delete=models.CASCADE, related_name='devolucoes')

@@ -188,6 +188,30 @@
                     </div>
                 </div>
                 
+                <!-- Tipo de Pagamento -->
+                <div class="col-md-6">
+                    <label class="form-label">Forma de Pagamento</label>
+                    <select id="tipo_pagamento" name="tipo_pagamento" class="form-select">
+                        <option value="DINHEIRO" {% if venda.tipo_pagamento == 'DINHEIRO' %}selected{% endif %}>Dinheiro (sem taxa)</option>
+                        <option value="PIX" {% if venda.tipo_pagamento == 'PIX' %}selected{% endif %}>Pix (sem taxa)</option>
+                        <option value="DEBITO" {% if venda.tipo_pagamento == 'DEBITO' %}selected{% endif %}>Débito (com taxa)</option>
+                        <option value="CREDITO" {% if venda.tipo_pagamento == 'CREDITO' %}selected{% endif %}>Crédito (com taxa)</option>
+                    </select>
+                </div>
+                
+                <!-- Número de Parcelas (só aparece se Crédito) -->
+                <div class="col-md-6" id="div_parcelas" style="display: {% if venda.tipo_pagamento == 'CREDITO' %}block{% else %}none{% endif %};">
+                    <label for="parcelas" class="form-label">Número de Parcelas</label>
+                    <select id="parcelas" name="parcelas" class="form-select">
+                        {% for i in "123456789012"|make_list %}
+                            {% with parcela_num=forloop.counter %}
+                            <option value="{{ parcela_num }}" {% if venda.parcelas == parcela_num %}selected{% endif %}>{{ parcela_num }}x {% if parcela_num == 1 %}(à vista){% endif %}</option>
+                            {% endwith %}
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted" id="taxa_info"></small>
+                </div>
+                
                 <!-- Buscar Produto -->
                 <div class="col-12">
                     <label for="buscar_produto" class="form-label">Buscar Produto</label>
@@ -275,6 +299,23 @@ $(document).ready(function() {
     let itensVenda = {};
     let subtotal = 0;
     let lucroTotal = 0;
+    
+    // Mostrar/ocultar campo de parcelas conforme tipo de pagamento
+    $('#tipo_pagamento').on('change', function() {
+        const tipoPagamento = $(this).val();
+        if (tipoPagamento === 'CREDITO') {
+            $('#div_parcelas').show();
+        } else {
+            $('#div_parcelas').hide();
+            $('#parcelas').val('1');
+        }
+        recalcularTudo();
+    });
+    
+    // Atualizar taxa quando mudar parcelas
+    $('#parcelas').on('change', function() {
+        recalcularTudo();
+    });
 
     // Carregar itens existentes da venda
     {% for item in venda.itens.all %}
@@ -611,6 +652,8 @@ $(document).ready(function() {
             cliente_nome: $('#cliente_nome').val() || '',
             tipo_venda: $('input[name="tipo_venda"]:checked').val(),
             desconto: parseFloat($('#desconto-venda').val()) || 0,
+            tipo_pagamento: $('#tipo_pagamento').val(),
+            parcelas: parseInt($('#parcelas').val()) || 1,
             itens: Object.values(itensVenda).map(item => ({
                 id: item.id,
                 quantidade: item.quantidade,

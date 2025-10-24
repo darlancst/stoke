@@ -176,6 +176,37 @@
                     </div>
                 </div>
                 
+                <!-- Tipo de Pagamento -->
+                <div class="col-md-6">
+                    <label class="form-label">Forma de Pagamento</label>
+                    <select id="tipo_pagamento" name="tipo_pagamento" class="form-select">
+                        <option value="DINHEIRO" selected>Dinheiro (sem taxa)</option>
+                        <option value="PIX">Pix (sem taxa)</option>
+                        <option value="DEBITO">Débito (com taxa)</option>
+                        <option value="CREDITO">Crédito (com taxa)</option>
+                    </select>
+                </div>
+                
+                <!-- Número de Parcelas (só aparece se Crédito) -->
+                <div class="col-md-6" id="div_parcelas" style="display: none;">
+                    <label for="parcelas" class="form-label">Número de Parcelas</label>
+                    <select id="parcelas" name="parcelas" class="form-select">
+                        <option value="1">1x (à vista)</option>
+                        <option value="2">2x</option>
+                        <option value="3">3x</option>
+                        <option value="4">4x</option>
+                        <option value="5">5x</option>
+                        <option value="6">6x</option>
+                        <option value="7">7x</option>
+                        <option value="8">8x</option>
+                        <option value="9">9x</option>
+                        <option value="10">10x</option>
+                        <option value="11">11x</option>
+                        <option value="12">12x</option>
+                    </select>
+                    <small class="form-text text-muted" id="taxa_info"></small>
+                </div>
+                
                 <!-- Buscar Produto -->
                 <div class="col-12">
                     <label for="buscar_produto" class="form-label">Buscar Produto</label>
@@ -263,6 +294,26 @@ $(document).ready(function() {
     let itensVenda = {};
     let subtotal = 0;
     let lucroTotal = 0;
+    
+    // Configuração de taxas (carregadas do servidor via JSON inline abaixo)
+    const taxasConfig = {{ config|default:"{}" }};
+
+    // Mostrar/ocultar campo de parcelas conforme tipo de pagamento
+    $('#tipo_pagamento').on('change', function() {
+        const tipoPagamento = $(this).val();
+        if (tipoPagamento === 'CREDITO') {
+            $('#div_parcelas').show();
+        } else {
+            $('#div_parcelas').hide();
+            $('#parcelas').val('1');
+        }
+        recalcularTudo();
+    });
+    
+    // Atualizar taxa quando mudar parcelas
+    $('#parcelas').on('change', function() {
+        recalcularTudo();
+    });
 
     function recalcularTudo() {
         subtotal = 0;
@@ -531,6 +582,8 @@ $(document).ready(function() {
             cliente_nome: $('#cliente_nome').val() || 'Cliente Anônimo',
             tipo_venda: $('input[name="tipo_venda"]:checked').val(),
             desconto: parseFloat($('#desconto-venda').val()) || 0,
+            tipo_pagamento: $('#tipo_pagamento').val(),
+            parcelas: parseInt($('#parcelas').val()) || 1,
             itens: Object.values(itensVenda).map(item => ({
                 id: item.id,
                 quantidade: item.quantidade,
