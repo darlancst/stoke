@@ -294,6 +294,9 @@ $(document).ready(function() {
     let itensVenda = {};
     let subtotal = 0;
     let lucroTotal = 0;
+    
+    // Configurações de taxas do servidor
+    const taxasConfig = {{ taxas_config_json|safe }};
 
     // Mostrar/ocultar campo de parcelas conforme tipo de pagamento
     $('#tipo_pagamento').on('change', function() {
@@ -304,13 +307,51 @@ $(document).ready(function() {
             $('#div_parcelas').hide();
             $('#parcelas').val('1');
         }
+        atualizarInfoTaxa();
         recalcularTudo();
     });
     
     // Atualizar taxa quando mudar parcelas
     $('#parcelas').on('change', function() {
+        atualizarInfoTaxa();
         recalcularTudo();
     });
+    
+    function getTaxaAtual() {
+        const tipoPagamento = $('#tipo_pagamento').val();
+        const parcelas = parseInt($('#parcelas').val()) || 1;
+        
+        if (tipoPagamento === 'DINHEIRO' || tipoPagamento === 'PIX') {
+            return 0;
+        } else if (tipoPagamento === 'DEBITO') {
+            return taxasConfig.taxa_debito;
+        } else if (tipoPagamento === 'CREDITO') {
+            if (parcelas === 1) return taxasConfig.taxa_credito_avista;
+            if (parcelas === 2) return taxasConfig.juros_2x;
+            if (parcelas === 3) return taxasConfig.juros_3x;
+            if (parcelas === 4) return taxasConfig.juros_4x;
+            if (parcelas === 5) return taxasConfig.juros_5x;
+            if (parcelas === 6) return taxasConfig.juros_6x;
+            if (parcelas === 7) return taxasConfig.juros_7x;
+            if (parcelas === 8) return taxasConfig.juros_8x;
+            if (parcelas === 9) return taxasConfig.juros_9x;
+            if (parcelas === 10) return taxasConfig.juros_10x;
+            if (parcelas === 11) return taxasConfig.juros_11x;
+            if (parcelas === 12) return taxasConfig.juros_12x;
+        }
+        return 0;
+    }
+    
+    function atualizarInfoTaxa() {
+        const taxa = getTaxaAtual();
+        const tipoPagamento = $('#tipo_pagamento').val();
+        
+        if (taxa > 0) {
+            $('#taxa_info').text(`Taxa de ${taxa.toFixed(2)}% será aplicada sobre o valor da venda`);
+        } else {
+            $('#taxa_info').text('');
+        }
+    }
 
     function recalcularTudo() {
         subtotal = 0;
@@ -343,6 +384,11 @@ $(document).ready(function() {
             // Venda na Loja: 50% do lucro - 50% do desconto
             lucroFinal = (lucroTotal / 2) - (desconto / 2);
         }
+        
+        // Calcular e descontar a taxa de pagamento
+        const taxaPorcentagem = getTaxaAtual();
+        const valorTaxa = (totalFinal * taxaPorcentagem) / 100;
+        lucroFinal = lucroFinal - valorTaxa;
 
         $('#subtotal-venda').text('R$ ' + subtotal.toFixed(2).replace('.', ','));
         $('#lucro-venda').text('R$ ' + lucroFinal.toFixed(2).replace('.', ','));
@@ -356,6 +402,9 @@ $(document).ready(function() {
             $('#lucro-venda').parent().removeClass('text-danger').addClass('text-success');
         }
     }
+    
+    // Inicializar info da taxa
+    atualizarInfoTaxa();
 
     function adicionarItemMobile(produto) {
         const precoFormatado = produto.preco.toFixed(2).replace('.', ',');

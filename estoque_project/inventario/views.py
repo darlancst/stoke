@@ -276,11 +276,16 @@ def dashboard(request):
         valor_liquido_agg=F('valor_bruto_agg') - F('desconto'),
         custo_total_agg=Sum('itens__custo_compra_total_registrado'),
         lucro_bruto_agg=F('valor_liquido_agg') - F('custo_total_agg'),
-        meu_lucro_agg=Case(
+        lucro_pos_tipo=Case(
             When(tipo_venda='LOJA', then=F('lucro_bruto_agg') / 2),
             default=F('lucro_bruto_agg'),
             output_field=fields.DecimalField(max_digits=10, decimal_places=2)
-        )
+        ),
+        valor_taxa_calc=ExpressionWrapper(
+            (F('valor_liquido_agg') * F('taxa_aplicada')) / 100,
+            output_field=fields.DecimalField(max_digits=10, decimal_places=2)
+        ),
+        meu_lucro_agg=F('lucro_pos_tipo') - F('valor_taxa_calc')
     )
     
     # Cards
@@ -425,11 +430,16 @@ def dashboard(request):
         valor_liquido_hm=F('valor_bruto_hm') - F('desconto'),
         custo_total_hm=Sum('itens__custo_compra_total_registrado'),
         lucro_bruto_hm=F('valor_liquido_hm') - F('custo_total_hm'),
-        meu_lucro_hm=Case(
+        lucro_pos_tipo_hm=Case(
             When(tipo_venda='LOJA', then=F('lucro_bruto_hm') / 2),
             default=F('lucro_bruto_hm'),
             output_field=fields.DecimalField(max_digits=10, decimal_places=2)
-        )
+        ),
+        valor_taxa_hm=ExpressionWrapper(
+            (F('valor_liquido_hm') * F('taxa_aplicada')) / 100,
+            output_field=fields.DecimalField(max_digits=10, decimal_places=2)
+        ),
+        meu_lucro_hm=F('lucro_pos_tipo_hm') - F('valor_taxa_hm')
     ).prefetch_related('itens', 'devolucoes__itens_devolvidos')
     
     lucro_por_dia = {}
@@ -944,7 +954,28 @@ def criar_venda(request):
     
     # GET: renderizar template com configurações
     config, _ = Configuracao.objects.get_or_create()
-    return render(request, 'inventario/nova_venda.html', {'config': config})
+    
+    # Preparar configurações de taxas para JavaScript
+    taxas_config = {
+        'taxa_debito': float(config.taxa_debito),
+        'taxa_credito_avista': float(config.taxa_credito_avista),
+        'juros_2x': float(config.juros_2x),
+        'juros_3x': float(config.juros_3x),
+        'juros_4x': float(config.juros_4x),
+        'juros_5x': float(config.juros_5x),
+        'juros_6x': float(config.juros_6x),
+        'juros_7x': float(config.juros_7x),
+        'juros_8x': float(config.juros_8x),
+        'juros_9x': float(config.juros_9x),
+        'juros_10x': float(config.juros_10x),
+        'juros_11x': float(config.juros_11x),
+        'juros_12x': float(config.juros_12x),
+    }
+    
+    return render(request, 'inventario/nova_venda.html', {
+        'config': config,
+        'taxas_config_json': json.dumps(taxas_config)
+    })
 
 def listar_vendas(request):
     query = request.GET.get('q', '').strip()
