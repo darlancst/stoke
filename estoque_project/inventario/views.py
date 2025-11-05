@@ -679,11 +679,17 @@ def detalhar_produto(request, pk):
     if lote_fifo and produto.preco_venda:
         lucro_unitario_fifo = produto.preco_venda - lote_fifo.preco_compra
     
+    # Buscar vendas deste produto
+    vendas_do_produto = ItemVenda.objects.filter(
+        produto=produto
+    ).select_related('venda').order_by('-venda__data')[:10]
+    
     context = {
         'produto': produto,
         'config': config,
         'lote_fifo': lote_fifo,
-        'lucro_unitario_fifo': lucro_unitario_fifo
+        'lucro_unitario_fifo': lucro_unitario_fifo,
+        'vendas_do_produto': vendas_do_produto
     }
     return render(request, 'inventario/detalhar_produto.html', context)
 
