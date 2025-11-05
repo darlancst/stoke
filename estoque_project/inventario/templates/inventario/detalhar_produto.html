@@ -396,6 +396,7 @@
                                 <th>Cliente</th>
                                 <th class="text-center">Qtd.</th>
                                 <th class="text-end">Total</th>
+                                <th class="text-end">Meu Lucro</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -405,6 +406,9 @@
                                 <td><small>{{ item.venda.cliente_nome|default:'—' }}</small></td>
                                 <td class="text-center">{{ item.quantidade }}</td>
                                 <td class="text-end fw-bold">R$ {{ item.subtotal|floatformat:2 }}</td>
+                                <td class="text-end {% if item.meu_lucro_item >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    <strong>R$ {{ item.meu_lucro_item|floatformat:2 }}</strong>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -416,15 +420,26 @@
                     {% for item in vendas_do_produto %}
                     <div class="card mb-2">
                         <div class="card-body p-2">
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="flex-grow-1">
                                     <a href="{% url 'inventario:detalhar_venda' pk=item.venda.pk %}" class="fw-bold text-decoration-none">
                                         #{{ item.venda.pk }}
                                     </a>
                                     <span class="text-muted small">· {{ item.venda.cliente_nome|default:'—' }}</span>
                                 </div>
-                                <span class="badge bg-primary mx-2">{{ item.quantidade }}</span>
-                                <strong class="text-success">R$ {{ item.subtotal|floatformat:2 }}</strong>
+                                <span class="badge bg-primary">{{ item.quantidade }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted">Total:</small>
+                                    <strong>R$ {{ item.subtotal|floatformat:2 }}</strong>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">Lucro:</small>
+                                    <strong class="{% if item.meu_lucro_item >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        R$ {{ item.meu_lucro_item|floatformat:2 }}
+                                    </strong>
+                                </div>
                             </div>
                         </div>
                     </div>

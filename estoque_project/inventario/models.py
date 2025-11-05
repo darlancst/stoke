@@ -220,6 +220,24 @@ class ItemVenda(models.Model):
         if self.eh_brinde:
             return Decimal('0.00')
         return self.quantidade * self.preco_venda_unitario
+    
+    @property
+    def meu_lucro_item(self):
+        """Calcula o lucro deste item considerando taxa e tipo de venda"""
+        # Lucro bruto do item
+        lucro_bruto = self.subtotal - self.custo_compra_total_registrado
+        
+        # Calcular proporção da taxa que cabe a este item
+        if self.venda.taxa_aplicada > 0 and self.venda.valor_total > 0:
+            # Taxa proporcional ao valor deste item
+            proporcao_item = self.subtotal / self.venda.valor_total
+            taxa_deste_item = (self.venda.valor_total * self.venda.taxa_aplicada / 100) * proporcao_item
+            lucro_bruto = lucro_bruto - taxa_deste_item
+        
+        # Aplica divisão por tipo de venda
+        if self.venda.tipo_venda == 'LOJA':
+            return lucro_bruto / 2
+        return lucro_bruto
 
     def __str__(self):
         if self.eh_brinde:
