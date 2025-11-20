@@ -72,8 +72,7 @@
             <div class="col-4 col-sm-4 col-md-2">
                 <small class="text-muted d-block mb-0">Pagamento</small>
                 <span class="badge bg-info">
-                    {{ venda.get_tipo_pagamento_display }}{% if venda.tipo_pagamento == 'CREDITO' and venda.parcelas > 1
-                    %} {{ venda.parcelas }}x{% endif %}
+                    {{ venda.get_tipo_pagamento_display }}{% if venda.tipo_pagamento == 'CREDITO' and venda.parcelas > 1 %} {{ venda.parcelas }}x{% endif %}
                 </span>
             </div>
             {% if venda.taxa_aplicada > 0 %}
@@ -96,8 +95,7 @@
             {% if venda.tem_brindes %}
             <div class="col-12 col-sm-auto">
                 <span class="badge bg-success">
-                    <i class="bi bi-gift-fill"></i> {{ venda.quantidade_brindes_dados }} brinde{{
-                    venda.quantidade_brindes_dados|pluralize:'s' }} (R$ {{ venda.valor_brindes_dados|floatformat:2 }})
+                    <i class="bi bi-gift-fill"></i> {{ venda.quantidade_brindes_dados }} brinde{{ venda.quantidade_brindes_dados|pluralize:'s' }} (R$ {{ venda.valor_brindes_dados|floatformat:2 }})
                 </span>
             </div>
             {% endif %}
@@ -163,18 +161,15 @@
                             </td>
                             <td>{{ item.quantidade }}</td>
                             <td>R$ {{ item.preco_venda_unitario|floatformat:2 }}</td>
-                            <td class="fw-bold">R$ {% widthratio item.preco_venda_unitario 1 item.quantidade as subtotal
-                                %}{{ subtotal|floatformat:2 }}</td>
+                            <td class="fw-bold">R$ {% widthratio item.preco_venda_unitario 1 item.quantidade as subtotal %}{{ subtotal|floatformat:2 }}</td>
                             <td>
                                 {% if item.lotes_utilizados.exists %}
                                 <small class="text-muted">
                                     {% for lote_usado in item.lotes_utilizados.all %}
                                     <div class="mb-1">
                                         <span class="badge bg-secondary">Lote #{{ lote_usado.lote.id }}</span>
-                                        {{ lote_usado.quantidade_retirada }} un. × R$ {{
-                                        lote_usado.preco_compra_lote|floatformat:2 }}
-                                        <small class="text-muted">({{ lote_usado.lote.data_entrada|date:"d/m/y"
-                                            }})</small>
+                                        {{ lote_usado.quantidade_retirada }} un. × R$ {{ lote_usado.preco_compra_lote|floatformat:2 }}
+                                        <small class="text-muted">({{ lote_usado.lote.data_entrada|date:"d/m/y" }})</small>
                                     </div>
                                     {% endfor %}
                                 </small>
@@ -220,8 +215,7 @@
                                 </div>
                                 <div class="col-6">
                                     <small class="text-muted d-block">Subtotal</small>
-                                    <span class="fs-6 fw-bold text-success">R$ {% widthratio item.preco_venda_unitario 1
-                                        item.quantidade as subtotal %}{{ subtotal|floatformat:2 }}</span>
+                                    <span class="fs-6 fw-bold text-success">R$ {% widthratio item.preco_venda_unitario 1 item.quantidade as subtotal %}{{ subtotal|floatformat:2 }}</span>
                                 </div>
                             </div>
 
@@ -231,8 +225,7 @@
                                 {% for lote_usado in item.lotes_utilizados.all %}
                                 <div class="mb-1">
                                     <span class="badge bg-secondary">Lote #{{ lote_usado.lote.id }}</span>
-                                    <small>{{ lote_usado.quantidade_retirada }} un. × R$ {{
-                                        lote_usado.preco_compra_lote|floatformat:2 }}</small>
+                                    <small>{{ lote_usado.quantidade_retirada }} un. × R$ {{ lote_usado.preco_compra_lote|floatformat:2 }}</small>
                                     <small class="text-muted">({{ lote_usado.lote.data_entrada|date:"d/m/y" }})</small>
                                 </div>
                                 {% endfor %}
