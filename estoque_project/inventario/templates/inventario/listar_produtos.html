@@ -128,23 +128,38 @@
     </div>
 </div>
 
-<!-- Busca -->
+<!-- Busca e Filtros -->
 <div class="card mb-3">
     <div class="card-body py-3">
-        <form method="get">
-            <input type="hidden" name="status" value="{{ status_atual }}">
-            <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" placeholder="Buscar produto por nome..." name="q"
-                    value="{{ query_atual }}" id="search-input">
-                {% if query_atual %}
-                <a href="{% url 'inventario:listar_produtos' %}?status={{ status_atual }}"
-                    class="btn btn-outline-secondary">
-                    <i class="bi bi-x"></i>
-                </a>
-                {% endif %}
+        <div class="row g-2">
+            <!-- Campo de Busca -->
+            <div class="col-12 col-md-8">
+                <form method="get">
+                    <input type="hidden" name="status" value="{{ status_atual }}">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" placeholder="Buscar produto por nome..." name="q"
+                            value="{{ query_atual }}" id="search-input">
+                        {% if query_atual %}
+                        <a href="{% url 'inventario:listar_produtos' %}?status={{ status_atual }}"
+                            class="btn btn-outline-secondary">
+                            <i class="bi bi-x"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
             </div>
-        </form>
+
+            <!-- Switch: Ocultar produtos com estoque 0 -->
+            <div class="col-12 col-md-4">
+                <div class="form-check form-switch d-flex align-items-center h-100">
+                    <input class="form-check-input" type="checkbox" id="ocultarEstoqueZero" style="cursor: pointer;">
+                    <label class="form-check-label ms-2" for="ocultarEstoqueZero" style="cursor: pointer;">
+                        <i class="bi bi-eye-slash"></i> Ocultar estoque zerado
+                    </label>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -471,7 +486,51 @@
         const searchInput = document.getElementById('search-input');
         const produtosTbodyDesktop = document.getElementById('produtos-tbody-desktop');
         const produtosCardsMobile = document.getElementById('produtos-cards-mobile');
+        const ocultarEstoqueZeroCheckbox = document.getElementById('ocultarEstoqueZero');
         let searchTimeout;
+
+        // Restaurar preferência do localStorage
+        const ocultarEstoqueZero = localStorage.getItem('ocultarEstoqueZero') === 'true';
+        ocultarEstoqueZeroCheckbox.checked = ocultarEstoqueZero;
+        aplicarFiltroEstoqueZero();
+
+        // Listener do checkbox
+        ocultarEstoqueZeroCheckbox.addEventListener('change', function () {
+            localStorage.setItem('ocultarEstoqueZero', this.checked);
+            aplicarFiltroEstoqueZero();
+        });
+
+        function aplicarFiltroEstoqueZero() {
+            const ocultar = ocultarEstoqueZeroCheckbox.checked;
+
+            // Filtrar tabela desktop
+            const linhasDesktop = produtosTbodyDesktop.querySelectorAll('tr');
+            linhasDesktop.forEach(linha => {
+                const badgeEstoque = linha.querySelector('.badge.bg-primary');
+                if (badgeEstoque) {
+                    const estoque = parseInt(badgeEstoque.textContent.trim());
+                    if (ocultar && estoque === 0) {
+                        linha.style.display = 'none';
+                    } else {
+                        linha.style.display = '';
+                    }
+                }
+            });
+
+            // Filtrar cards mobile
+            const cardsMobile = produtosCardsMobile.querySelectorAll('.produto-card-mobile');
+            cardsMobile.forEach(card => {
+                const badgeEstoque = card.querySelector('.badge.bg-primary');
+                if (badgeEstoque) {
+                    const estoque = parseInt(badgeEstoque.textContent.trim());
+                    if (ocultar && estoque === 0) {
+                        card.style.display = 'none';
+                    } else {
+                        card.style.display = '';
+                    }
+                }
+            });
+        }
 
         searchInput.addEventListener('input', function () {
             clearTimeout(searchTimeout);
@@ -491,6 +550,8 @@
                 .then(response => response.json())
                 .then(data => {
                     atualizarConteudo(data.produtos, query);
+                    // Aplicar filtro após atualizar conteúdo
+                    setTimeout(aplicarFiltroEstoqueZero, 100);
                 })
                 .catch(error => {
                     console.error('Erro na busca:', error);

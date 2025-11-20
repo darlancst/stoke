@@ -111,48 +111,63 @@
 {% block content %}
 <!-- Cabeçalho Responsivo -->
 <div class="row align-items-center mb-3">
-    <div class="col-12 col-md-6">
+    <div class="col-12 col-md-4">
         <h1 class="mb-2 mb-md-0">{{ produto.nome }}</h1>
     </div>
-    <div class="col-12 col-md-6">
-        <div class="d-flex flex-wrap gap-2 justify-content-md-end">
-            <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-success btn-sm">
-                <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Adicionar Lote</span>
-            </a>
-            <a href="{% url 'inventario:editar_produto' pk=produto.pk %}" class="btn btn-warning btn-sm">
-                <i class="bi bi-pencil-square"></i> <span class="d-none d-sm-inline">Editar</span>
-            </a>
-            {% if produto.ativo %}
-            <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post" class="d-inline"
-                onsubmit="return confirm('Tem certeza que deseja pausar este produto?');">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-secondary btn-sm">
-                    <i class="bi bi-pause-fill"></i> <span class="d-none d-sm-inline">Pausar</span>
+    <div class="col-12 col-md-8">
+        <div class="d-flex flex-wrap gap-2 justify-content-md-between align-items-center">
+            <!-- Botões de Ação -->
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-success btn-sm">
+                    <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Adicionar Lote</span>
+                </a>
+                <a href="{% url 'inventario:editar_produto' pk=produto.pk %}" class="btn btn-warning btn-sm">
+                    <i class="bi bi-pencil-square"></i> <span class="d-none d-sm-inline">Editar</span>
+                </a>
+                {% if produto.ativo %}
+                <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post" class="d-inline"
+                    onsubmit="return confirm('Tem certeza que deseja pausar este produto?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary btn-sm">
+                        <i class="bi bi-pause-fill"></i> <span class="d-none d-sm-inline">Pausar</span>
+                    </button>
+                </form>
+                {% else %}
+                <form action="{% url 'inventario:reativar_produto' pk=produto.pk %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-play-fill"></i> <span class="d-none d-sm-inline">Reativar</span>
+                    </button>
+                </form>
+                {% endif %}
+                <button onclick="window.history.back()" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
                 </button>
-            </form>
-            {% else %}
-            <form action="{% url 'inventario:reativar_produto' pk=produto.pk %}" method="post" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-success btn-sm">
-                    <i class="bi bi-play-fill"></i> <span class="d-none d-sm-inline">Reativar</span>
+            </div>
+
+            <!-- Botões de Navegação -->
+            <div class="d-flex gap-2">
+                {% if produto_anterior %}
+                <a href="{% url 'inventario:detalhar_produto' pk=produto_anterior.pk %}"
+                    class="btn btn-outline-primary btn-sm" title="Produto Anterior">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                {% else %}
+                <button class="btn btn-outline-secondary btn-sm" disabled title="Nenhum produto anterior">
+                    <i class="bi bi-chevron-left"></i>
                 </button>
-            </form>
-            {% endif %}
-            {% if produto_anterior %}
-            <a href="{% url 'inventario:detalhar_produto' pk=produto_anterior.pk %}"
-                class="btn btn-outline-secondary btn-sm" title="Produto Anterior">
-                <i class="bi bi-chevron-left"></i>
-            </a>
-            {% endif %}
-            {% if proximo_produto %}
-            <a href="{% url 'inventario:detalhar_produto' pk=proximo_produto.pk %}"
-                class="btn btn-outline-secondary btn-sm" title="Próximo Produto">
-                <i class="bi bi-chevron-right"></i>
-            </a>
-            {% endif %}
-            <button onclick="window.history.back()" class="btn btn-secondary btn-sm">
-                <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
-            </button>
+                {% endif %}
+                {% if proximo_produto %}
+                <a href="{% url 'inventario:detalhar_produto' pk=proximo_produto.pk %}"
+                    class="btn btn-outline-primary btn-sm" title="Próximo Produto">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+                {% else %}
+                <button class="btn btn-outline-secondary btn-sm" disabled title="Nenhum próximo produto">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
@@ -219,15 +234,32 @@
                 </div>
             </div>
 
-            <!-- Margem de Lucro -->
+            <!-- Margem de Lucro (Estoque) -->
             <div class="col-4 col-md-4 col-lg-2">
                 <div class="text-center">
-                    <small class="text-muted d-block">Margem Lucro</small>
+                    <small class="text-muted d-block">Margem Lucro (Estoque)</small>
                     <p class="mb-0 mt-1">
                         {% if produto.margem_lucro is not None %}
                         <span
                             class="badge {% if produto.margem_lucro >= config.margem_lucro_ideal %}bg-success{% else %}bg-danger{% endif %}">
                             {{ produto.margem_lucro|floatformat:1 }}%
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">N/A</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Margem de Lucro (Vendidos) -->
+            <div class="col-4 col-md-4 col-lg-2">
+                <div class="text-center">
+                    <small class="text-muted d-block">Margem Lucro (Vendidos)</small>
+                    <p class="mb-0 mt-1">
+                        {% if margem_lucro_vendidos is not None and margem_lucro_vendidos > 0 %}
+                        <span
+                            class="badge {% if margem_lucro_vendidos >= config.margem_lucro_ideal %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ margem_lucro_vendidos|floatformat:1 }}%
                         </span>
                         {% else %}
                         <span class="badge bg-secondary">N/A</span>

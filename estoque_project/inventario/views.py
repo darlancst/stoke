@@ -685,6 +685,14 @@ def detalhar_produto(request, pk):
     total_custo_vendido = itens_vendidos.aggregate(t=Sum('custo_compra_total_registrado'))['t'] or 0
     custo_medio_vendidos = total_custo_vendido / total_vendido_qtd if total_vendido_qtd > 0 else Decimal('0.00')
     
+    # Calcular margem de lucro dos produtos vendidos
+    total_receita_vendida = itens_vendidos.aggregate(t=Sum(F('quantidade') * F('preco_venda_unitario')))['t'] or Decimal('0.00')
+    preco_medio_vendido = total_receita_vendida / total_vendido_qtd if total_vendido_qtd > 0 else Decimal('0.00')
+    
+    margem_lucro_vendidos = None
+    if preco_medio_vendido > 0 and custo_medio_vendidos > 0:
+        margem_lucro_vendidos = ((preco_medio_vendido - custo_medio_vendidos) / preco_medio_vendido) * 100
+    
     # Navegação entre produtos (Próximo/Anterior)
     proximo_produto = Produto.objects.filter(pk__gt=produto.pk, ativo=True).order_by('pk').first()
     produto_anterior = Produto.objects.filter(pk__lt=produto.pk, ativo=True).order_by('-pk').first()
@@ -701,6 +709,7 @@ def detalhar_produto(request, pk):
         'lucro_unitario_fifo': lucro_unitario_fifo,
         'vendas_do_produto': vendas_do_produto,
         'custo_medio_vendidos': custo_medio_vendidos,
+        'margem_lucro_vendidos': margem_lucro_vendidos,
         'proximo_produto': proximo_produto,
         'produto_anterior': produto_anterior,
     }
