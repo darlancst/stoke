@@ -72,7 +72,8 @@
             <div class="col-4 col-sm-4 col-md-2">
                 <small class="text-muted d-block mb-0">Pagamento</small>
                 <span class="badge bg-info">
-                    {{ venda.get_tipo_pagamento_display }}{% if venda.tipo_pagamento == 'CREDITO' and venda.parcelas > 1 %} {{ venda.parcelas }}x{% endif %}
+                    {{ venda.get_tipo_pagamento_display }}{% if venda.tipo_pagamento == 'CREDITO' and venda.parcelas > 1
+                    %} {{ venda.parcelas }}x{% endif %}
                 </span>
             </div>
             {% if venda.taxa_aplicada > 0 %}
