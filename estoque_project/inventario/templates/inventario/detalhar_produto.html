@@ -8,92 +8,99 @@
     .fifo-highlight-card {
         animation: pulseGlow 2s ease-in-out infinite;
     }
-    
+
     @keyframes pulseGlow {
-        0%, 100% { box-shadow: 0 0 5px rgba(25, 135, 84, 0.3); }
-        50% { box-shadow: 0 0 15px rgba(25, 135, 84, 0.6); }
+
+        0%,
+        100% {
+            box-shadow: 0 0 5px rgba(25, 135, 84, 0.3);
+        }
+
+        50% {
+            box-shadow: 0 0 15px rgba(25, 135, 84, 0.6);
+        }
     }
-    
+
     /* Dark mode para card FIFO */
     [data-theme="dark"] .card.border-success {
         border-color: #2ea043 !important;
     }
-    
+
     [data-theme="dark"] .card-header.bg-success {
         background-color: #2ea043 !important;
     }
-    
+
     [data-theme="dark"] .bg-success.bg-opacity-10 {
         background-color: rgba(46, 160, 67, 0.15) !important;
     }
-    
+
     [data-theme="dark"] .text-success {
         color: #7ee787 !important;
     }
-    
+
     [data-theme="dark"] .badge.bg-success {
         background-color: #2ea043 !important;
         color: #fff !important;
     }
-    
+
     [data-theme="dark"] .table-success {
         background-color: rgba(46, 160, 67, 0.1) !important;
         color: #c9d1d9 !important;
     }
-    
+
     [data-theme="dark"] .table-success td {
         border-color: #30363d !important;
     }
-    
+
     /* Efeito hover no lote FIFO */
     .table-success:hover {
         background-color: rgba(25, 135, 84, 0.15) !important;
     }
-    
+
     [data-theme="dark"] .table-success:hover {
         background-color: rgba(46, 160, 67, 0.2) !important;
     }
-    
+
     /* Card mobile FIFO */
     [data-theme="dark"] .card.border-success.border-2 {
         background-color: #0d1117;
         border-color: #2ea043 !important;
     }
-    
+
     [data-theme="dark"] .card.border-success .card-body {
         background-color: rgba(46, 160, 67, 0.12) !important;
     }
-    
+
     /* Divisores no card FIFO mobile */
     [data-theme="dark"] .border-start {
         border-color: rgba(255, 255, 255, 0.2) !important;
     }
-    
+
     /* Switch "Ocultar esgotados" no dark mode */
     [data-theme="dark"] .form-check-input[type="checkbox"] {
         background-color: #30363d;
         border-color: #8b949e;
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
     }
-    
+
     [data-theme="dark"] .form-check-input[type="checkbox"]:checked {
         background-color: #2ea043;
         border-color: #2ea043;
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
     }
-    
+
     [data-theme="dark"] .form-switch .form-check-input {
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%28255, 255, 255, 0.9%29'/%3e%3c/svg%3e") !important;
     }
-    
+
     [data-theme="dark"] .form-switch .form-check-input:checked {
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e") !important;
     }
-    
+
     [data-theme="dark"] .form-check-label {
         color: #c9d1d9;
     }
-    
+
     [data-theme="dark"] .form-check-input:focus {
         border-color: #58a6ff;
         box-shadow: 0 0 0 0.25rem rgba(88, 166, 255, 0.25);
@@ -116,7 +123,8 @@
                 <i class="bi bi-pencil-square"></i> <span class="d-none d-sm-inline">Editar</span>
             </a>
             {% if produto.ativo %}
-            <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja pausar este produto?');">
+            <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post" class="d-inline"
+                onsubmit="return confirm('Tem certeza que deseja pausar este produto?');">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-secondary btn-sm">
                     <i class="bi bi-pause-fill"></i> <span class="d-none d-sm-inline">Pausar</span>
@@ -129,6 +137,18 @@
                     <i class="bi bi-play-fill"></i> <span class="d-none d-sm-inline">Reativar</span>
                 </button>
             </form>
+            {% endif %}
+            {% if produto_anterior %}
+            <a href="{% url 'inventario:detalhar_produto' pk=produto_anterior.pk %}"
+                class="btn btn-outline-secondary btn-sm" title="Produto Anterior">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            {% endif %}
+            {% if proximo_produto %}
+            <a href="{% url 'inventario:detalhar_produto' pk=proximo_produto.pk %}"
+                class="btn btn-outline-secondary btn-sm" title="Próximo Produto">
+                <i class="bi bi-chevron-right"></i>
+            </a>
             {% endif %}
             <button onclick="window.history.back()" class="btn btn-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Voltar</span>
@@ -148,41 +168,49 @@
                     <p class="fs-5 mb-0 fw-bold">{{ produto.quantidade_total }}</p>
                 </div>
             </div>
-            
+
             <!-- Chegando -->
             <div class="col-4 col-md-4 col-lg-2">
                 <div class="text-center">
                     <small class="text-muted d-block">Chegando</small>
                     {% with chegando=produto.quantidade_chegando|default:0 %}
-                        <p class="fs-5 mb-0 fw-bold {% if chegando > 0 %}text-info{% else %}text-secondary{% endif %}">
-                            {{ chegando }}
-                        </p>
+                    <p class="fs-5 mb-0 fw-bold {% if chegando > 0 %}text-info{% else %}text-secondary{% endif %}">
+                        {{ chegando }}
+                    </p>
                     {% endwith %}
                 </div>
             </div>
-            
+
             <!-- Status -->
             <div class="col-4 col-md-4 col-lg-2">
                 <div class="text-center">
                     <small class="text-muted d-block">Status</small>
                     <p class="mb-0 mt-1">
                         {% if produto.ativo %}
-                            <span class="badge bg-success">Ativo</span>
+                        <span class="badge bg-success">Ativo</span>
                         {% else %}
-                            <span class="badge bg-secondary">Inativo</span>
+                        <span class="badge bg-secondary">Inativo</span>
                         {% endif %}
                     </p>
                 </div>
             </div>
-            
+
             <!-- Custo Médio -->
             <div class="col-4 col-md-4 col-lg-2">
                 <div class="text-center">
-                    <small class="text-muted d-block">Custo Médio</small>
+                    <small class="text-muted d-block">Custo Médio (Estoque)</small>
                     <p class="mb-0 mt-1">R$ {{ produto.custo_medio_ponderado|floatformat:2 }}</p>
                 </div>
             </div>
-            
+
+            <!-- Custo Médio Vendidos -->
+            <div class="col-4 col-md-4 col-lg-2">
+                <div class="text-center">
+                    <small class="text-muted d-block">Custo Médio (Vendidos)</small>
+                    <p class="mb-0 mt-1 text-secondary">R$ {{ custo_medio_vendidos|floatformat:2 }}</p>
+                </div>
+            </div>
+
             <!-- Preço de Venda -->
             <div class="col-4 col-md-4 col-lg-2">
                 <div class="text-center">
@@ -190,18 +218,19 @@
                     <p class="mb-0 mt-1 fw-bold text-primary">R$ {{ produto.preco_venda|floatformat:2 }}</p>
                 </div>
             </div>
-            
+
             <!-- Margem de Lucro -->
             <div class="col-4 col-md-4 col-lg-2">
                 <div class="text-center">
                     <small class="text-muted d-block">Margem Lucro</small>
                     <p class="mb-0 mt-1">
                         {% if produto.margem_lucro is not None %}
-                            <span class="badge {% if produto.margem_lucro >= config.margem_lucro_ideal %}bg-success{% else %}bg-danger{% endif %}">
-                                {{ produto.margem_lucro|floatformat:1 }}%
-                            </span>
+                        <span
+                            class="badge {% if produto.margem_lucro >= config.margem_lucro_ideal %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ produto.margem_lucro|floatformat:1 }}%
+                        </span>
                         {% else %}
-                            <span class="badge bg-secondary">N/A</span>
+                        <span class="badge bg-secondary">N/A</span>
                         {% endif %}
                     </p>
                 </div>
@@ -260,122 +289,128 @@
     </div>
     <div class="card-body py-2">
         {% if produto.lotes.all %}
-            <!-- Tabela para telas médias e grandes -->
-            <div class="table-responsive d-none d-md-block">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Data Entrada</th>
-                            <th>Fornecedor</th>
-                            <th class="text-center">Qtd. Inicial</th>
-                            <th class="text-center">Qtd. Atual</th>
-                            <th class="text-end">Preço Compra</th>
-                            <th class="text-center">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for lote in produto.lotes.all|dictsort:"data_entrada" %}
-                        <tr class="lote-row {% if lote.quantidade_atual == 0 %}lote-esgotado table-secondary text-muted{% elif lote == lote_fifo %}table-success{% endif %}" data-esgotado="{% if lote.quantidade_atual == 0 %}true{% else %}false{% endif %}">
-                            <td>{{ lote.data_entrada|date:"d/m/Y" }}</td>
-                            <td>{{ produto.fornecedor.nome|default:"N/A" }}</td>
-                            <td class="text-center">{{ lote.quantidade_inicial }}</td>
-                            <td class="text-center">
-                                <span class="{% if lote.quantidade_atual == 0 %}text-muted{% else %}fw-bold{% endif %}">
-                                    {{ lote.quantidade_atual }}
-                                </span>
-                            </td>
-                            <td class="text-end fw-bold">R$ {{ lote.preco_compra|floatformat:2 }}</td>
-                            <td class="text-center">
-                                {% if lote == lote_fifo %}
-                                    <span class="badge bg-success">
-                                        <i class="bi bi-arrow-right-circle-fill"></i> FIFO
-                                    </span>
-                                {% elif lote.quantidade_atual == 0 %}
-                                    <span class="badge bg-secondary">Esgotado</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <!-- Tabela para telas médias e grandes -->
+        <div class="table-responsive d-none d-md-block">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Data Entrada</th>
+                        <th>Fornecedor</th>
+                        <th class="text-center">Qtd. Inicial</th>
+                        <th class="text-center">Qtd. Atual</th>
+                        <th class="text-end">Preço Compra</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lote in produto.lotes.all|dictsort:"data_entrada" %}
+                    <tr class="lote-row {% if lote.quantidade_atual == 0 %}lote-esgotado table-secondary text-muted{% elif lote == lote_fifo %}table-success{% endif %}"
+                        data-esgotado="{% if lote.quantidade_atual == 0 %}true{% else %}false{% endif %}">
+                        <td>{{ lote.data_entrada|date:"d/m/Y" }}</td>
+                        <td>{{ produto.fornecedor.nome|default:"N/A" }}</td>
+                        <td class="text-center">{{ lote.quantidade_inicial }}</td>
+                        <td class="text-center">
+                            <span class="{% if lote.quantidade_atual == 0 %}text-muted{% else %}fw-bold{% endif %}">
+                                {{ lote.quantidade_atual }}
+                            </span>
+                        </td>
+                        <td class="text-end fw-bold">R$ {{ lote.preco_compra|floatformat:2 }}</td>
+                        <td class="text-center">
+                            {% if lote == lote_fifo %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-arrow-right-circle-fill"></i> FIFO
+                            </span>
+                            {% elif lote.quantidade_atual == 0 %}
+                            <span class="badge bg-secondary">Esgotado</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Cards para telas pequenas -->
+        <div class="d-md-none">
+            {% if lote_fifo and produto.lotes.count > 1 %}
+            <!-- Card FIFO em destaque para mobile (só aparece se houver mais de 1 lote) -->
+            <div class="card border-success border-2 mb-2 fifo-highlight-card">
+                <div class="card-header bg-success text-white py-1 px-2">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <small class="mb-0"><i class="bi bi-arrow-right-circle-fill"></i> <strong>Próximo FIFO</strong>
+                            · {{ lote_fifo.data_entrada|date:"d/m/y" }}</small>
+                        <span class="badge bg-light text-success py-0 px-1" style="font-size: 0.65rem;"><i
+                                class="bi bi-clock-history"></i></span>
+                    </div>
+                </div>
+                <div class="card-body p-2 bg-success bg-opacity-10">
+                    <div class="d-flex justify-content-around align-items-center text-center">
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.7rem;">Qtd</small>
+                            <strong class="text-success">{{ lote_fifo.quantidade_atual }}</strong>
+                        </div>
+                        <div class="border-start px-2">
+                            <small class="text-muted d-block" style="font-size: 0.7rem;">Custo</small>
+                            <strong class="text-primary">R$ {{ lote_fifo.preco_compra|floatformat:2 }}</strong>
+                        </div>
+                        {% if lucro_unitario_fifo %}
+                        <div class="border-start px-2">
+                            <small class="text-muted d-block" style="font-size: 0.7rem;">Lucro</small>
+                            <strong
+                                class="{% if lucro_unitario_fifo > 0 %}text-success{% else %}text-danger{% endif %}">
+                                R$ {{ lucro_unitario_fifo|floatformat:2 }}
+                            </strong>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            
-            <!-- Cards para telas pequenas -->
-            <div class="d-md-none">
-                {% if lote_fifo and produto.lotes.count > 1 %}
-                <!-- Card FIFO em destaque para mobile (só aparece se houver mais de 1 lote) -->
-                <div class="card border-success border-2 mb-2 fifo-highlight-card">
-                    <div class="card-header bg-success text-white py-1 px-2">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <small class="mb-0"><i class="bi bi-arrow-right-circle-fill"></i> <strong>Próximo FIFO</strong> · {{ lote_fifo.data_entrada|date:"d/m/y" }}</small>
-                            <span class="badge bg-light text-success py-0 px-1" style="font-size: 0.65rem;"><i class="bi bi-clock-history"></i></span>
+            {% endif %}
+
+            {% for lote in produto.lotes.all|dictsort:"data_entrada" %}
+            <div class="card mb-2 lote-card {% if lote.quantidade_atual == 0 %}lote-esgotado bg-light{% elif lote == lote_fifo %}border-success border-2{% endif %}"
+                data-esgotado="{% if lote.quantidade_atual == 0 %}true{% else %}false{% endif %}">
+                <div class="card-body p-2 {% if lote == lote_fifo %}bg-success bg-opacity-10{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <small class="text-muted">{{ lote.data_entrada|date:"d/m/Y" }}</small>
+                            <span class="d-block small">{{ produto.fornecedor.nome|default:"N/A" }}</span>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-info">Ini: {{ lote.quantidade_inicial }}</span>
+                            <span
+                                class="badge {% if lote.quantidade_atual == 0 %}bg-secondary{% else %}bg-primary{% endif %}">
+                                Atual: {{ lote.quantidade_atual }}
+                            </span>
                         </div>
                     </div>
-                    <div class="card-body p-2 bg-success bg-opacity-10">
-                        <div class="d-flex justify-content-around align-items-center text-center">
-                            <div>
-                                <small class="text-muted d-block" style="font-size: 0.7rem;">Qtd</small>
-                                <strong class="text-success">{{ lote_fifo.quantidade_atual }}</strong>
-                            </div>
-                            <div class="border-start px-2">
-                                <small class="text-muted d-block" style="font-size: 0.7rem;">Custo</small>
-                                <strong class="text-primary">R$ {{ lote_fifo.preco_compra|floatformat:2 }}</strong>
-                            </div>
-                            {% if lucro_unitario_fifo %}
-                            <div class="border-start px-2">
-                                <small class="text-muted d-block" style="font-size: 0.7rem;">Lucro</small>
-                                <strong class="{% if lucro_unitario_fifo > 0 %}text-success{% else %}text-danger{% endif %}">
-                                    R$ {{ lucro_unitario_fifo|floatformat:2 }}
-                                </strong>
-                            </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">Compra: </small>
+                            <strong class="text-primary">R$ {{ lote.preco_compra|floatformat:2 }}</strong>
+                        </div>
+                        <div>
+                            {% if lote == lote_fifo %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-arrow-right-circle-fill"></i> FIFO
+                            </span>
+                            {% elif lote.quantidade_atual == 0 %}
+                            <span class="badge bg-secondary">Esgotado</span>
                             {% endif %}
                         </div>
                     </div>
                 </div>
-                {% endif %}
-                
-                {% for lote in produto.lotes.all|dictsort:"data_entrada" %}
-                <div class="card mb-2 lote-card {% if lote.quantidade_atual == 0 %}lote-esgotado bg-light{% elif lote == lote_fifo %}border-success border-2{% endif %}" data-esgotado="{% if lote.quantidade_atual == 0 %}true{% else %}false{% endif %}">
-                    <div class="card-body p-2 {% if lote == lote_fifo %}bg-success bg-opacity-10{% endif %}">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <small class="text-muted">{{ lote.data_entrada|date:"d/m/Y" }}</small>
-                                <span class="d-block small">{{ produto.fornecedor.nome|default:"N/A" }}</span>
-                            </div>
-                            <div class="text-end">
-                                <span class="badge bg-info">Ini: {{ lote.quantidade_inicial }}</span>
-                                <span class="badge {% if lote.quantidade_atual == 0 %}bg-secondary{% else %}bg-primary{% endif %}">
-                                    Atual: {{ lote.quantidade_atual }}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <small class="text-muted">Compra: </small>
-                                <strong class="text-primary">R$ {{ lote.preco_compra|floatformat:2 }}</strong>
-                            </div>
-                            <div>
-                                {% if lote == lote_fifo %}
-                                    <span class="badge bg-success">
-                                        <i class="bi bi-arrow-right-circle-fill"></i> FIFO
-                                    </span>
-                                {% elif lote.quantidade_atual == 0 %}
-                                    <span class="badge bg-secondary">Esgotado</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
             </div>
+            {% endfor %}
+        </div>
         {% else %}
-            <div class="text-center py-3">
-                <i class="bi bi-inbox fs-1 text-muted"></i>
-                <p class="text-muted mt-2 mb-2">Nenhum lote cadastrado</p>
-                <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-circle"></i> Adicionar Lote
-                </a>
-            </div>
+        <div class="text-center py-3">
+            <i class="bi bi-inbox fs-1 text-muted"></i>
+            <p class="text-muted mt-2 mb-2">Nenhum lote cadastrado</p>
+            <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> Adicionar Lote
+            </a>
+        </div>
         {% endif %}
     </div>
 </div>
@@ -386,82 +421,89 @@
         <h6 class="mb-0"><i class="bi bi-people"></i> Vendas deste Produto</h6>
     </div>
     <div class="card-body py-2">
-            {% if vendas_do_produto %}
-                <!-- Tabela para telas médias e grandes -->
-                <div class="table-responsive d-none d-md-block">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Venda</th>
-                                <th>Cliente</th>
-                                <th class="text-center">Qtd.</th>
-                                <th class="text-end">Total</th>
-                                <th class="text-end">Meu Lucro</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in vendas_do_produto %}
-                            <tr>
-                                <td><a href="{% url 'inventario:detalhar_venda' pk=item.venda.pk %}">#{{ item.venda.pk }}</a></td>
-                                <td><small>{{ item.venda.cliente_nome|default:'—' }}</small></td>
-                                <td class="text-center">{{ item.quantidade }}</td>
-                                <td class="text-end fw-bold">R$ {{ item.subtotal|floatformat:2 }}</td>
-                                <td class="text-end {% if item.meu_lucro_item >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                    <strong>R$ {{ item.meu_lucro_item|floatformat:2 }}</strong>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Cards para telas pequenas -->
-                <div class="d-md-none">
+        {% if vendas_do_produto %}
+        <!-- Tabela para telas médias e grandes -->
+        <div class="table-responsive d-none d-md-block">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Venda</th>
+                        <th>Data da Venda</th>
+                        <th>Cliente</th>
+                        <th class="text-center">Qtd.</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Meu Lucro</th>
+                    </tr>
+                </thead>
+                <tbody>
                     {% for item in vendas_do_produto %}
-                    <div class="card mb-2">
-                        <div class="card-body p-2">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="flex-grow-1">
-                                    <a href="{% url 'inventario:detalhar_venda' pk=item.venda.pk %}" class="fw-bold text-decoration-none">
-                                        #{{ item.venda.pk }}
-                                    </a>
-                                    <span class="text-muted small">· {{ item.venda.cliente_nome|default:'—' }}</span>
-                                </div>
-                                <span class="badge bg-primary">{{ item.quantidade }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <small class="text-muted">Total:</small>
-                                    <strong>R$ {{ item.subtotal|floatformat:2 }}</strong>
-                                </div>
-                                <div class="text-end">
-                                    <small class="text-muted">Lucro:</small>
-                                    <strong class="{% if item.meu_lucro_item >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                        R$ {{ item.meu_lucro_item|floatformat:2 }}
-                                    </strong>
-                                </div>
-                            </div>
+                    <tr>
+                        <td><a href="{% url 'inventario:detalhar_venda' pk=item.venda.pk %}">#{{ item.venda.pk }}</a>
+                        </td>
+                        <td>{{ item.venda.data|date:"d/m/Y H:i" }}</td>
+                        <td><small>{{ item.venda.cliente_nome|default:'—' }}</small></td>
+                        <td class="text-center">{{ item.quantidade }}</td>
+                        <td class="text-end fw-bold">R$ {{ item.subtotal|floatformat:2 }}</td>
+                        <td
+                            class="text-end {% if item.meu_lucro_item >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            <strong>R$ {{ item.meu_lucro_item|floatformat:2 }}</strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Cards para telas pequenas -->
+        <div class="d-md-none">
+            {% for item in vendas_do_produto %}
+            <div class="card mb-2">
+                <div class="card-body p-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="flex-grow-1">
+                            <a href="{% url 'inventario:detalhar_venda' pk=item.venda.pk %}"
+                                class="fw-bold text-decoration-none">
+                                #{{ item.venda.pk }}
+                            </a>
+                            <span class="text-muted small">· {{ item.venda.data|date:"d/m/y" }}</span>
+                            <span class="text-muted small">· {{ item.venda.cliente_nome|default:'—' }}</span>
+                        </div>
+                        <span class="badge bg-primary">{{ item.quantidade }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">Total:</small>
+                            <strong>R$ {{ item.subtotal|floatformat:2 }}</strong>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">Lucro:</small>
+                            <strong
+                                class="{% if item.meu_lucro_item >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                R$ {{ item.meu_lucro_item|floatformat:2 }}
+                            </strong>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
-            {% else %}
-                <p class="text-muted mb-0">Este produto ainda não foi vendido.</p>
-            {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">Este produto ainda não foi vendido.</p>
+        {% endif %}
     </div>
- </div>
+</div>
 
 <script>
-// Controlar ocultação de lotes esgotados
-document.getElementById('ocultarEsgotados').addEventListener('change', function() {
-    const esgotados = document.querySelectorAll('.lote-esgotado');
-    esgotados.forEach(lote => {
-        if (this.checked) {
-            lote.style.display = 'none';
-        } else {
-            lote.style.display = '';
-        }
+    // Controlar ocultação de lotes esgotados
+    document.getElementById('ocultarEsgotados').addEventListener('change', function () {
+        const esgotados = document.querySelectorAll('.lote-esgotado');
+        esgotados.forEach(lote => {
+            if (this.checked) {
+                lote.style.display = 'none';
+            } else {
+                lote.style.display = '';
+            }
+        });
     });
-});
 </script>
 {% endblock %}

@@ -679,17 +679,30 @@ def detalhar_produto(request, pk):
     if lote_fifo and produto.preco_venda:
         lucro_unitario_fifo = produto.preco_venda - lote_fifo.preco_compra
     
-    # Buscar vendas deste produto
+    # Calcular custo médio dos produtos vendidos
+    itens_vendidos = ItemVenda.objects.filter(produto=produto)
+    total_vendido_qtd = itens_vendidos.aggregate(t=Sum('quantidade'))['t'] or 0
+    total_custo_vendido = itens_vendidos.aggregate(t=Sum('custo_compra_total_registrado'))['t'] or 0
+    custo_medio_vendidos = total_custo_vendido / total_vendido_qtd if total_vendido_qtd > 0 else Decimal('0.00')
+    
+    # Navegação entre produtos (Próximo/Anterior)
+    proximo_produto = Produto.objects.filter(pk__gt=produto.pk, ativo=True).order_by('pk').first()
+    produto_anterior = Produto.objects.filter(pk__lt=produto.pk, ativo=True).order_by('-pk').first()
+    
+    # Buscar vendas deste produto (aumentado limite para mostrar histórico mais completo)
     vendas_do_produto = ItemVenda.objects.filter(
         produto=produto
-    ).select_related('venda').order_by('-venda__data')[:10]
+    ).select_related('venda').order_by('-venda__data')
     
     context = {
         'produto': produto,
         'config': config,
         'lote_fifo': lote_fifo,
         'lucro_unitario_fifo': lucro_unitario_fifo,
-        'vendas_do_produto': vendas_do_produto
+        'vendas_do_produto': vendas_do_produto,
+        'custo_medio_vendidos': custo_medio_vendidos,
+        'proximo_produto': proximo_produto,
+        'produto_anterior': produto_anterior,
     }
     return render(request, 'inventario/detalhar_produto.html', context)
 

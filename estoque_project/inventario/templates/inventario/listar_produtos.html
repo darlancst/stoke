@@ -11,15 +11,15 @@
         position: relative;
         padding-right: 1.5rem;
     }
-    
+
     .sortable-header:hover {
         background-color: rgba(0, 0, 0, 0.05);
     }
-    
+
     [data-theme="dark"] .sortable-header:hover {
         background-color: rgba(255, 255, 255, 0.05);
     }
-    
+
     .sort-icon {
         position: absolute;
         right: 0.5rem;
@@ -28,19 +28,20 @@
         opacity: 0.3;
         font-size: 0.75rem;
     }
-    
+
     .sortable-header:hover .sort-icon {
         opacity: 0.6;
     }
-    
+
     .sort-icon.active {
         opacity: 1;
         color: #0d6efd;
     }
-    
+
     [data-theme="dark"] .sort-icon.active {
         color: #58a6ff;
     }
+
     /* Destaque extra para nome dos produtos */
     .produto-nome-link {
         font-weight: 700;
@@ -48,20 +49,20 @@
         transition: color 0.2s ease, transform 0.1s ease;
         display: inline-block;
     }
-    
+
     .produto-nome-link:hover {
         color: #0a58ca;
         transform: translateX(2px);
     }
-    
+
     [data-theme="dark"] .produto-nome-link {
         color: #58a6ff;
     }
-    
+
     [data-theme="dark"] .produto-nome-link:hover {
         color: #79c0ff;
     }
-    
+
     /* Cards de produtos mobile - design compacto */
     .produto-card-mobile {
         border-radius: 8px;
@@ -69,22 +70,22 @@
         transition: box-shadow 0.2s ease;
         background-color: #fff;
     }
-    
+
     [data-theme="dark"] .produto-card-mobile {
         background-color: #161b22;
         border-color: #30363d;
     }
-    
+
     /* Link do nome do produto */
     .produto-card-mobile .produto-nome-link {
         color: inherit;
         font-weight: 600;
     }
-    
+
     .produto-card-mobile .produto-nome-link:hover {
         color: #0d6efd;
     }
-    
+
     [data-theme="dark"] .produto-card-mobile .produto-nome-link:hover {
         color: #58a6ff;
     }
@@ -99,7 +100,8 @@
         <!-- Estatísticas (abaixo do título) -->
         <div class="d-flex gap-2 align-items-center flex-wrap">
             <small class="text-muted">
-                <i class="bi bi-boxes"></i> {{ total_produtos_diferentes }} produto{{ total_produtos_diferentes|pluralize }}
+                <i class="bi bi-boxes"></i> {{ total_produtos_diferentes }} produto{{
+                total_produtos_diferentes|pluralize }}
             </small>
             <small class="text-muted">
                 <i class="bi bi-stack"></i> {{ quantidade_total_geral }} unidade{{ quantidade_total_geral|pluralize }}
@@ -109,13 +111,15 @@
     <div class="col-12 col-md-6">
         <div class="d-flex flex-wrap gap-2 justify-content-md-end">
             {% if status_atual == 'ativos' %}
-                <a href="{% url 'inventario:listar_produtos' %}?status=pausados&q={{ query_atual|urlencode }}" class="btn btn-secondary btn-sm">
-                    <i class="bi bi-pause-circle"></i> Ver Pausados
-                </a>
+            <a href="{% url 'inventario:listar_produtos' %}?status=pausados&q={{ query_atual|urlencode }}"
+                class="btn btn-secondary btn-sm">
+                <i class="bi bi-pause-circle"></i> Ver Pausados
+            </a>
             {% else %}
-                <a href="{% url 'inventario:listar_produtos' %}?q={{ query_atual|urlencode }}" class="btn btn-secondary btn-sm">
-                    <i class="bi bi-play-circle"></i> Ver Ativos
-                </a>
+            <a href="{% url 'inventario:listar_produtos' %}?q={{ query_atual|urlencode }}"
+                class="btn btn-secondary btn-sm">
+                <i class="bi bi-play-circle"></i> Ver Ativos
+            </a>
             {% endif %}
             <a href="{% url 'inventario:criar_produto' %}" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-circle"></i> Novo Produto
@@ -131,11 +135,13 @@
             <input type="hidden" name="status" value="{{ status_atual }}">
             <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" placeholder="Buscar produto por nome..." name="q" value="{{ query_atual }}" id="search-input">
+                <input type="text" class="form-control" placeholder="Buscar produto por nome..." name="q"
+                    value="{{ query_atual }}" id="search-input">
                 {% if query_atual %}
-                    <a href="{% url 'inventario:listar_produtos' %}?status={{ status_atual }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x"></i>
-                    </a>
+                <a href="{% url 'inventario:listar_produtos' %}?status={{ status_atual }}"
+                    class="btn btn-outline-secondary">
+                    <i class="bi bi-x"></i>
+                </a>
                 {% endif %}
             </div>
         </form>
@@ -144,12 +150,12 @@
 
 <!-- Mensagens -->
 {% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
 {% endif %}
 
 <!-- Tabela para Desktop/Tablet -->
@@ -159,102 +165,127 @@
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th class="sortable-header" onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=nome&ordem={% if ordenar_por == 'nome' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
+                        <th class="sortable-header"
+                            onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=nome&ordem={% if ordenar_por == 'nome' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
                             Nome do Produto
-                            <i class="bi bi-arrow-{% if ordenar_por == 'nome' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'nome' %}active{% endif %}"></i>
+                            <i
+                                class="bi bi-arrow-{% if ordenar_por == 'nome' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'nome' %}active{% endif %}"></i>
                         </th>
-                        <th class="text-center sortable-header" onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=estoque&ordem={% if ordenar_por == 'estoque' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
+                        <th class="text-center sortable-header"
+                            onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=estoque&ordem={% if ordenar_por == 'estoque' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
                             Estoque
-                            <i class="bi bi-arrow-{% if ordenar_por == 'estoque' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'estoque' %}active{% endif %}"></i>
+                            <i
+                                class="bi bi-arrow-{% if ordenar_por == 'estoque' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'estoque' %}active{% endif %}"></i>
                         </th>
                         <th class="text-center">Chegando</th>
-                        <th class="text-end sortable-header" onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=preco&ordem={% if ordenar_por == 'preco' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
+                        <th class="text-end sortable-header"
+                            onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=preco&ordem={% if ordenar_por == 'preco' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
                             Preço Venda
-                            <i class="bi bi-arrow-{% if ordenar_por == 'preco' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'preco' %}active{% endif %}"></i>
+                            <i
+                                class="bi bi-arrow-{% if ordenar_por == 'preco' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'preco' %}active{% endif %}"></i>
                         </th>
-                        <th class="text-end sortable-header" onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=custo&ordem={% if ordenar_por == 'custo' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
+                        <th class="text-end sortable-header"
+                            onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=custo&ordem={% if ordenar_por == 'custo' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
                             Custo Médio
-                            <i class="bi bi-arrow-{% if ordenar_por == 'custo' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'custo' %}active{% endif %}"></i>
+                            <i
+                                class="bi bi-arrow-{% if ordenar_por == 'custo' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'custo' %}active{% endif %}"></i>
                         </th>
-                        <th class="text-center sortable-header" onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=margem&ordem={% if ordenar_por == 'margem' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
+                        <th class="text-center sortable-header"
+                            onclick="window.location.href='?status={{ status_atual }}&q={{ query_atual }}&ordenar=margem&ordem={% if ordenar_por == 'margem' and ordem_atual == 'asc' %}desc{% else %}asc{% endif %}'">
                             Margem
-                            <i class="bi bi-arrow-{% if ordenar_por == 'margem' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'margem' %}active{% endif %}"></i>
+                            <i
+                                class="bi bi-arrow-{% if ordenar_por == 'margem' %}{% if ordem_atual == 'desc' %}down{% else %}up{% endif %}{% else %}down-up{% endif %} sort-icon {% if ordenar_por == 'margem' %}active{% endif %}"></i>
                         </th>
                         <th class="text-center">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="produtos-tbody-desktop">
                     {% for produto in produtos %}
-                        <tr class="align-middle">
-                            <td>
-                                <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="produto-nome-link text-decoration-none fs-6">
-                                    {{ produto.nome }}
-                                </a>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge bg-primary">{{ produto.quantidade_total_agg|default:"0" }}</span>
-                            </td>
-                            <td class="text-center">
-                                {% with chegando=produto.quantidade_chegando|default:0 %}
-                                    {% if chegando > 0 %}
-                                        <span class="badge bg-info text-dark">{{ chegando }}</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">0</span>
-                                    {% endif %}
-                                {% endwith %}
-                            </td>
-                            <td class="text-end fw-bold">R$ {{ produto.preco_venda|floatformat:2 }}</td>
-                            <td class="text-end">R$ {{ produto.custo_medio_ponderado_agg|floatformat:2|default:"0.00" }}</td>
-                            <td class="text-center">
-                                {% if produto.margem_lucro_agg is not None %}
-                                    <span class="badge {% if config and produto.margem_lucro_agg < config.margem_lucro_ideal %}bg-danger{% else %}bg-success{% endif %}">
-                                        {{ produto.margem_lucro_agg|floatformat:2 }}%
-                                    </span>
+                    <tr class="align-middle">
+                        <td>
+                            <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}"
+                                class="produto-nome-link text-decoration-none fs-6">
+                                {{ produto.nome }}
+                            </a>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary">{{ produto.quantidade_total_agg|default:"0" }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% with chegando=produto.quantidade_chegando|default:0 %}
+                            {% if chegando > 0 %}
+                            <span class="badge bg-info text-dark">{{ chegando }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">0</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="text-end fw-bold">R$ {{ produto.preco_venda|floatformat:2 }}</td>
+                        <td class="text-end">R$ {{ produto.custo_medio_ponderado_agg|floatformat:2|default:"0.00" }}
+                        </td>
+                        <td class="text-center">
+                            {% if produto.margem_lucro_agg is not None %}
+                            <span
+                                class="badge {% if config and produto.margem_lucro_agg < config.margem_lucro_ideal %}bg-danger{% else %}bg-success{% endif %}">
+                                {{ produto.margem_lucro_agg|floatformat:2 }}%
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}"
+                                    class="btn btn-sm btn-info" title="Detalhes"><i class="bi bi-eye"></i></a>
+                                <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}"
+                                    class="btn btn-sm btn-success" title="Adicionar Lote"><i
+                                        class="bi bi-plus-lg"></i></a>
+                                <a href="{% url 'inventario:editar_produto' pk=produto.pk %}"
+                                    class="btn btn-sm btn-warning" title="Editar"><i class="bi bi-pencil"></i></a>
+                                {% if produto.ativo %}
+                                <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post"
+                                    class="d-inline"
+                                    onsubmit="return confirm('Tem certeza que deseja pausar este produto?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-secondary" title="Pausar"><i
+                                            class="bi bi-pause-fill"></i></button>
+                                </form>
                                 {% else %}
-                                    <span class="badge bg-secondary">N/A</span>
+                                <form action="{% url 'inventario:reativar_produto' pk=produto.pk %}" method="post"
+                                    class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success" title="Reativar"><i
+                                            class="bi bi-play-fill"></i></button>
+                                </form>
+                                <form action="{% url 'inventario:excluir_produto_permanente' pk=produto.pk %}"
+                                    method="post" class="d-inline"
+                                    onsubmit="return confirm('EXCLUSÃO PERMANENTE!\n\nEsta ação não pode ser desfeita. Continuar?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                        title="Excluir Permanentemente"><i class="bi bi-trash"></i></button>
+                                </form>
                                 {% endif %}
-                            </td>
-                            <td class="text-center">
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="btn btn-sm btn-info" title="Detalhes"><i class="bi bi-eye"></i></a>
-                                    <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-sm btn-success" title="Adicionar Lote"><i class="bi bi-plus-lg"></i></a>
-                                    <a href="{% url 'inventario:editar_produto' pk=produto.pk %}" class="btn btn-sm btn-warning" title="Editar"><i class="bi bi-pencil"></i></a>
-                                    {% if produto.ativo %}
-                                        <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja pausar este produto?');">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-secondary" title="Pausar"><i class="bi bi-pause-fill"></i></button>
-                                        </form>
-                                    {% else %}
-                                        <form action="{% url 'inventario:reativar_produto' pk=produto.pk %}" method="post" class="d-inline">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-success" title="Reativar"><i class="bi bi-play-fill"></i></button>
-                                        </form>
-                                        <form action="{% url 'inventario:excluir_produto_permanente' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('EXCLUSÃO PERMANENTE!\n\nEsta ação não pode ser desfeita. Continuar?');">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-danger" title="Excluir Permanentemente"><i class="bi bi-trash"></i></button>
-                                        </form>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
+                            </div>
+                        </td>
+                    </tr>
                     {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-4">
-                                <i class="bi bi-inbox display-1 text-muted"></i>
-                                <h5 class="text-muted mt-2">
-                                    {% if query_atual %}
-                                        Nenhum produto encontrado para "<strong>{{ query_atual }}</strong>"
-                                    {% else %}
-                                        Nenhum produto encontrado
-                                    {% endif %}
-                                </h5>
-                                {% if not query_atual %}
-                                    <a href="{% url 'inventario:criar_produto' %}" class="btn btn-primary mt-2">
-                                        <i class="bi bi-plus-circle"></i> Adicionar Primeiro Produto
-                                    </a>
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <i class="bi bi-inbox display-1 text-muted"></i>
+                            <h5 class="text-muted mt-2">
+                                {% if query_atual %}
+                                Nenhum produto encontrado para "<strong>{{ query_atual }}</strong>"
+                                {% else %}
+                                Nenhum produto encontrado
                                 {% endif %}
-                            </td>
-                        </tr>
+                            </h5>
+                            {% if not query_atual %}
+                            <a href="{% url 'inventario:criar_produto' %}" class="btn btn-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Adicionar Primeiro Produto
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -265,94 +296,101 @@
 <!-- Cards para Mobile/Tablet -->
 <div class="d-lg-none" id="produtos-cards-mobile">
     {% for produto in produtos %}
-        <div class="card produto-card-mobile mb-2">
-            <div class="card-body py-2 px-3">
-                <!-- Linha 1: Nome e Estoque -->
-                <div class="d-flex justify-content-between align-items-start mb-1">
-                    <div class="flex-grow-1">
-                        <h6 class="mb-0 small">
-                            <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="produto-nome-link text-decoration-none">
-                                <span class="fw-bold">{{ produto.nome }}</span>
-                            </a>
-                        </h6>
-                        <small class="text-muted">
-                            Custo: R$ {{ produto.custo_medio_ponderado_agg|floatformat:2|default:"0.00" }}
-                            · Margem: 
-                            {% if produto.margem_lucro_agg is not None %}
-                                <span class="{% if config and produto.margem_lucro_agg < config.margem_lucro_ideal %}text-danger{% else %}text-success{% endif %} fw-semibold">
-                                    {{ produto.margem_lucro_agg|floatformat:1 }}%
-                                </span>
-                            {% else %}
-                                <span class="text-muted">N/A</span>
-                            {% endif %}
-                        </small>
-                    </div>
-                    <div class="text-end">
-                        <span class="badge bg-primary">{{ produto.quantidade_total_agg|default:"0" }}</span>
-                        {% with chegando=produto.quantidade_chegando|default:0 %}
-                            {% if chegando > 0 %}
-                                <span class="badge bg-info text-dark">+{{ chegando }}</span>
-                            {% endif %}
-                        {% endwith %}
-                    </div>
-                </div>
-                
-                <!-- Linha 2: Preço e Ações -->
-                <div class="d-flex justify-content-between align-items-center mt-2">
-                    <div>
-                        <strong class="text-success fs-6">R$ {{ produto.preco_venda|floatformat:2 }}</strong>
-                    </div>
-                    <div class="d-flex gap-1">
-                        <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}" class="btn btn-info btn-sm py-0 px-2" title="Detalhes">
-                            <i class="bi bi-eye"></i>
+    <div class="card produto-card-mobile mb-2">
+        <div class="card-body py-2 px-3">
+            <!-- Linha 1: Nome e Estoque -->
+            <div class="d-flex justify-content-between align-items-start mb-1">
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 small">
+                        <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}"
+                            class="produto-nome-link text-decoration-none">
+                            <span class="fw-bold">{{ produto.nome }}</span>
                         </a>
-                        <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}" class="btn btn-success btn-sm py-0 px-2" title="Adicionar lote">
-                            <i class="bi bi-plus-lg"></i>
-                        </a>
-                        <a href="{% url 'inventario:editar_produto' pk=produto.pk %}" class="btn btn-warning btn-sm py-0 px-2" title="Editar">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                        {% if produto.ativo %}
-                            <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('Pausar este produto?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-secondary btn-sm py-0 px-2" title="Pausar">
-                                    <i class="bi bi-pause-fill"></i>
-                                </button>
-                            </form>
+                    </h6>
+                    <small class="text-muted">
+                        Custo: R$ {{ produto.custo_medio_ponderado_agg|floatformat:2|default:"0.00" }}
+                        · Margem:
+                        {% if produto.margem_lucro_agg is not None %}
+                        <span
+                            class="{% if config and produto.margem_lucro_agg < config.margem_lucro_ideal %}text-danger{% else %}text-success{% endif %} fw-semibold">
+                            {{ produto.margem_lucro_agg|floatformat:1 }}%
+                        </span>
                         {% else %}
-                            <form action="{% url 'inventario:reativar_produto' pk=produto.pk %}" method="post" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-success btn-sm py-0 px-2" title="Reativar">
-                                    <i class="bi bi-play-fill"></i>
-                                </button>
-                            </form>
-                            <form action="{% url 'inventario:excluir_produto_permanente' pk=produto.pk %}" method="post" class="d-inline" onsubmit="return confirm('EXCLUSÃO PERMANENTE!\n\nContinuar?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger btn-sm py-0 px-2" title="Excluir">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
+                        <span class="text-muted">N/A</span>
                         {% endif %}
-                    </div>
+                    </small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary">{{ produto.quantidade_total_agg|default:"0" }}</span>
+                    {% with chegando=produto.quantidade_chegando|default:0 %}
+                    {% if chegando > 0 %}
+                    <span class="badge bg-info text-dark">+{{ chegando }}</span>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <!-- Linha 2: Preço e Ações -->
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <div>
+                    <strong class="text-success fs-6">R$ {{ produto.preco_venda|floatformat:2 }}</strong>
+                </div>
+                <div class="d-flex gap-1">
+                    <a href="{% url 'inventario:detalhar_produto' pk=produto.pk %}"
+                        class="btn btn-info btn-sm py-0 px-2" title="Detalhes">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{% url 'inventario:adicionar_estoque' pk=produto.pk %}"
+                        class="btn btn-success btn-sm py-0 px-2" title="Adicionar lote">
+                        <i class="bi bi-plus-lg"></i>
+                    </a>
+                    <a href="{% url 'inventario:editar_produto' pk=produto.pk %}"
+                        class="btn btn-warning btn-sm py-0 px-2" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    {% if produto.ativo %}
+                    <form action="{% url 'inventario:pausar_produto' pk=produto.pk %}" method="post" class="d-inline"
+                        onsubmit="return confirm('Pausar este produto?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary btn-sm py-0 px-2" title="Pausar">
+                            <i class="bi bi-pause-fill"></i>
+                        </button>
+                    </form>
+                    {% else %}
+                    <form action="{% url 'inventario:reativar_produto' pk=produto.pk %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm py-0 px-2" title="Reativar">
+                            <i class="bi bi-play-fill"></i>
+                        </button>
+                    </form>
+                    <form action="{% url 'inventario:excluir_produto_permanente' pk=produto.pk %}" method="post"
+                        class="d-inline" onsubmit="return confirm('EXCLUSÃO PERMANENTE!\n\nContinuar?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm py-0 px-2" title="Excluir">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
+    </div>
     {% empty %}
-        <div class="text-center py-5">
-            <i class="bi bi-inbox display-1 text-muted"></i>
-            <h5 class="text-muted mt-3">
-                {% if query_atual %}
-                    Nenhum produto encontrado para "<strong>{{ query_atual }}</strong>"
-                {% else %}
-                    Nenhum produto encontrado
-                {% endif %}
-            </h5>
-            {% if not query_atual %}
-                <a href="{% url 'inventario:criar_produto' %}" class="btn btn-primary mt-3">
-                    <i class="bi bi-plus-circle"></i> Adicionar Primeiro Produto
-                </a>
+    <div class="text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <h5 class="text-muted mt-3">
+            {% if query_atual %}
+            Nenhum produto encontrado para "<strong>{{ query_atual }}</strong>"
+            {% else %}
+            Nenhum produto encontrado
             {% endif %}
-        </div>
+        </h5>
+        {% if not query_atual %}
+        <a href="{% url 'inventario:criar_produto' %}" class="btn btn-primary mt-3">
+            <i class="bi bi-plus-circle"></i> Adicionar Primeiro Produto
+        </a>
+        {% endif %}
+    </div>
     {% endfor %}
 </div>
 
@@ -361,124 +399,134 @@
 <nav aria-label="Navegação de páginas" class="mt-4">
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page=1&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}" aria-label="Primeira">
-                    <span aria-hidden="true">&laquo;&laquo;</span>
-                </a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}" aria-label="Anterior">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
+        <li class="page-item">
+            <a class="page-link"
+                href="?page=1&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}"
+                aria-label="Primeira">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link"
+                href="?page={{ page_obj.previous_page_number }}&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}"
+                aria-label="Anterior">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
         {% else %}
-            <li class="page-item disabled">
-                <span class="page-link">&laquo;&laquo;</span>
-            </li>
-            <li class="page-item disabled">
-                <span class="page-link">&laquo;</span>
-            </li>
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;&laquo;</span>
+        </li>
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;</span>
+        </li>
         {% endif %}
 
         {% for num in page_obj.paginator.page_range %}
-            {% if page_obj.number == num %}
-                <li class="page-item active" aria-current="page">
-                    <span class="page-link">{{ num }}</span>
-                </li>
-            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}">{{ num }}</a>
-                </li>
+        {% if page_obj.number == num %}
+        <li class="page-item active" aria-current="page">
+            <span class="page-link">{{ num }}</span>
+        </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <li class="page-item">
+            <a class="page-link"
+                href="?page={{ num }}&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}">{{
+                num }}</a>
+            </li>
             {% endif %}
-        {% endfor %}
+            {% endfor %}
 
-        {% if page_obj.has_next %}
+            {% if page_obj.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}" aria-label="Próxima">
+                <a class="page-link"
+                    href="?page={{ page_obj.next_page_number }}&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}"
+                    aria-label="Próxima">
                     <span aria-hidden="true">&raquo;</span>
                 </a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}" aria-label="Última">
+                <a class="page-link"
+                    href="?page={{ page_obj.paginator.num_pages }}&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}"
+                    aria-label="Última">
                     <span aria-hidden="true">&raquo;&raquo;</span>
                 </a>
             </li>
-        {% else %}
+            {% else %}
             <li class="page-item disabled">
                 <span class="page-link">&raquo;</span>
             </li>
             <li class="page-item disabled">
                 <span class="page-link">&raquo;&raquo;</span>
             </li>
-        {% endif %}
+            {% endif %}
     </ul>
     <p class="text-center text-muted">
-        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} produtos no total)
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} produtos no
+        total)
     </p>
 </nav>
 {% endif %}
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('search-input');
-    const produtosTbodyDesktop = document.getElementById('produtos-tbody-desktop');
-    const produtosCardsMobile = document.getElementById('produtos-cards-mobile');
-    let searchTimeout;
-    
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            const query = this.value.trim();
-            const status = '{{ status_atual }}';
-            buscarProdutos(query, status);
-        }, 300);
-    });
-    
-    function buscarProdutos(query, status) {
-        const url = new URL('{% url "inventario:buscar_produtos_listagem_json" %}', window.location.origin);
-        url.searchParams.set('q', query);
-        url.searchParams.set('status', status);
-        
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                atualizarConteudo(data.produtos, query);
-            })
-            .catch(error => {
-                console.error('Erro na busca:', error);
-            });
-    }
-    
-    function atualizarConteudo(produtos, query) {
-        // Atualizar tabela desktop
-        atualizarTabelaDesktop(produtos, query);
-        // Atualizar cards mobile
-        atualizarCardsMobile(produtos, query);
-    }
-    
-    function atualizarTabelaDesktop(produtos, query) {
-        let html = '';
-        
-        if (produtos.length === 0) {
-            const mensagem = query ? `Nenhum produto encontrado para "<strong>${query}</strong>"` : 'Nenhum produto encontrado';
-            const botaoAdicionar = !query ? '<a href="{% url "inventario:criar_produto" %}" class="btn btn-primary mt-2"><i class="bi bi-plus-circle"></i> Adicionar Primeiro Produto</a>' : '';
-            
-            html = `<tr>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('search-input');
+        const produtosTbodyDesktop = document.getElementById('produtos-tbody-desktop');
+        const produtosCardsMobile = document.getElementById('produtos-cards-mobile');
+        let searchTimeout;
+
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const query = this.value.trim();
+                const status = '{{ status_atual }}';
+                buscarProdutos(query, status);
+            }, 300);
+        });
+
+        function buscarProdutos(query, status) {
+            const url = new URL('{% url "inventario:buscar_produtos_listagem_json" %}', window.location.origin);
+            url.searchParams.set('q', query);
+            url.searchParams.set('status', status);
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    atualizarConteudo(data.produtos, query);
+                })
+                .catch(error => {
+                    console.error('Erro na busca:', error);
+                });
+        }
+
+        function atualizarConteudo(produtos, query) {
+            // Atualizar tabela desktop
+            atualizarTabelaDesktop(produtos, query);
+            // Atualizar cards mobile
+            atualizarCardsMobile(produtos, query);
+        }
+
+        function atualizarTabelaDesktop(produtos, query) {
+            let html = '';
+
+            if (produtos.length === 0) {
+                const mensagem = query ? `Nenhum produto encontrado para "<strong>${query}</strong>"` : 'Nenhum produto encontrado';
+                const botaoAdicionar = !query ? '<a href="{% url "inventario:criar_produto" %}" class="btn btn-primary mt-2"><i class="bi bi-plus-circle"></i> Adicionar Primeiro Produto</a>' : '';
+
+                html = `<tr>
                 <td colspan="6" class="text-center py-4">
                     <i class="bi bi-inbox display-1 text-muted"></i>
                     <h5 class="text-muted mt-2">${mensagem}</h5>
                     ${botaoAdicionar}
                 </td>
             </tr>`;
-        } else {
-            produtos.forEach(produto => {
-                const margemBadge = produto.margem_lucro_agg !== null 
-                    ? `<span class="badge bg-${produto.margem_cor}">${produto.margem_lucro_agg.toFixed(2)}%</span>`
-                    : '<span class="badge bg-secondary">N/A</span>';
-                
-                const acoesBotoes = gerarBotoesAcao(produto);
-                
-                html += `<tr class="align-middle">
+            } else {
+                produtos.forEach(produto => {
+                    const margemBadge = produto.margem_lucro_agg !== null
+                        ? `<span class="badge bg-${produto.margem_cor}">${produto.margem_lucro_agg.toFixed(2)}%</span>`
+                        : '<span class="badge bg-secondary">N/A</span>';
+
+                    const acoesBotoes = gerarBotoesAcao(produto);
+
+                    html += `<tr class="align-middle">
                     <td><a href="/produtos/${produto.id}/" class="fw-semibold text-decoration-none">${produto.nome}</a></td>
                     <td class="text-center"><span class="badge bg-primary">${produto.quantidade_total_agg}</span></td>
                     <td class="text-end fw-bold">R$ ${produto.preco_venda.toFixed(2)}</td>
@@ -493,37 +541,37 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </td>
                 </tr>`;
-            });
+                });
+            }
+
+            produtosTbodyDesktop.innerHTML = html;
         }
-        
-        produtosTbodyDesktop.innerHTML = html;
-    }
-    
-    function atualizarCardsMobile(produtos, query) {
-        let html = '';
-        
-        if (produtos.length === 0) {
-            const mensagem = query ? `Nenhum produto encontrado para "<strong>${query}</strong>"` : 'Nenhum produto encontrado';
-            const botaoAdicionar = !query ? '<a href="{% url "inventario:criar_produto" %}" class="btn btn-primary mt-3"><i class="bi bi-plus-circle"></i> Adicionar Primeiro Produto</a>' : '';
-            
-            html = `<div class="text-center py-5">
+
+        function atualizarCardsMobile(produtos, query) {
+            let html = '';
+
+            if (produtos.length === 0) {
+                const mensagem = query ? `Nenhum produto encontrado para "<strong>${query}</strong>"` : 'Nenhum produto encontrado';
+                const botaoAdicionar = !query ? '<a href="{% url "inventario:criar_produto" %}" class="btn btn-primary mt-3"><i class="bi bi-plus-circle"></i> Adicionar Primeiro Produto</a>' : '';
+
+                html = `<div class="text-center py-5">
                 <i class="bi bi-inbox display-1 text-muted"></i>
                 <h5 class="text-muted mt-3">${mensagem}</h5>
                 ${botaoAdicionar}
             </div>`;
-        } else {
-            produtos.forEach(produto => {
-                const margemTexto = produto.margem_lucro_agg !== null 
-                    ? `<span class="fw-semibold ${produto.margem_cor === 'danger' ? 'text-danger' : 'text-success'}">${produto.margem_lucro_agg.toFixed(1)}%</span>`
-                    : '<span class="text-muted">N/A</span>';
-                
-                const chegandoBadge = produto.quantidade_chegando > 0 
-                    ? `<span class="badge bg-info text-dark">+${produto.quantidade_chegando}</span>`
-                    : '';
-                
-                const acoesBotoesIcones = gerarBotoesIconesMobile(produto);
-                
-                html += `<div class="card produto-card-mobile mb-2">
+            } else {
+                produtos.forEach(produto => {
+                    const margemTexto = produto.margem_lucro_agg !== null
+                        ? `<span class="fw-semibold ${produto.margem_cor === 'danger' ? 'text-danger' : 'text-success'}">${produto.margem_lucro_agg.toFixed(1)}%</span>`
+                        : '<span class="text-muted">N/A</span>';
+
+                    const chegandoBadge = produto.quantidade_chegando > 0
+                        ? `<span class="badge bg-info text-dark">+${produto.quantidade_chegando}</span>`
+                        : '';
+
+                    const acoesBotoesIcones = gerarBotoesIconesMobile(produto);
+
+                    html += `<div class="card produto-card-mobile mb-2">
                     <div class="card-body py-2 px-3">
                         <!-- Linha 1: Nome e Estoque -->
                         <div class="d-flex justify-content-between align-items-start mb-1">
@@ -555,20 +603,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </div>`;
-            });
+                });
+            }
+
+            produtosCardsMobile.innerHTML = html;
         }
-        
-        produtosCardsMobile.innerHTML = html;
-    }
-    
-    function gerarBotoesAcao(produto) {
-        if (produto.ativo) {
-            return `<form action="/produtos/${produto.id}/pausar/" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja pausar este produto?');">
+
+        function gerarBotoesAcao(produto) {
+            if (produto.ativo) {
+                return `<form action="/produtos/${produto.id}/pausar/" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja pausar este produto?');">
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <button type="submit" class="btn btn-sm btn-secondary" title="Pausar"><i class="bi bi-pause-fill"></i></button>
             </form>`;
-        } else {
-            return `<form action="/produtos/${produto.id}/reativar/" method="post" class="d-inline">
+            } else {
+                return `<form action="/produtos/${produto.id}/reativar/" method="post" class="d-inline">
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <button type="submit" class="btn btn-sm btn-success" title="Reativar"><i class="bi bi-play-fill"></i></button>
             </form>
@@ -576,21 +624,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <button type="submit" class="btn btn-sm btn-danger" title="Excluir Permanentemente"><i class="bi bi-trash"></i></button>
             </form>`;
+            }
         }
-    }
-    
-    function gerarBotoesIconesMobile(produto) {
-        let botoes = `<a href="/produtos/${produto.id}/" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes"><i class="bi bi-eye"></i></a>
+
+        function gerarBotoesIconesMobile(produto) {
+            let botoes = `<a href="/produtos/${produto.id}/" class="btn btn-info btn-sm py-0 px-2" title="Ver detalhes"><i class="bi bi-eye"></i></a>
             <a href="/produtos/${produto.id}/adicionar-estoque/" class="btn btn-success btn-sm py-0 px-2" title="Adicionar lote"><i class="bi bi-plus-lg"></i></a>
             <a href="/produtos/${produto.id}/editar/" class="btn btn-warning btn-sm py-0 px-2" title="Editar"><i class="bi bi-pencil"></i></a>`;
-        
-        if (produto.ativo) {
-            botoes += `<form action="/produtos/${produto.id}/pausar/" method="post" class="d-inline" onsubmit="return confirm('Pausar este produto?');">
+
+            if (produto.ativo) {
+                botoes += `<form action="/produtos/${produto.id}/pausar/" method="post" class="d-inline" onsubmit="return confirm('Pausar este produto?');">
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <button type="submit" class="btn btn-secondary btn-sm py-0 px-2" title="Pausar"><i class="bi bi-pause-fill"></i></button>
             </form>`;
-        } else {
-            botoes += `<form action="/produtos/${produto.id}/reativar/" method="post" class="d-inline">
+            } else {
+                botoes += `<form action="/produtos/${produto.id}/reativar/" method="post" class="d-inline">
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <button type="submit" class="btn btn-success btn-sm py-0 px-2" title="Reativar"><i class="bi bi-play-fill"></i></button>
             </form>
@@ -598,10 +646,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <button type="submit" class="btn btn-danger btn-sm py-0 px-2" title="Excluir"><i class="bi bi-trash"></i></button>
             </form>`;
+            }
+
+            return botoes;
         }
-        
-        return botoes;
-    }
-});
+    });
 </script>
-{% endblock %} 
+{% endblock %}
