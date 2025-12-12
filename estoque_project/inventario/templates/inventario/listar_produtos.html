@@ -442,13 +442,12 @@
         <li class="page-item active" aria-current="page">
             <span class="page-link">{{ num }}</span>
         </li>
-        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <li class="page-item">
-            <a class="page-link"
-                href="?page={{ num }}&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}">{{
-                num }}</a>
-            </li>
-            {% endif %}
-            {% endfor %}
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}&status={{ status_atual }}{% if query_atual %}&q={{ query_atual }}{% endif %}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
 
             {% if page_obj.has_next %}
             <li class="page-item">
