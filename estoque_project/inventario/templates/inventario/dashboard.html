@@ -12,10 +12,10 @@
             <form method="get" id="filtro-periodo-form">
                 <select class="form-select form-select-sm" name="periodo" id="periodo-select"
                     style="width: auto; padding-right: 0.4rem; padding-left: 0.5rem;">
-                    <option value="7d" {% if periodo_selecionado=='7d' %}selected{% endif %}>7 dias</option>
-                    <option value="30d" {% if periodo_selecionado=='30d' %}selected{% endif %}>30 dias</option>
-                    <option value="anual" {% if periodo_selecionado=='anual' %}selected{% endif %}>Anual</option>
-                    <option value="custom" {% if periodo_selecionado=='custom' %}selected{% endif %}>Personalizado
+                    <option value="7d" {% if periodo_selecionado == '7d' %}selected{% endif %}>7 dias</option>
+                    <option value="30d" {% if periodo_selecionado == '30d' %}selected{% endif %}>30 dias</option>
+                    <option value="anual" {% if periodo_selecionado == 'anual' %}selected{% endif %}>Anual</option>
+                    <option value="custom" {% if periodo_selecionado == 'custom' %}selected{% endif %}>Personalizado
                     </option>
                 </select>
             </form>
