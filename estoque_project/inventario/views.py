@@ -729,6 +729,11 @@ def pausar_produto(request, pk):
     produto.ativo = False
     produto.save()
     messages.success(request, f"Produto '{produto.nome}' pausado com sucesso!")
+    
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url:
+        return redirect(next_url)
+        
     return redirect('inventario:listar_produtos')
 
 @require_POST
